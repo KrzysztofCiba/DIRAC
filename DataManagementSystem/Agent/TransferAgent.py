@@ -34,7 +34,9 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.AgentModule import AgentModule
 
 ## base classes
-from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase, defaultCallback, defaultExceptionCallabck
+from DIRAC.DataManagementSystem.private.RequestAgentBase import RequestAgentBase
+from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultCallback
+from DIRAC.DataManagementSystem.private.RequestAgentBase import defaultExceptionCallback
 from DIRAC.DataManagementSystem.Agent.TransferTask import TransferTask
 
 ## DIRAC tools
@@ -119,11 +121,13 @@ class TransferAgent( RequestAgentBase ):
 
   This class is dealing with 'transfer' DIRAC requests.
 
-  A request could be processed in a two different modes: request's files could be scheduled for FTS processing
-  or alternatively subrequests could be processed by TransferTask in a standalone subprocesses.
-  If FTS scheduling fails for any reason OR request itself cannot be processed using FTS machinery (i.e. its owner
-  is not a DataManager, FTS channel for at least on file doesn't exist), the processing will go through 
-  TransferTasks and ProcessPool.
+  A request could be processed in a two different modes: request's files could be scheduled 
+  for FTS processing or alternatively subrequests could be processed by TransferTask in 
+  a standalone subprocesses.
+  
+  If FTS scheduling fails for any reason OR request itself cannot be processed using 
+  FTS machinery (i.e. its owner is not a DataManager, FTS channel for at least on file 
+  doesn't exist), the processing will go through TransferTasks and ProcessPool.
 
   By default FTS scheduling is disabled and all requests are processed using tasks.  
 
@@ -220,11 +224,11 @@ class TransferAgent( RequestAgentBase ):
                                                      False : "disabled" }[ self.__executionMode["Tasks"] ] )
     
     if self.__executionMode["Task"]:
-      register = self.registerCallback( defaultCallBack )
+      register = self.registerCallback( defaultCallback )
       if not register["OK"]:
         self.log.error( register["Message"] )
         raise TransferAgentError( register["Message"] )
-      register = self.registerExceptionCallback( defaultExceptionCallBack )
+      register = self.registerExceptionCallback( defaultExceptionCallback )
       if not register["OK"]:
         self.log.error( register["Message"] )
         raise TransferAgentError( register["Message"] )
@@ -559,7 +563,8 @@ class TransferAgent( RequestAgentBase ):
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
-            self.log.info("successfully enqueued request %s to task taskID = %d" % ( requestDict["requestName"], taskID ) )
+            self.log.info("request %s enqueued to task taskID = %d" % ( requestDict["requestName"], 
+                                                                        taskID ) )
             ## update request counter
             requestCounter = requestCounter - 1
             ## task created, a little time kick to proceed
@@ -734,44 +739,47 @@ class TransferAgent( RequestAgentBase ):
       self.log.info( "schedule: found %s files" % ( iSubRequest, len( subRequestFiles ) ) )
       for subRequestFile in subRequestFiles:
         status = subRequestFile["Status"]
-        LFN = subRequestFile["LFN"]
-        FileID = subRequestFile["FileID"]
-        self.log.info("schedule: processing file FileID=%s LFN=%s Status=%s" % ( FileID, LFN, status ) )
+        lfn = subRequestFile["LFN"]
+        fileID = subRequestFile["FileID"]
+        self.log.info("schedule: processing file FileID=%s LFN=%s Status=%s" % ( fileID, lfn, status ) )
         if status == "Done":
           ## get failed to register [ ( PFN, SE, ChannelID ), ... ] 
-          toRegister = self.transferDB().getRegisterFailover( FileID )
-          if not failedToRegister["OK"]:
+          toRegister = self.transferDB().getRegisterFailover( fileID )
+          if not toRegister["OK"]:
             self.log.error( "schedule: %s" % toRegister["Message"] )
             return toRegister
           if not toRegister["Value"]:
-            self.log.debug("schedule: no waiting registrations found for %s file" % LFN )
+            self.log.debug("schedule: no waiting registrations found for %s file" % lfn )
             continue
           ## loop and try to register
           toRegister = toRegister["Value"]
-          for PFN, SE, channelID in toRegister.items():
-            self.log.debug("schedule: failover registration of %s to %s" % ( LFN, SE ) )
+          for pfn, se, channelID in toRegister.items():
+            self.log.debug("schedule: failover registration of %s to %s" % ( lfn, se ) )
             ## register replica now
-            registerReplica = self.replicaManager().registerReplica( ( LFN, PFN, SE ) )
-            if ( not registerReplica["OK"] ) or ( not registerReplica["Value"] ) or ( LFN in registerReplica["Value"]["Failed"] ):
+            registerReplica = self.replicaManager().registerReplica( ( lfn, pfn, se ) )
+            if ( ( not registerReplica["OK"] ) 
+                 or ( not registerReplica["Value"] ) 
+                 or ( lfn in registerReplica["Value"]["Failed"] ) ):
               error = registerReplica["Message"] if "Message" in registerReplica else None 
               if "Value" in registerReplica:
                 if not registerReplica["Value"]:
                   error = "RM call returned empty value"
                 else:
-                  error = registerReplica["Value"]["Failed"][LFN]
-              self.log.error( "schedule: unable to register %s at %s: %s" %  ( LFN, SE, registerReplica["Message"] ) )
+                  error = registerReplica["Value"]["Failed"][lfn]
+              self.log.error( "schedule: unable to register %s at %s: %s" %  ( lfn, se, 
+                                                                               registerReplica["Message"] ) )
               waitingRegistrations = True
 
-            elif LFN in registerReplica["Value"]["Successfull"]:
+            elif lfn in registerReplica["Value"]["Successfull"]:
 
               ## no other option, it must be in successfull
-              updateRegister = self.transferDB().setRegistrationDone( channelID, FileID )
-              if not updateRegister["OK"]:
-              self.log.error("schedule: unable to set registration Done for %s fileID=%s channelID=%s: %s" % ( LFN,
-                                                                                                               FileID,
-                                                                                                               channelID,
-                                                                                                               updateRegister["Message"] ) )
-              return updateRegister
+              register = self.transferDB().setRegistrationDone( channelID, fileID )
+              if not register["OK"]:
+                self.log.error("schedule: register status error %s fileID=%s channelID=%s: %s" % ( lfn,
+                                                                                                   fileID,
+                                                                                                   channelID,
+                                                                                                   register["Message"] ) )
+                return register
 
       if not waitingRegistrations and requestObj.isSubRequestEmpty( iSubRequest, "transfer" )["Value"]:
         self.log.info("schedule: setting sub-request %d status to 'Scheduled'" % iSubRequest )
