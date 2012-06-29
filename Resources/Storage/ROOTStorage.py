@@ -73,7 +73,11 @@ class ROOTStorage( StorageBase ):
 
     ## base class init
     StorageBase.__init__( self, self.name, self.wspath )
-  
+
+    ## xrd timeout
+    self.xrdTimeout = gConfig.getOption( "/Resources/Storages/XRDTimeout", 300 )
+
+
   def createDirectory( self, path ):
     """ mkdir path
 
@@ -262,4 +266,6 @@ class ROOTStorage( StorageBase ):
     :param str operation: xdm command
     :param mixed url: pfns undergoing :operation: 
     """
-    pass
+    command = "xrd %s %s %s" ( self.server, operation, url ) 
+    self.log.debug( command )
+    
