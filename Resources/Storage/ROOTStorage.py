@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import os
+import os.path
 import sys
 import re
 from types import StringTypes, ListType, DictType 
@@ -76,7 +77,25 @@ class ROOTStorage( StorageBase ):
 
     ## xrd timeout
     self.xrdTimeout = gConfig.getOption( "/Resources/Storages/XRDTimeout", 300 )
+    self.xrdRetry = gConfig.getOption( "/Resources/Storages/XRDRetry", 3 )
 
+
+  def isPfnForProtocol( self, pfn ):
+    """ check if supplied pfn is valid for XROOT protocol
+
+    :param self: self reference
+    :param str pfn: PFN
+    """
+    res = pfnparse( pfn )
+    return S_OK( res in not res["OK"] else res["Value"]["Protocol"] == self.protocol ) 
+
+  def changeDirectory( self, directory ):
+    """ cd dir
+
+    :param self: self reference
+    :param str directory:
+    """
+    self.cwd = os.path.normpath( os.path.join( self.cwd, directory.lstrip("/") ) )
 
   def createDirectory( self, path ):
     """ mkdir path
@@ -84,6 +103,7 @@ class ROOTStorage( StorageBase ):
     :param self: self reference
     :param str path: path to create
     """
+    
     pass
 
   def getCurrentURL( self ):
@@ -91,6 +111,8 @@ class ROOTStorage( StorageBase ):
 
     :param self: self reference
     """
+    
+
     pass
 
   def getDirectory( self, path ):
@@ -153,6 +175,8 @@ class ROOTStorage( StorageBase ):
 
     :param self: self reference
     """
+    
+
     pass
 
   def getProtocolPfn( self ):
@@ -170,20 +194,18 @@ class ROOTStorage( StorageBase ):
     """
     pass
 
-  def isDirectory( self ):
+  def isDirectory( self, path ):
     """ test -d dir
 
     :param self: self reference
     """
+    res = self.__xrd_wrapper( "existdir", path )
 
-    pass
-
-  def isFile( self ):
+  def isFile( self, path ):
     """ test -f file
 
     """
-
-    pass
+    res = self.__xrd_wrapper( "existfile", path )
 
   def listDirectory( self ):
     """ ls dir
@@ -191,8 +213,8 @@ class ROOTStorage( StorageBase ):
 
     :param self: self reference
     """
+    res = self.__xrd_wrapper( "existfile", path )
 
-    pass
 
   def pinFile( self ):
     """ pin file 
@@ -208,7 +230,7 @@ class ROOTStorage( StorageBase ):
     """
     pass
 
-  def prestageFIleStatus( self ):
+  def prestageFileStatus( self ):
     pass
 
   def putFile( self ):
@@ -259,13 +281,23 @@ class ROOTStorage( StorageBase ):
     return S_OK( urls )
 
   
-  def __xrd_wrapper( self, operation, url ):
+  def __xrd_wrapper( self, operation, url, timeout=None, callback=None ):
     """ xrd wrapper calling :operation: on :url:
 
     :param self: self reference
     :param str operation: xdm command
-    :param mixed url: pfns undergoing :operation: 
+    :param mixed url: pfn undergoing :operation: 
     """
-    command = "xrd %s %s %s" ( self.server, operation, url ) 
-    self.log.debug( command )
     
+    timeout = timeout if timeout else self.xrdTimeout
+    retry = self.xrdRetry if self.xrdRetry else 1
+    command = [ "xrd", self.server, url, operation ]
+    while retry:
+      res = shellCall( timeout, command, callback )
+      if not res["OK"]:
+        if res["Message"].startswith("Timeout"):
+          retry -= 1
+          timeout *= 2
+          continue
+        else:
+          return res
