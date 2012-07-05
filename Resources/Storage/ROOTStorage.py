@@ -195,12 +195,9 @@ class ROOTStorage( StorageBase ):
     isFile = self.isFile( urls["Value"]["Failed"].keys() )
     if not isFile["OK"]:
       return isFile
-    
     isDirectory = isDirectory["Value"]
     isFile = isFile["Value"]
-
     successful = isDirectory["Successful"].update( isFile["Successful"] )
-
     return S_OK( { "Successful" : dict.fromkeys( successful.keys(), True), 
                    "Failed" : dict.fromkeys( [ url for url in urls if url not in successful.keys() ], False ) } )
     
@@ -390,12 +387,11 @@ class ROOTStorage( StorageBase ):
       retry -= 1
       res = shellCall( timeout, command, callback )
       self.log.debug( res )
-      if not res["OK"]:
-        if res["Message"].startswith("Timeout"):
-          timeout *= 2
-          continue
-        else: 
-          return res
+      if not res["OK"] and res["Message"].startswith("Timeout"):
+        timeout *= 2
+        continue
+      else: 
+        return res
     return res  
 
 
