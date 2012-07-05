@@ -376,12 +376,39 @@ class ROOTStorage( StorageBase ):
     retry = self.xrdRetry if self.xrdRetry else 1
     
     self.log.info("entering xrd wrapper timeout=%s retry=%s operation=%s url=%s" % ( timeout, retry, operation, url ) )
-    
+ 
+    ## TODO: not sure if it is right
     if not url.startswith( self.path ):
       url = "%s/%s" % ( self.path, url )
       self.log.debug( "new path = %s" % url )
       
     command = " ".join( [ "xrd", self.host, operation, url ] )
+    self.log.debug( command )
+    while retry:
+      retry -= 1
+      res = shellCall( timeout, command, callback )
+      self.log.debug( res )
+      if not res["OK"] and res["Message"].startswith("Timeout"):
+        timeout *= 2
+        continue
+      else: 
+        return res
+    return res  
+
+  def __xrdcp_wrapper( self, source, destination, timeout=None, callback=None ):
+    """ xrdcp wrapper
+
+    :param self: self reference
+    :param str source: source pfn
+    :param str destination: destination pfn
+    :param int timeout: xrdcp timeout in seconds
+    :param callable callback: callback fcn 
+    """
+    timeout = timeout if timeout else self.xrdTimeout
+    retry = self.xrdRetry if self.xrdRetry else 1
+    self.log.info("entering xrdcp wrapper timeout=%s retry=%s source=%s destination=%s" % ( timeout, retry, source, destination ) )
+   
+    command = " ".join( [ "xrdcp", self.host, source, destination ] )
     self.log.debug( command )
     while retry:
       retry -= 1
