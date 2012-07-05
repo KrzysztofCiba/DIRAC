@@ -12,7 +12,7 @@
     :synopsis: xroot protocol storage element
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    xroot protocol storage element interface
+    xroot/scalla protocol storage element interface
 """
 
 __RCSID__ = "$Id $"
@@ -76,10 +76,10 @@ class ROOTStorage( StorageBase ):
     StorageBase.__init__( self, self.name, self.wspath )
 
     ## xrd timeout
-    self.xrdTimeout = gConfig.getOption( "/Resources/Storages/XRDTimeout", 300 )
-    self.xrdRetry = gConfig.getOption( "/Resources/Storages/XRDRetry", 3 )
+    self.xrdTimeout = gConfig.getValue( "/Resources/StorageElements/XRDTimeout", 300 )
+    self.xrdRetry = gConfig.getValue( "/Resources/StorageElements/XRDRetry", 3 )
 
-
+  
   def isPfnForProtocol( self, pfn ):
     """ check if supplied pfn is valid for XROOT protocol
 
@@ -87,7 +87,7 @@ class ROOTStorage( StorageBase ):
     :param str pfn: PFN
     """
     res = pfnparse( pfn )
-    return S_OK( res in not res["OK"] else res["Value"]["Protocol"] == self.protocol ) 
+    return S_OK( res if not res["OK"] else res["Value"]["Protocol"] == self.protocol ) 
 
   def changeDirectory( self, directory ):
     """ cd dir
@@ -167,18 +167,43 @@ class ROOTStorage( StorageBase ):
  
     :param self: self reference
     """
-    
-    pass
+    return S_OK( { "StorageName" : self.name,
+                   "ProtocolName" : self.protocolName,
+                   "Protocol" : self.protocol,
+                   "Host" : self.host,
+                   "Path" : self.path,
+                   "Port" : self.port,
+                   "SpaceToken" : self.spaceToken,
+                   "WSUrl" : self.wspath } )
 
-  def exists( self, path ):
-    """ 
+  def exists( self, urls ):
+    """ test -d or test -f
 
     :param self: self reference
+    :param mixed urls: urls to check 
     """
+    urls = self.__checkArgumentFormat( urls )
+    if not urls["OK"]:
+      return urls
     
+    successful = []
+    failed = {}
+    isDirectory = self.isDirectory( urls )
+    if not isDirectory["OK"]:
+      return isDirectory
 
-    pass
+    isFile = self.isFile( urls["Value"]["Failed"].keys() )
+    if not isFile["OK"]:
+      return isFile
+    
+    isDirectory = isDirectory["Value"]
+    isFile = isFile["Value"]
 
+    successful = isDirectory["Successful"].update( isFile["Successful"] )
+
+    return S_OK( { "Successful" : dict.fromkeys( successful.keys(), True), 
+                   "Failed" : dict.fromkeys( [ url for url in urls if url not in successful.keys() ], False ) } )
+    
   def getProtocolPfn( self ):
     """
 
@@ -194,28 +219,92 @@ class ROOTStorage( StorageBase ):
     """
     pass
 
-  def isDirectory( self, path ):
+  def isDirectory( self, urls ):
     """ test -d dir
 
     :param self: self reference
+    :param mixed urls: urls to check
     """
-    res = self.__xrd_wrapper( "existdir", path )
+    urls = self.__checkArgumentFormat( urls )
+    if not urls["OK"]:
+      return urls
+    successful = []
+    failed = []
+    for url in urls["Value"]:
+      res = self.__xrd_wrapper( "existdir", url )
+      if not res["OK"]:
+        failed.append( ( url, res["Message"] ) )
+      exitCode, stdOut, stdErr = res["Value"]
+      if exitCode != 0:
+        failed.append( ( url, stdErr ) )
+      if "the directory exists" in stdOut.lower():
+        successful.append( url )
+        continue
+      failed.append( ( url, False ) )
+    return S_OK( { "Successful" : dict.fromkeys( successful, True ), "Failed" : dict(failed) } )
 
-  def isFile( self, path ):
+  def isFile( self, urls ):
     """ test -f file
 
-    """
-    res = self.__xrd_wrapper( "existfile", path )
-
-  def listDirectory( self ):
-    """ ls dir
-
-
     :param self: self reference
+    :param mixed urls: paths to check
     """
-    res = self.__xrd_wrapper( "existfile", path )
+    urls = self.__checkArgumentFormat( urls )
+    if not urls["OK"]:
+      return urls
+    successful = []
+    failed = []
+    for url in urls["Value"]:
+      res = self.__xrd_wrapper( "existfile", url )
+      self.log.always( res )
+      if not res["OK"]:
+        failed.append( ( url, res["Message"] ) )
+      exitCode, stdOut, stdErr = res["Value"]
+      if exitCode != 0:
+        failed.append( ( url, stdErr ) )
+      if "the file exists" in stdOut.lower():
+        successful.append(  url )
+        continue
+      failed.append( ( url, False ) ) 
 
+    return S_OK( { "Successful": dict.fromkeys( successful, True ), "Failed" : dict(failed) } )  
 
+  def listDirectory( self, urls ):
+    """ ls dir
+    
+    :param self: self reference
+    :param mixed urls: folders to check
+    """
+    urls = self.__checkArgumentFormat( urls )
+    if not urls["OK"]:
+      return urls
+    isDirectory = self.isDirectory( urls["Value"] )
+    if not isDirectory["OK"]:
+      return isDirectory
+    urls = isDirectory["Value"]["Successful"].keys()
+    successful = {} 
+    failed = isDirectory["Value"]["Failed"]
+    for url in sorted(urls):
+      res = self.__xrd_wrapper( "dirlist", url )
+      if not res["OK"]:
+        failed[url] = res["Message"]
+      exitCode, stdOut, stdErr = res["Value"]
+      if exitCode != 0:
+        failed[url] = stdErr
+        continue
+      subDirs = {}
+      files = {}
+      for line in stdOut.split("\n"):
+        if not line:
+          continue
+        permission, size, cDate, cTime, path  = line.split()
+        if permission.startswith("d"):
+          subDirs[path] = True 
+        else:
+          files[path] = { "Size" : int(size) }
+      successful[url] = { "SubDirs" : subDirs, "Files" : files }
+    return S_OK( { "Successful" : successful, "Failed" : failed } )
+         
   def pinFile( self ):
     """ pin file 
 
@@ -238,7 +327,6 @@ class ROOTStorage( StorageBase ):
  
     :param self: self reference
     """
-
     pass
 
   def releaseFile( self ):
@@ -279,7 +367,6 @@ class ROOTStorage( StorageBase ):
     else:
       return S_ERROR( "__checkArgumentFormat: Supplied path is not of the correct format." )
     return S_OK( urls )
-
   
   def __xrd_wrapper( self, operation, url, timeout=None, callback=None ):
     """ xrd wrapper calling :operation: on :url:
@@ -288,16 +375,41 @@ class ROOTStorage( StorageBase ):
     :param str operation: xdm command
     :param mixed url: pfn undergoing :operation: 
     """
-    
     timeout = timeout if timeout else self.xrdTimeout
     retry = self.xrdRetry if self.xrdRetry else 1
-    command = [ "xrd", self.server, url, operation ]
+    
+    self.log.info("entering xrd wrapper timeout=%s retry=%s operation=%s url=%s" % ( timeout, retry, operation, url ) )
+    
+    if not url.startswith( self.path ):
+      url = "%s/%s" % ( self.path, url )
+      self.log.debug( "new path = %s" % url )
+      
+    command = " ".join( [ "xrd", self.host, operation, url ] )
+    self.log.debug( command )
     while retry:
+      retry -= 1
       res = shellCall( timeout, command, callback )
+      self.log.debug( res )
       if not res["OK"]:
         if res["Message"].startswith("Timeout"):
-          retry -= 1
           timeout *= 2
           continue
-        else:
+        else: 
           return res
+    return res  
+
+
+# TODO remove when ready
+if __name__ == "__main__":
+  from DIRAC.Core.Base.Script import parseCommandLine
+  parseCommandLine()
+  from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+  sf = StorageFactory()
+  rs = sf.getStorages( "CERN-USER" )["Value"]["StorageObjects"][0]
+  gLogger.always( rs.getParameteres() )
+  res = rs.isDirectory( [ "/user/c/cibak", "user/c/cibak/a", "user/c/cibak/b"] )
+  res = rs.isFile( [ "user/c/cibak/cert-test2"] )
+
+  res = rs.listDirectory( "user/c/cibak/" )
+
+  gLogger.always( res )
