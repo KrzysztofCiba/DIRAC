@@ -23,8 +23,8 @@ __RCSID__ = "$Id $"
 # @date 2012/06/27 12:42:27
 # @brief Definition of ROOTStorage class.
 
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
+#from DIRAC.Core.Base.Script import parseCommandLine
+#parseCommandLine()
 
 ## imports 
 import os
@@ -49,7 +49,7 @@ def urlsAsList( fcn ):
   def wrapper( self, *args, **kwargs ):
     """ inside worker
     
-    :warn: urls must be a 1st one arg
+    :warn: arg urls has to be defined as 2nd one, just after self 
     
     :param self: instance reference
     :param args: non-keyword args
