@@ -23,9 +23,6 @@ __RCSID__ = "$Id $"
 # @date 2012/06/27 12:42:27
 # @brief Definition of ROOTStorage class.
 
-#from DIRAC.Core.Base.Script import parseCommandLine
-#parseCommandLine()
-
 ## imports 
 import os
 import os.path
@@ -276,7 +273,6 @@ class ROOTStorage( StorageBase ):
 
     :param self: self reference
     """
-
     pass
 
   @urlsAsList
