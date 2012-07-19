@@ -24,9 +24,41 @@ __RCSID__ = "$Id $"
 # @brief Definition of Request class.
 
 ## imports 
+from UserList import UserList
+
+class File( object ):
+  pass
 
 class SubRequest( object ):
   pass
+
+class TypedListEx( type ):
+  def __new__(meta, name, bases, attrs):
+    return type.__new__(meta, name, bases, attrs)
+
+class TypedList( UserList ):
+  
+  __typedef = None
+
+  def setType( self, typedef=None ):
+    if not self.__typedef:
+      if typedef and type( typedef ) == TypeType:
+        self.__typedef = typedef 
+
+  def append( self, obj ):
+    if not self.__typedef:
+      self.__typedef = type( obj )
+    if not isinstance( obj, self.__typedef ):
+      raise TypeError( "Wrong type")
+    self.data.append( obj )
+
+  def insert( self, where, what ):
+    if not self.__typedef:
+      self.__typedef = type( what )
+    if not isinstance( what, typedef ):
+      raise TypeError("Wrong type")
+    self.data.insert( where, what )
+  
 
 ########################################################################
 class Request(object):
@@ -75,7 +107,7 @@ class Request(object):
     if subRequest not in self:
       self.__subRequests.append( subRequest )
       subRequest.parent = self
-   return self
+    return self
 
   def __isub__( self, subRequest ):
     """ -= operator for subRequest
@@ -127,6 +159,7 @@ class Request(object):
     def fget( self ):
       """ request owner DN getter """
       return self.__ownerDN
+    return locals()
   ownerDN = property( **ownerDN() )
 
   def ownerGroup():
@@ -138,6 +171,7 @@ class Request(object):
     def fget( self ):
       """ request owner group getter """
       return self.__ownerGroup
+    return locals()
   ownerGroup = property( **ownerGroup() )
 
   def setup():
