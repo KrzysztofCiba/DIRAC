@@ -24,7 +24,9 @@ __RCSID__ = "$Id $"
 # @brief Definition of Request class.
 
 ## imports 
-from UserList import UserList
+import datetime
+## from DIRAC
+from DIRAC.Core.Utilities.TypedList import TypedList
 
 class File( object ):
   pass
@@ -32,39 +34,23 @@ class File( object ):
 class SubRequest( object ):
   pass
 
-class TypedListEx( type ):
-  def __new__(meta, name, bases, attrs):
-    return type.__new__(meta, name, bases, attrs)
-
-class TypedList( UserList ):
   
-  __typedef = None
-
-  def setType( self, typedef=None ):
-    if not self.__typedef:
-      if typedef and type( typedef ) == TypeType:
-        self.__typedef = typedef 
-
-  def append( self, obj ):
-    if not self.__typedef:
-      self.__typedef = type( obj )
-    if not isinstance( obj, self.__typedef ):
-      raise TypeError( "Wrong type")
-    self.data.append( obj )
-
-  def insert( self, where, what ):
-    if not self.__typedef:
-      self.__typedef = type( what )
-    if not isinstance( what, typedef ):
-      raise TypeError("Wrong type")
-    self.data.insert( where, what )
-  
-
 ########################################################################
 class Request(object):
   """
   .. class:: Request
-  
+ 
+  :param str name: request' name
+  :param str ownerDN: request's owner DN
+  :param str ownerGroup: request owner group
+  :param str setup: DIRAC setup
+  :param str sourceComponent: ??? 
+  :param int jobID: jobID 
+  :param datetime.datetime creationTime: UTC datetime 
+  :param datetime.datetime submissionTime: UTC datetime 
+  :param datetime.datetime lastUpdate: UTC datetime 
+  :param str status: request's status
+  :p[aram TypedList subRequests: list of subrequests 
   """
   ## request's name
   __name = None
@@ -74,6 +60,17 @@ class Request(object):
   __ownerGroup = None
   ## DIRAC setup
   __setup = None
+  ## source component
+  __sourceComponent = None
+  ## jobID
+  __jobID = 0
+  ## creation time
+  __creationTime = None 
+  ## submission time
+  __submissionTime = None 
+  ## last update 
+  __lastUpdate = None
+
   ## list of sub-requests
   __subRequests = []
   ## status
@@ -86,8 +83,8 @@ class Request(object):
     """
     self.__name = ""
 
-  ## SubRequest aritmetics
 
+  ## SubRequest aritmetics
   def __contains__( self, subRequest ):
     """ in operator 
     
@@ -102,8 +99,6 @@ class Request(object):
     :param self: self reference
     :param SubRequest subRequest: sub-request to add
     """
-    if not isinstance( subRequest, SubRequest ):
-      raise TypeError( "wrong type for arg subRequest" )
     if subRequest not in self:
       self.__subRequests.append( subRequest )
       subRequest.parent = self
@@ -115,8 +110,6 @@ class Request(object):
     :param self: self reference
     :param SubRequest subRequest: sub-request to add
     """
-    if not isinstance( subRequest, SubRequest ):
-      raise TypeError( "wrong type for arg subRequest" )
     if subRequest in self:
       self.__subRequests.remove( subRequest )
       subRequest.parent = None
@@ -139,8 +132,6 @@ class Request(object):
     :param self: self reference
     :param SubRequest newSubRequest:
     """
-    if ( type(newSubRequest), type(existingSubRequest) ) != ( SubRequest, SubRequest ):
-      return S_ERROR( "wrong type for arg" )
     if existingSubRequest not in self:
       return S_ERROR( "%s is not in" % existingSubRequest )
     if newSubRequest in self:
@@ -149,12 +140,13 @@ class Request(object):
     return S_OK()
 
   ## props
-
   def ownerDN():
     """ request owner DN prop """
     doc = "request owner DN"
     def fset( self, value ):
       """ request owner DN setter """
+      if type(value) <> str:
+        raise TypeError("ownerDN should be a string!")
       self.__ownerDN = value
     def fget( self ):
       """ request owner DN getter """
@@ -167,6 +159,8 @@ class Request(object):
     doc = "request owner group "
     def fset( self, value ):
       """ request owner group setter """
+      if type(value) <> str:
+        raise TypeError("ownerGroup should be a string!")
       self.__ownerGroup = value
     def fget( self ):
       """ request owner group getter """
@@ -179,6 +173,8 @@ class Request(object):
     doc = "DIRAC setup"
     def fset( self, value ):
       """ DIRAC setup setter """
+      if type(value) != str:
+        raise TypeError("setu should be a string!")
       self.__setup = value
     def fget( self ):
       """ DIRAC setup getter """
@@ -186,11 +182,27 @@ class Request(object):
     return locals() 
   setup = property( **setup() )
 
+  def sourceComponent():
+    """ source component prop """
+    doc = "source component "
+    def fset( self, value ):
+      """ source component setter """
+      if type(value) != str:
+        raise TypeError("setu should be a string!")
+      self.__sourceComponent = value
+    def fget( self ):
+      """ source component getter """
+      return self.__sourceComponent
+    return locals() 
+  sourceComponent = property( **sourceComponent() )
+
   def name():
     """ request's name prop """
     doc = "request's name"
     def fset( self, value ):
       """ request name setter """
+      if type(value) <> str:
+        raise TypeError("name should be a string")
       self.__name = value
     def fget( self ):
       """ request name getter """
@@ -198,11 +210,76 @@ class Request(object):
     return locals()
   name = property( **name() )
 
+  def jobID():
+    """ jobID prop """
+    doc = "jobID"
+    def fset( self, value=0 ):
+      """ jobID setter """
+      if type(value) not in ( long, int ):
+        raise TypeError( "jobID as to be an int" )
+      self.__jobID = value
+    def fget( self ):
+      """ jobID getter """
+      return self.__jobID
+    return locals()
+  jobID = property( **jobID() )
 
-  def fromXML( self, xmlString ):
+  def creationTime():
+    """ request's creation time prop """
+    doc = "request's creation time"
+    def fset( self, value = None ):
+      """ creation time setter """
+      if type( value != type(datetime.datetime) ):
+        raise TypeError("creationTime should be a datetime.datetime!")
+      self.__creationTime = value
+    def fget( self ):
+      """ creation time getter """
+      return self.__creationTime
+    return locals()
+  creationTime = property( **creationTime() )
+
+  def submissionTime():
+    """ request's submission time prop """
+    doc = "request's submisssion time"
+    def fset( self, value = None ):
+      """ submission time setter """
+      if type( value != type(datetime.datetime) ):
+        raise TypeError("submissionTime should be a datetime.datetime!")
+      self.__submissionTime = value
+    def fget( self ):
+      """ submisssion time getter """
+      return self.__submissionTime
+    return locals()
+  submissionTime = property( **submissionTime() )
+
+  def lastUpdate():
+    """ last update prop """ 
+    doc = "request's last update"
+    def fset( self, value = None ):
+      """ last update setter """
+      if type( value != type(datetime.datetime) ):
+        raise TypeError("lastUpdate should be a datetime.datetime!")
+      self.__lastUpdate = value
+    def fget( self ):
+      """ submisssion time getter """
+      return self.__lastUpdate
+    return locals()
+  lastUpdate = property( **lastUpdate() )
+
+
+  @classmethod
+  def fromXML( cls, xmlString ):
+    
+
     pass
 
+
+  @classmethod
   def toXML( self ):
     pass
 
+
+if __name__ == "__main__":
+  r = Request()
+  print r.creationTime
   
