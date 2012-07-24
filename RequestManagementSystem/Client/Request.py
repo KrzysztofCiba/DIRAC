@@ -70,11 +70,10 @@ class Request(object):
   __submissionTime = None 
   ## last update 
   __lastUpdate = None
-
-  ## list of sub-requests
-  __subRequests = []
   ## status
   __status = "Waiting"
+  ## list of sub-requests
+  __subRequests = []
 
   def __init__( self ):
     """c'tor
@@ -269,17 +268,18 @@ class Request(object):
 
   @classmethod
   def fromXML( cls, xmlString ):
-    
 
     pass
 
-
-  @classmethod
   def toXML( self ):
     pass
 
+  
+  def fromSQL( cls ):
+    pass
 
-if __name__ == "__main__":
-  r = Request()
-  print r.creationTime
+
+  def toSQL( self ):
+    pass
+
   
