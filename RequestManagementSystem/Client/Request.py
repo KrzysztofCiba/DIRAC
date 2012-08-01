@@ -4,9 +4,8 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/16 13:43:45
 ########################################################################
-
 """ :mod: Request 
-    =======================
+    =============
  
     .. module: Request
     :synopsis: request implementation
@@ -24,14 +23,28 @@ __RCSID__ = "$Id $"
 # @brief Definition of Request class.
 
 ## imports 
+from types import LongType, IntType
 import datetime
+try:
+  import xml.etree.cElementTree as ElementTree
+except ImportError:
+  import xml.etree.ElementTree as ElementTree
+from xml.parsers.expat import ExpatError
+  
 ## from DIRAC
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
 
 class File( object ):
   pass
 
 class SubRequest( object ):
+
+  def toXML( self ):
+    
+
+    return ElementTree.Element("subrequest")
+
   pass
 
   
@@ -40,6 +53,7 @@ class Request(object):
   """
   .. class:: Request
  
+  :param int requestID: requestID
   :param str name: request' name
   :param str ownerDN: request's owner DN
   :param str ownerGroup: request owner group
@@ -50,8 +64,10 @@ class Request(object):
   :param datetime.datetime submissionTime: UTC datetime 
   :param datetime.datetime lastUpdate: UTC datetime 
   :param str status: request's status
-  :p[aram TypedList subRequests: list of subrequests 
+  :param TypedList subRequests: list of subrequests 
   """
+  ## requets's id
+  __requestID = None
   ## request's name
   __name = None
   ## request's owner DN
@@ -73,7 +89,7 @@ class Request(object):
   ## status
   __status = "Waiting"
   ## list of sub-requests
-  __subRequests = []
+  __subRequests = TypedList( allowedTypes=SubRequest )
 
   def __init__( self ):
     """c'tor
@@ -81,7 +97,6 @@ class Request(object):
     :param self: self reference
     """
     self.__name = ""
-
 
   ## SubRequest aritmetics
   def __contains__( self, subRequest ):
@@ -117,6 +132,9 @@ class Request(object):
   def insertBefore( self, newSubRequest, existingSubRequest ):
     """ insert :newSubRequest: just before :existingSubRequest:
 
+    :param self: self reference
+    :param SubRequest newSubRequest: SubRequest to be inserted 
+    :param SubRequest existingSubRequest: previous SubRequest sibling  
     """
     if existingSubRequest not in self:
       return S_ERROR( "%s is not in" % existingSubRequest )
@@ -129,7 +147,8 @@ class Request(object):
     """ insert :newSubRequest: just after :existingSubRequest: 
     
     :param self: self reference
-    :param SubRequest newSubRequest:
+    :param SubRequest newSubRequest: SubRequest to be insterted
+    :param SubRequest existingSubRequest: next SubRequest sibling
     """
     if existingSubRequest not in self:
       return S_ERROR( "%s is not in" % existingSubRequest )
@@ -138,13 +157,47 @@ class Request(object):
     self.__subRequests.insert( self.__subRequests.index( existingSubRequest )+1, newSubRequest )
     return S_OK()
 
+  def addSubRequest( self, subRequest ):
+    """ add :subRequest: to list of SubRequests
+
+    :param self: self reference
+    :param SubRequest subRequest: SubRequest to be insterted
+    """
+    if subRequest in self:
+      return S_ERROR( "%s is already in" % subRequest )
+    self += subRequest
+    return S_OK()
+
+  def removeSubRequest( self, subRequest ):
+    """ delete :subRequest: from request 
+
+    :param self: self reference
+    :param SubRequest subRequest: SubRequest to be removed 
+    """
+    self -= subRequest 
+    return S_OK()
+
   ## props
+  def requestID():
+    """ request ID prop """
+    doc = "request ID"
+    def fset( self, value ):
+      """ requestID setter """
+      if type(value) not in (LongType, IntType, StringType):
+        raise TypeError("requestID should be an integer!")
+      self.__requestID = long(value)
+    def fget( self ):
+      """ request ID getter """
+      return self.__requestID
+    return locals()
+  requestID = property( **requestID() )
+
   def ownerDN():
     """ request owner DN prop """
     doc = "request owner DN"
     def fset( self, value ):
       """ request owner DN setter """
-      if type(value) <> str:
+      if type(value) != str:
         raise TypeError("ownerDN should be a string!")
       self.__ownerDN = value
     def fget( self ):
@@ -158,7 +211,7 @@ class Request(object):
     doc = "request owner group "
     def fset( self, value ):
       """ request owner group setter """
-      if type(value) <> str:
+      if type(value) != str:
         raise TypeError("ownerGroup should be a string!")
       self.__ownerGroup = value
     def fget( self ):
@@ -200,7 +253,7 @@ class Request(object):
     doc = "request's name"
     def fset( self, value ):
       """ request name setter """
-      if type(value) <> str:
+      if type(value) != str:
         raise TypeError("name should be a string")
       self.__name = value
     def fget( self ):
@@ -214,9 +267,9 @@ class Request(object):
     doc = "jobID"
     def fset( self, value=0 ):
       """ jobID setter """
-      if type(value) not in ( long, int ):
-        raise TypeError( "jobID as to be an int" )
-      self.__jobID = value
+      if type(value) not in ( long, int, str ):
+        raise TypeError( "jobID as to be an integer" )
+      self.__jobID = long(value)
     def fget( self ):
       """ jobID getter """
       return self.__jobID
@@ -228,9 +281,11 @@ class Request(object):
     doc = "request's creation time"
     def fset( self, value = None ):
       """ creation time setter """
-      if type( value != type(datetime.datetime) ):
+      if type(value) not in ( datetime.datetime, str ) :
         raise TypeError("creationTime should be a datetime.datetime!")
-      self.__creationTime = value
+      if type(value) == str:
+        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+        self.__creationTime = value
     def fget( self ):
       """ creation time getter """
       return self.__creationTime
@@ -242,8 +297,10 @@ class Request(object):
     doc = "request's submisssion time"
     def fset( self, value = None ):
       """ submission time setter """
-      if type( value != type(datetime.datetime) ):
+      if type(value) not in ( datetime.datetime, str ):
         raise TypeError("submissionTime should be a datetime.datetime!")
+      if type(value) == str:
+        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
       self.__submissionTime = value
     def fget( self ):
       """ submisssion time getter """
@@ -258,6 +315,8 @@ class Request(object):
       """ last update setter """
       if type( value != type(datetime.datetime) ):
         raise TypeError("lastUpdate should be a datetime.datetime!")
+      if type(value) == str:
+        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
       self.__lastUpdate = value
     def fget( self ):
       """ submisssion time getter """
@@ -265,20 +324,74 @@ class Request(object):
     return locals()
   lastUpdate = property( **lastUpdate() )
 
-
+  
+  ## status
+  def status( self ):
+    """ status prop
+    
+    TODO: add more logic here
+    """
+    def fget( self ):
+      subStatuses = list( set( [ subRequest.status() for subRequest in self.__subRequests ] ) ) 
+      self.__status = "New"
+      if "Done" in subStatuses:
+        self.__status = "Done"
+      if "Assigned" in subStatuses:
+        self.__status = "Assigned"
+      if "Waiting" in subStatuses:
+        self.__status = "Waiting"
+      return self.__status  
+      
+  def executionOrder( self ):
+    """ get execution order """
+    subStatuses = [ subRequest.status() for subRequest in self.__subRequests ]
+    return S_OK( subStatuses["Waiting"] if "Waiting" in subStatuses else len(subStatuses) )
+    
   @classmethod
   def fromXML( cls, xmlString ):
-
-    pass
-
+    try:
+      doc = ElementTree.parse( xmlString )
+    except ExpatError, error:
+      self.log.exception("unable to deserialize request from xml string", error )
+      return S_ERROR( )
+    root = doc.getroot()
+    if root.tag != "request":
+      return S_ERROR( "unable to deserialise request, xml root element is not a 'request' " )
+    request = Request()
+    for attrName, attrValue in root.attrib.items():
+      setattr( request, attrName, attrValue )
+  
   def toXML( self ):
+    """ dump request to XML 
+
+    :param self: self reference
+    :return: S_OK( xmlString ) 
+    """
+    root = ElementTree.Element( "request" )
+    root.attrib["RequestName"] = str(self.name) if self.name else ""
+    root.attrib["RequestID"] = str(self.requestID) if self.requestID else ""
+    root.attrib["OwnerDN"] = str(self.ownerDN) if self.ownerDN else "" 
+    root.attrib["OwnerGroup"] = str(self.ownerGroup) if self.ownerGroup else "" 
+    root.attrib["DIRACSetup"] = str(self.setup) if self.setup else ""
+    root.attrib["JobID"] = str(self.jobID) if self.jobID else "0"
+    root.attrib["SourceComponent"] = self.sourceComponent.isoformat(" ").split(".")[0] if self.sourceComponent else ""
+    ## always calculate status, never set
+    root.attrib["Status"] = self.status()
+    ## datetime up to seconds
+    root.attrib["CreationTime"] = self.creationTime.isoformat(" ").split(".")[0] is self.creationTime else ""
+    root.attrib["SubmissionTime"] = self.submissionTime.isoformat(" ").split(".")[0] if self.submissionTime else ""
+    root.attrib["LastUpdate"] = str(self.lastUpdate) if self.lastUpdate else ""
+    for subRequest in self.__subRequests:
+      root.insert( subRequest.toXML() )
+    doc = ElementTree.ElementTree( root )
+    xmlStr = ElementTree.tostring( doc, "utf-8", "xml" )
+    return S_OK( xmlStr )
+
+  @classmethod
+  def fromSQL( cls, record ):
     pass
 
   
-  def fromSQL( cls ):
-    pass
-
-
   def toSQL( self ):
     pass
 
