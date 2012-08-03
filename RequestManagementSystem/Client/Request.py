@@ -36,16 +36,14 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
 
 class File( object ):
-  pass
+  
+  def toXML( self ):
+    return ElementTree.Element("file")
 
 class SubRequest( object ):
 
   def toXML( self ):
-    
-
     return ElementTree.Element("subrequest")
-
-  pass
 
   
 ########################################################################
@@ -176,6 +174,11 @@ class Request(object):
     """
     self -= subRequest 
     return S_OK()
+
+  def __iter__( self ):
+    return self.__subRequests.__iter__()
+  
+  
 
   ## props
   def requestID():

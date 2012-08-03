@@ -24,6 +24,10 @@ __RCSID__ = "$Id $"
 # @brief Definition of SubRequest class.
 
 ## imports 
+try:
+  import xml.etree.cElementTree as ElementTree
+except ImportError:
+  import xml.etree.ElementTree
 
 
 ########################################################################
