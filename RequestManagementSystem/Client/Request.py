@@ -34,17 +34,9 @@ from xml.parsers.expat import ExpatError
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
-
-class File( object ):
-  
-  def toXML( self ):
-    return ElementTree.Element("file")
-
-class SubRequest( object ):
-
-  def toXML( self ):
-    return ElementTree.Element("subrequest")
-
+##  
+from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
+from DIRAC.RequestManagementSystem.Client.RequestFile import RequestFile
   
 ########################################################################
 class Request(object):
@@ -178,8 +170,6 @@ class Request(object):
   def __iter__( self ):
     return self.__subRequests.__iter__()
   
-  
-
   ## props
   def requestID():
     """ request ID prop """
