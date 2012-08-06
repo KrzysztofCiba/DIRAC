@@ -153,6 +153,5 @@ class SubRequest(object):
   error = property( **error() )
 
   
-
   def toXML( self ):
     pass
