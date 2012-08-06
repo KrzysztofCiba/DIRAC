@@ -24,19 +24,197 @@ __RCSID__ = "$Id $"
 # @brief Definition of SubReqFile class.
 
 ## imports 
+try:
+  import xml.etree.cElementTree as ElementTree
+except ImportError:
+  import xml.etree.ElementTree
 
+from DIRAC.Core.Utilities.File import checkGuid
 
 ########################################################################
 class SubReqFile(object):
   """
   .. class:: SubReqFile
-  
-  """
 
-  def __init__( self ):
+  A bag object holding sub-request file attributes.
+
+  :param SubRequest parent: sub-request reference
+  """
+  parent = None
+
+  __attrs = dict.fromkeys( ( "FileID", "LFN", "PFN", "GUID", "Size", "Addler", 
+                             "Md5", "Status", "FileID", "Attempt",  "Error"),  
+                             None )
+  def __init__( self, fromDict=None ):
     """c'tor
 
     :param self: self reference
     """
-    pass
+    if fromDict:
+      for attrName, value in fromDict.items():
+        if not hasattr( self, attrName ):
+          raise AttributeError("unknown file attribute %s" % str(attr) )
+        setattr( self, attrName, value )
+        
+  ## props  
+  def FileID():
+    """ file ID """
+    doc = "FileID"
+    def fset( self, value ):
+      """ FileID setter """
+      self.__attrs["FileID"] = long(value)
+    def fget( self ):
+      """ FileID getter """
+      return self.__attrs["FileID"]
+    return locals()
+  FileID = property( **FileID() ) 
+
+  def Size():
+    """ file size prop """
+    doc = "file size in bytes"
+    def fset( self, value ):
+      """ file size setter """
+      self.__attrs["Size"] = long(value)
+    def fget( self ):
+      """ file size getter """
+      return self.__attrs["Size"]
+    return locals()
+  Size = property( **Size() )
+
+  def LFN():
+    """ LFN prop """
+    doc = "lfn"
+    def fset( self, value ):
+      """ lfn setter """
+      if type(value) != str:
+        raise TypeError("lfn has to be a string!")
+      self.__attrs["LFN"] = value
+    def fget( self ):
+      """ lfn getter """
+      return self.__attrs["LFN"]
+    return locals()
+  LFN = property( **LFN() )
+
+  def PFN():
+    """ pfn prop """
+    doc = "pfn"
+    def fset( self, value ):
+      """ pfn setter """
+      if type(value) != str:
+        raise TypeError("pfn has to be a string!")
+      self.__attrs["PFN"] = value
+    def fget( self ):
+      """ pfn getter """
+      return self.__attrs["PFN"]
+    return locals()
+  PFN = property( **PFN() )
+
+  def GUID():
+    """ GUID prop """
+    doc = "GUID"
+    def fset( self, value ):
+      """ GUID setter """
+      if not checkGuid( value ):
+        raise TypeError("%s is not a GUID" % str(value) )
+      self.__attrs["GUID"] = value
+    def fget( self ):
+      """ GUID getter """
+      return self.__attrs["GUID"]
+    return locals()
+  GUID = property( **GUID() )
+
+  def Addler():
+    """ ADDLER32 checksum prop """
+    doc = "ADDLER32 checksum"
+    def fset( self, value ):
+      """ ADDLER32 setter """
+      self.__attrs["Addler"] = value
+    def fget( self ):
+      """ ADDLER32 getter """
+      return self.__attrs["Addler"]
+    return locals()
+  Addler = property( **Addler() ) 
+
+  def Md5():
+    """ MD5 checksum prop """
+    doc = "MD5 checksum"
+    def fset( self, value ):
+      """ MD5 setter """
+      self.__attrs["Md5"] = value
+    def fget( self ):
+      """ MD5 getter """
+      return self.__attrs["Md5"] 
+    return locals()
+  Md5 = property( **Md5() )
+  
+  def Attempt():
+    """ attempt prop """
+    doc = "attempt"
+    def fset( self, value ):
+      """ attempt getter """
+      if type( value ) not in (int, long):
+        raise TypeError("attempt has to ba an integer")
+      self.__attrs["Attempt"] = value
+    def fget( self ):
+      """ attempt getter """
+      return self.__attrs["Attempt"]
+    return locals()
+  Attempt = property( **Attempt() )
+
+  def Error():
+    """ error prop """
+    doc = "error"
+    def fset( self, value ):
+      """ error setter """
+      if type(value) != str:
+        raise ValueError("error has to be a string!")
+      self.__attrs["Error"] = value[255:]
+    def fget( self ):
+      """ error getter """
+      return self.__attrs["Error"]
+    return locals()
+  Error = property( **Error() )
+    
+  def Status():
+    """ status prop """
+    doc = "file status"
+    def fset( self, value ):
+      """ status setter """
+      if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
+        raise ValueError( "unknown status: %s" % str(value) )
+      self.__attrs["Status"] = value
+    def fget( self ):
+      """ status getter """
+      return self.__attrs["Status"] 
+    return locals()
+  Status = property( **Status() )
+
+  ## (de)serialisation   
+
+  def toXML( self ):
+    """ serialise SubReq file to XML """
+    attrs = dict( [ ( k, str(v) if v else "") for (k, v) in self.__attrs.items() ] )
+    return ElementTree.Element( "file", attrs )
+
+  @classmethod
+  def fromXML( cls, element ):
+    if element.tag != "file":
+      raise ValueError("wrong tag, excpected file, got %s" % element.tag )
+    return SubReqFile( element.attrib )
+
+  def toSQL( self ):
+    """ insert or update """
+    if self.__attrs["FileID"]:
+      setval = ",".join( [ "`%s`=%s" % ( attr, value if type(value) != str else "'%s'" % value ) 
+                           for (attr, value) in self.__attrs 
+                           if attr != "FileID" and value ] )
+      return "UPDATE `Files` SET %s WHERE `FileID` = %s;" ( setval, self.__attrs["FileID"]  )
+    else:
+      # TODO: add INSERT 
+      pass
+
+  def __str__( self ):
+    """ str operator """
+    return ElementTree.tostring( self.toXML() )
+
 
