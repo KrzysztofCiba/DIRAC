@@ -194,12 +194,13 @@ class SubReqFile(object):
   ## (de)serialisation   
 
   def toXML( self ):
-    """ serialise SubReq file to XML """
+    """ serialise SubReqFile to XML """
     attrs = dict( [ ( k, str(v) if v else "") for (k, v) in self.__attrs.items() ] )
     return ElementTree.Element( "file", attrs )
 
   @classmethod
   def fromXML( cls, element ):
+    """ build SubReqFile form ElementTree.Element :element: """
     if element.tag != "file":
       raise ValueError("wrong tag, excpected file, got %s" % element.tag )
     return SubReqFile( element.attrib )
