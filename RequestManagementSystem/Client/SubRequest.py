@@ -32,7 +32,7 @@ from xml.parsers.expat import ExpatError
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
-
+from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
 
 ########################################################################
 class SubRequest(object):
@@ -43,7 +43,7 @@ class SubRequest(object):
   
   """
   ## sub-request files
-  __files = TypedList( allowedTypes = File )
+  __files = TypedList( allowedTypes = SubReqFile )
   
   __attrs = dict.fromkeys( ( "RequestType", "Operation", "Arguments", 
                              "SourceSE", "TargetSE", "Catalogue", "Error" ), None )
