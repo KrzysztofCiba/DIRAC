@@ -27,7 +27,8 @@ __RCSID__ = "$Id $"
 try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
-  import xml.etree.ElementTree
+  import xml.etree.ElementTree as ElementTree
+from xml.parsers.expat import ExpatError
 
 from DIRAC.Core.Utilities.File import checkGuid
 
@@ -42,22 +43,23 @@ class SubReqFile(object):
   """
   parent = None
 
-  __attrs = dict.fromkeys( ( "FileID", "LFN", "PFN", "GUID", "Size", "Addler", 
-                             "Md5", "Status", "FileID", "Attempt",  "Error"),  
+  __attrs = dict.fromkeys( ( "FileID", "LFN", "PFN", "GUID", "Size", 
+                             "Addler", "Md5", "Status", "Attempt",  "Error"),  
                              None )
+  
   def __init__( self, fromDict=None ):
     """c'tor
 
     :param self: self reference
     """
     if fromDict:
-      for attrName, value in fromDict.items():
-        if not hasattr( self, attrName ):
-          raise AttributeError("unknown file attribute %s" % str(attr) )
-        setattr( self, attrName, value )
-        
+      for attrName, attrValue in fromDict.items():
+        if attrName not in self.__attrs:
+          raise AttributeError( "unknown SubReqFile attribute %s" % str(attrName) )
+        setattr( self, attrName, attrValue )
+
   ## props  
-  def FileID():
+  def __fileID():
     """ file ID """
     doc = "FileID"
     def fset( self, value ):
@@ -67,9 +69,9 @@ class SubReqFile(object):
       """ FileID getter """
       return self.__attrs["FileID"]
     return locals()
-  FileID = property( **FileID() ) 
+  FileID = property( **__fileID() ) 
 
-  def Size():
+  def __size():
     """ file size prop """
     doc = "file size in bytes"
     def fset( self, value ):
@@ -79,9 +81,9 @@ class SubReqFile(object):
       """ file size getter """
       return self.__attrs["Size"]
     return locals()
-  Size = property( **Size() )
+  Size = property( **__size() )
 
-  def LFN():
+  def __lfn():
     """ LFN prop """
     doc = "lfn"
     def fset( self, value ):
@@ -93,9 +95,9 @@ class SubReqFile(object):
       """ lfn getter """
       return self.__attrs["LFN"]
     return locals()
-  LFN = property( **LFN() )
+  LFN = property( **__lfn() )
 
-  def PFN():
+  def __pfn():
     """ pfn prop """
     doc = "pfn"
     def fset( self, value ):
@@ -107,9 +109,9 @@ class SubReqFile(object):
       """ pfn getter """
       return self.__attrs["PFN"]
     return locals()
-  PFN = property( **PFN() )
+  PFN = property( **__pfn() )
 
-  def GUID():
+  def __guid():
     """ GUID prop """
     doc = "GUID"
     def fset( self, value ):
@@ -121,9 +123,9 @@ class SubReqFile(object):
       """ GUID getter """
       return self.__attrs["GUID"]
     return locals()
-  GUID = property( **GUID() )
+  GUID = property( **__guid() )
 
-  def Addler():
+  def __addler():
     """ ADDLER32 checksum prop """
     doc = "ADDLER32 checksum"
     def fset( self, value ):
@@ -133,9 +135,9 @@ class SubReqFile(object):
       """ ADDLER32 getter """
       return self.__attrs["Addler"]
     return locals()
-  Addler = property( **Addler() ) 
+  Addler = property( **__addler() ) 
 
-  def Md5():
+  def __md5():
     """ MD5 checksum prop """
     doc = "MD5 checksum"
     def fset( self, value ):
@@ -145,9 +147,9 @@ class SubReqFile(object):
       """ MD5 getter """
       return self.__attrs["Md5"] 
     return locals()
-  Md5 = property( **Md5() )
+  Md5 = property( **__md5() )
   
-  def Attempt():
+  def __attempt():
     """ attempt prop """
     doc = "attempt"
     def fset( self, value ):
@@ -159,9 +161,9 @@ class SubReqFile(object):
       """ attempt getter """
       return self.__attrs["Attempt"]
     return locals()
-  Attempt = property( **Attempt() )
+  Attempt = property( **__attempt() )
 
-  def Error():
+  def __error():
     """ error prop """
     doc = "error"
     def fset( self, value ):
@@ -173,9 +175,9 @@ class SubReqFile(object):
       """ error getter """
       return self.__attrs["Error"]
     return locals()
-  Error = property( **Error() )
+  Error = property( **__error() )
     
-  def Status():
+  def __status():
     """ status prop """
     doc = "file status"
     def fset( self, value ):
@@ -187,7 +189,7 @@ class SubReqFile(object):
       """ status getter """
       return self.__attrs["Status"] 
     return locals()
-  Status = property( **Status() )
+  Status = property( **__status() )
 
   ## (de)serialisation   
 
@@ -208,7 +210,7 @@ class SubReqFile(object):
       setval = ",".join( [ "`%s`=%s" % ( attr, value if type(value) != str else "'%s'" % value ) 
                            for (attr, value) in self.__attrs 
                            if attr != "FileID" and value ] )
-      return "UPDATE `Files` SET %s WHERE `FileID` = %s;" ( setval, self.__attrs["FileID"]  )
+      return "UPDATE `Files` SET %s WHERE `FileID` = %s;" % ( setval, self.__attrs["FileID"]  )
     else:
       # TODO: add INSERT 
       pass

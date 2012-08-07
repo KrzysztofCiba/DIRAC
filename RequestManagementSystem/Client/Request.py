@@ -23,7 +23,6 @@ __RCSID__ = "$Id $"
 # @brief Definition of Request class.
 
 ## imports 
-from types import LongType, IntType
 import datetime
 try:
   import xml.etree.cElementTree as ElementTree
@@ -56,6 +55,10 @@ class Request(object):
   :param str status: request's status
   :param TypedList subRequests: list of subrequests 
   """
+
+  __attrs = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status" 
+                             "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
+
   ## requets's id
   __requestID = None
   ## request's name
@@ -171,105 +174,101 @@ class Request(object):
     return self.__subRequests.__iter__()
   
   ## props
-  def requestID():
+  def __requestID():
     """ request ID prop """
     doc = "request ID"
     def fset( self, value ):
       """ requestID setter """
-      if type(value) not in (LongType, IntType, StringType):
-        raise TypeError("requestID should be an integer!")
-      self.__requestID = long(value)
+      self.__attrs["RequestID"] = long(value)
     def fget( self ):
       """ request ID getter """
-      return self.__requestID
+      return self.__attrs["RequestID"]
     return locals()
-  requestID = property( **requestID() )
+  RequestID = property( **__requestID() )
 
-  def ownerDN():
+  def __ownerDN():
     """ request owner DN prop """
     doc = "request owner DN"
     def fset( self, value ):
       """ request owner DN setter """
       if type(value) != str:
         raise TypeError("ownerDN should be a string!")
-      self.__ownerDN = value
+      self.__attrs["OwnerDN"] = value
     def fget( self ):
       """ request owner DN getter """
-      return self.__ownerDN
+      return self.__attrs["OwnerDN"]
     return locals()
-  ownerDN = property( **ownerDN() )
+  OwnerDN = property( **__ownerDN() )
 
-  def ownerGroup():
+  def __ownerGroup():
     """ request owner group prop """
     doc = "request owner group "
     def fset( self, value ):
       """ request owner group setter """
       if type(value) != str:
         raise TypeError("ownerGroup should be a string!")
-      self.__ownerGroup = value
+      self.__attrs["OwnerGroup"] = value
     def fget( self ):
       """ request owner group getter """
-      return self.__ownerGroup
+      return self.__attrs["OwnerGroup"]
     return locals()
-  ownerGroup = property( **ownerGroup() )
+  ownerGroup = property( **__ownerGroup() )
 
-  def setup():
+  def __setup():
     """ DIRAC setup prop """
     doc = "DIRAC setup"
     def fset( self, value ):
       """ DIRAC setup setter """
       if type(value) != str:
-        raise TypeError("setu should be a string!")
-      self.__setup = value
+        raise TypeError("setup should be a string!")
+      self.__attrs["DIRACSetup"] = value
     def fget( self ):
       """ DIRAC setup getter """
-      return self.__setup
+      return self.__attrs["DIRACSetup"]
     return locals() 
-  setup = property( **setup() )
+  DIRACSetup = property( **__setup() )
 
-  def sourceComponent():
+  def __sourceComponent():
     """ source component prop """
     doc = "source component "
     def fset( self, value ):
       """ source component setter """
       if type(value) != str:
         raise TypeError("setu should be a string!")
-      self.__sourceComponent = value
+      self.__attrs["SourceComponent"] = value
     def fget( self ):
       """ source component getter """
-      return self.__sourceComponent
+      return self.__attrs["SourceComponent"]
     return locals() 
-  sourceComponent = property( **sourceComponent() )
+  SourceComponent = property( **__sourceComponent() )
 
-  def name():
+  def __name():
     """ request's name prop """
     doc = "request's name"
     def fset( self, value ):
       """ request name setter """
       if type(value) != str:
         raise TypeError("name should be a string")
-      self.__name = value
+      self.__attrs["RequestName"] = value
     def fget( self ):
       """ request name getter """
-      return self.__name
+      return self.__attrs["RequestName"]
     return locals()
-  name = property( **name() )
+  RequestName = property( **__name() )
 
-  def jobID():
+  def __jobID():
     """ jobID prop """
     doc = "jobID"
     def fset( self, value=0 ):
       """ jobID setter """
-      if type(value) not in ( long, int, str ):
-        raise TypeError( "jobID as to be an integer" )
-      self.__jobID = long(value)
+      self.__attrs["JobID"] = long(value)
     def fget( self ):
       """ jobID getter """
-      return self.__jobID
+      return self.__attrs["JobID"]
     return locals()
-  jobID = property( **jobID() )
+  JobID = property( **__jobID() )
 
-  def creationTime():
+  def __creationTime():
     """ request's creation time prop """
     doc = "request's creation time"
     def fset( self, value = None ):
@@ -278,14 +277,14 @@ class Request(object):
         raise TypeError("creationTime should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-        self.__creationTime = value
+        self.__attrs["CreationTime"] = value
     def fget( self ):
       """ creation time getter """
-      return self.__creationTime
+      return self.__attrs["CreationTime"]
     return locals()
-  creationTime = property( **creationTime() )
+  CreationTime = property( **__creationTime() )
 
-  def submissionTime():
+  def __submissionTime():
     """ request's submission time prop """
     doc = "request's submisssion time"
     def fset( self, value = None ):
@@ -294,14 +293,14 @@ class Request(object):
         raise TypeError("submissionTime should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-      self.__submissionTime = value
+      self.__attrs["SubmissionTime"] = value
     def fget( self ):
       """ submisssion time getter """
-      return self.__submissionTime
+      return self.__attrs["SubmissionTime"]
     return locals()
-  submissionTime = property( **submissionTime() )
+  SubmissionTime = property( **__submissionTime() )
 
-  def lastUpdate():
+  def __lastUpdate():
     """ last update prop """ 
     doc = "request's last update"
     def fset( self, value = None ):
@@ -310,14 +309,13 @@ class Request(object):
         raise TypeError("lastUpdate should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-      self.__lastUpdate = value
+      self.__attrs["LastUpdate"] = value
     def fget( self ):
       """ submisssion time getter """
-      return self.__lastUpdate
+      return self.__attrs["LastUpdate"]
     return locals()
-  lastUpdate = property( **lastUpdate() )
+  LastUpdate = property( **__lastUpdate() )
 
-  
   ## status
   def status( self ):
     """ status prop
@@ -346,14 +344,14 @@ class Request(object):
       doc = ElementTree.parse( xmlString )
     except ExpatError, error:
       self.log.exception("unable to deserialize request from xml string", error )
-      return S_ERROR( )
+      return S_ERROR( "unable to deserialise request: %s" % str(error) )
     root = doc.getroot()
     if root.tag != "request":
       return S_ERROR( "unable to deserialise request, xml root element is not a 'request' " )
     request = Request()
     for attrName, attrValue in root.attrib.items():
       setattr( request, attrName, attrValue )
-  
+      
   def toXML( self ):
     """ dump request to XML 
 
@@ -361,19 +359,19 @@ class Request(object):
     :return: S_OK( xmlString ) 
     """
     root = ElementTree.Element( "request" )
-    root.attrib["RequestName"] = str(self.name) if self.name else ""
-    root.attrib["RequestID"] = str(self.requestID) if self.requestID else ""
-    root.attrib["OwnerDN"] = str(self.ownerDN) if self.ownerDN else "" 
-    root.attrib["OwnerGroup"] = str(self.ownerGroup) if self.ownerGroup else "" 
-    root.attrib["DIRACSetup"] = str(self.setup) if self.setup else ""
-    root.attrib["JobID"] = str(self.jobID) if self.jobID else "0"
-    root.attrib["SourceComponent"] = self.sourceComponent.isoformat(" ").split(".")[0] if self.sourceComponent else ""
+    root.attrib["RequestName"] = str(self.RequestName) if self.RequestName else ""
+    root.attrib["RequestID"] = str(self.RequestID) if self.RequestID else ""
+    root.attrib["OwnerDN"] = str(self.OwnerDN) if self.OwnerDN else "" 
+    root.attrib["OwnerGroup"] = str(self.OwnerGroup) if self.OwnerGroup else "" 
+    root.attrib["DIRACSetup"] = str(self.DIRACSetup) if self.DIRACSetup else ""
+    root.attrib["JobID"] = str(self.JobID) if self.JobID else "0"
+    root.attrib["SourceComponent"] = str(self.SourceComponent) if self.SourceComponent else "" 
     ## always calculate status, never set
     root.attrib["Status"] = self.status()
     ## datetime up to seconds
-    root.attrib["CreationTime"] = self.creationTime.isoformat(" ").split(".")[0] is self.creationTime else ""
-    root.attrib["SubmissionTime"] = self.submissionTime.isoformat(" ").split(".")[0] if self.submissionTime else ""
-    root.attrib["LastUpdate"] = str(self.lastUpdate) if self.lastUpdate else ""
+    root.attrib["CreationTime"] = self.CreationTime.isoformat(" ").split(".")[0] is self.CreationTime else ""
+    root.attrib["SubmissionTime"] = self.SubmissionTime.isoformat(" ").split(".")[0] if self.SubmissionTime else ""
+    root.attrib["LastUpdate"] = self.LastUpdate.isoformat(" ").split(".")[0] if self.LastUpdate else "" 
     for subRequest in self.__subRequests:
       root.insert( subRequest.toXML() )
     doc = ElementTree.ElementTree( root )

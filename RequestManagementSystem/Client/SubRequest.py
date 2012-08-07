@@ -44,114 +44,158 @@ class SubRequest(object):
   """
   ## sub-request files
   __files = TypedList( allowedTypes = File )
+  
+  __attrs = dict.fromkeys( ( "RequestType", "Operation", "Arguments", 
+                             "SourceSE", "TargetSE", "Catalogue", "Error" ), None )
 
-  def __init__( self ):
+  def __init__( self, fromDict=None ):
     """c'tor
 
     :param self: self reference
     """
     pass
 
-  ## props 
+  ## SubReqFiles aritmetics   
+  def __contains__( self, subFile ):
+    """ in operator """
+    return subFile in self.__files
 
-  def requestType():
+  def __iadd__( self, subFile ):
+    """ += operator """
+    if subFile not in self:
+      self.__files.append( subFile )
+    return self
+
+  def __add__( self, subFile ):
+    """ + operator """
+    if subFile not in self:
+      self.__files.append( subFile )
+      
+  def addFile( self, subFile ):
+    """ add :subFile: to subrequest """
+    return self + subFile
+
+  def __isub__( self, subFile ):
+    """ -= operator """
+    if subFile in self:
+      self.__files.remove( subFile )
+    return self
+
+  def __sub__( self, subFile ):
+    """ - operator """
+    if subFile in self:
+      self.__files.remove( subFile )
+
+  def removeFile( self, subFile ):
+    """ remove :subFile: from sub-request """
+    return self - subFile
+
+  ## props 
+  def __requestType():
     """ request type prop """
     doc = "request type"
     def fset( self, value ):
       """ request type setter """
       if value not in ( "diset", "logupload", "register", "removal", "transfer" ):
         raise ValueError( "%s is not a valid request type!" % str(value) )
-      self.__requestType = value
+      self.__attrs["RequestType"] = value
     def fget( self ):
       """ request type getter """
-      return self.__requestTypex
+      return self.__attrs["RequestType"]
     return locals()
-  requestType = property( **requestType() )
+  RequestType = property( **__requestType() )
 
-  def operation():
+  def __operation():
     """ operation prop """
     doc = "operation"
     def fset( self, value ):
       """ operation setter """
-      if not self.__requestType:
+      if not self.RequestType:
         raise Exception("unable to set operation when request type is not set!")
-      if value not in  { "diset" ; ( "commitRegisters", "setFileStatusForTransformation", "setJobStatusBulk",
-                                     "sendXMLBookkeepingReport", "setJobParameters" ),
-                         "logupload" : ( "uploadLogFiles", ),
-                         "register" : ( "registeFile", ),
-                         "removal" : ( "replicaRemoval", "removeFile", "physicalRemoval" ),
-                         "transfer" : ( "replicateAndRegister" ) }[self.__requestType]:
-        raise ValueError("opearion %s is not valid for %s request type!" % ( str(value), self.__requestType ) )
-      self.__operation = value
+      if value not in { "diset" : ( "commitRegisters", "setFileStatusForTransformation", "setJobStatusBulk",
+                                    "sendXMLBookkeepingReport", "setJobParameters" ),
+                        "logupload" : ( "uploadLogFiles", ),
+                        "register" : ( "registeFile", ),
+                        "removal" : ( "replicaRemoval", "removeFile", "physicalRemoval" ),
+                        "transfer" : ( "replicateAndRegister" ) }[ self.RequestType ]:
+        raise ValueError("opearion %s is not valid for %s request type!" % ( str(value),  self.RequestType ) )
+      self.__attrs["Operation"] = value
     def fget( self ):
       """ operation getter """
-      return self.__operation
+      return  self.__attrs["Operation"]
     return locals()
-  operation = property( **operation() )
+  Operation = property( **__operation() )
           
-  def arguments():
+  def __arguments():
     """ arguments prop """
     doc = "sub-request arguments"
     def fset( self, value ):
       """ arguments setter """
-      self.__arguments = value
+      self.__attrs["Arguments"] = value
     def fget( self ):
       """ arguments getter """
-      return self.__arguments
+      return self.__attrs["Arguments"]
     return locals()
-  arguments = property( **arguments() )
+  Arguments = property( **__arguments() )
   
-  def sourceSE():
+  def __sourceSE():
     """ source SE prop """
     doc = "source SE"
     def fset( self, value ):
       """ source SE setter """
-      self.__sourceSE = value
+      self.__attrs["SourceSE"] = value
     def fget( self ):
       """ source SE getter """
-      return self.__sourceSE 
+      return self.__attrs["SourceSE"] 
     return locals()
-  sourceSE = property( **sourceSE() )
+  SourceSE = property( **__sourceSE() )
   
-  def targetSE():
+  def __targetSE():
     """ target SE prop """
     doc = "source SE"
     def fset( self, value ):
       """ target SE setter """
-      self.__targetSE = value
+      self.__attrs["TargetSE"] = value
     def fget( self ):
       """ target SE getter """
-      return self.__targetSE 
+      return self.__attrs["TargetSE"]
     return locals()
-  targetSE = property( **targetSE() )
+  TargetSE = property( **__targetSE() )
   
-  def catalogue():
+  def __catalogue():
     """ catalogue prop """
     doc = "catalogue"
     def fset( self, value ):
       """ catalogue setter """
-      # TODO check type == list
-      self.__catalogue = value
+      # TODO check type == list or comma separated str 
+      self.__attrs["Catalogue"] = value
     def fget( self ):
       """ catalogue getter """
-      return self.__catalogue 
+      return self.__attrs["Catalogue"]
     return locals()
-  catalogue = property( **catalogue() )
+  Catalogue = property( **__catalogue() )
 
-  def error():
+  def __error():
     """ error prop """
     doc = "error"
     def fset( self, value ):
       """ error setter """
       if type(value) != str:
         raise ValueError("error has to be a string!")
-      self.__error = error
+      self.__attrs["Error"] = value[255:]
     def fget( self ):
       """ error getter """
-      return self.__error
+      return self.__attrs["Error"]
     return locals()
-  error = property( **error() )
+  Error = property( **__error() )
 
-  
   def toXML( self ):
-    pass
+    """ dump subrequest to XML """
+    element = ElementTree.Element( "subrequest", self.__attrs ) 
+    for subFile in self.__files:
+      element.insert( subFile.toXML() )
+    return element
+  
+  @classmethod
+  def fromXML( cls  ):
+    
