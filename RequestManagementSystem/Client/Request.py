@@ -35,7 +35,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
 ##  
 from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
-from DIRAC.RequestManagementSystem.Client.RequestFile import RequestFile
+from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
   
 ########################################################################
 class Request(object):
