@@ -29,7 +29,7 @@ try:
 except ImportError:
   import xml.etree.ElementTree as ElementTree
 from xml.parsers.expat import ExpatError
-
+## from DIRAC
 from DIRAC.Core.Utilities.File import checkGuid
 
 ########################################################################
@@ -57,6 +57,13 @@ class SubReqFile(object):
         if attrName not in self.__attrs:
           raise AttributeError( "unknown SubReqFile attribute %s" % str(attrName) )
         setattr( self, attrName, attrValue )
+
+  def __eq__( self, other ):
+    """ == operator, comparing LFNs """
+    return self.LFN == other.LFN
+
+  def __subRequestID( ):
+    pass
 
   ## props  
   def __fileID():
@@ -207,15 +214,23 @@ class SubReqFile(object):
 
   def toSQL( self ):
     """ insert or update """
-    if self.__attrs["FileID"]:
-      setval = ",".join( [ "`%s`=%s" % ( attr, value if type(value) != str else "'%s'" % value ) 
-                           for (attr, value) in self.__attrs 
-                           if attr != "FileID" and value ] )
-      return "UPDATE `Files` SET %s WHERE `FileID` = %s;" % ( setval, self.__attrs["FileID"]  )
-    else:
-      # TODO: add INSERT 
+    if self.FileID and self.parent and self.parent.SubRequestID:
+      ## update 
       pass
-
+    else:
+      ## insert
+      pass
+    query = "INSERT INTO `Files` (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s;"
+    colNames = ",".join( ["`%s`" % attr for attr in self.__attrs 
+                          if self.__attrs[attr] ] )
+    colValues = ",".join( [ "%s" % value if type(value) != str else "'%s'" % str(value) 
+                            for attr, value in self.__attrs.items() 
+                            if value ] )
+    updateValues = ",".join( [ "`%s`=%s" % ( attr, value if type(value) != str else "'%s'" % value ) 
+                               for (attr, value) in self.__attrs.items() if value ] )
+   
+    return "INSERT INTO `Files` (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s;" % ( colNames, colValues, updateValues )
+  
   def __str__( self ):
     """ str operator """
     return ElementTree.tostring( self.toXML() )
