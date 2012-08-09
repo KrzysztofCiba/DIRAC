@@ -70,11 +70,13 @@ class SubReqFileTests( unittest.TestCase ):
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( subReqFile, key ), value  )
 
-
-    print subReqFile.toSQL()
-
   def test_props( self ):
-    pass
+    """ test props """
+    subReqFile = SubReqFile()
+    subReqFile.FileID = 1234567
+    self.assertEqual( subReqFile.updated(), [ "FileID" ] )
+    subReqFile.Status = "Done"
+    self.assertEqual( subReqFile.updated(), [ "FileID", "Status" ] )
 
 ## test execution
 if __name__ == "__main__":
