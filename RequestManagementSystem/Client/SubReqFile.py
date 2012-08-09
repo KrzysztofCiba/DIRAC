@@ -31,9 +31,10 @@ except ImportError:
 from xml.parsers.expat import ExpatError
 ## from DIRAC
 from DIRAC.Core.Utilities.File import checkGuid
+from DIRAC.Core.Utilities.Traced import Traced
 
 ########################################################################
-class SubReqFile(object):
+class SubReqFile( object ):
   """
   .. class:: SubReqFile
 
@@ -41,6 +42,8 @@ class SubReqFile(object):
 
   :param SubRequest parent: sub-request reference
   """
+  __metaclass__ = Traced 
+
   parent = None
 
   __attrs = dict.fromkeys( ( "FileID", "LFN", "PFN", "GUID", "Size", 
@@ -57,6 +60,7 @@ class SubReqFile(object):
         if attrName not in self.__attrs:
           raise AttributeError( "unknown SubReqFile attribute %s" % str(attrName) )
         setattr( self, attrName, attrValue )
+    self.updated( reset = True )
 
   def __eq__( self, other ):
     """ == operator, comparing LFNs """
