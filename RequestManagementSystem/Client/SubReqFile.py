@@ -24,6 +24,8 @@ __RCSID__ = "$Id $"
 # @brief Definition of SubReqFile class.
 
 ## imports 
+import os
+import urlparse
 try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
@@ -41,14 +43,17 @@ class SubReqFile( object ):
   A bag object holding sub-request file attributes.
 
   :param SubRequest parent: sub-request reference
+  
+  :param SubRequest parent: reference to parent SubRequest
   """
   __metaclass__ = Traced 
 
   parent = None
-
-  __attrs = dict.fromkeys( ( "FileID", "LFN", "PFN", "GUID", "Size", 
-                             "Addler", "Md5", "Status", "Attempt",  "Error"),  
-                             None )
+  
+  ## SQL and XML description 
+  __data__ = dict.fromkeys( ( "FileID", "LFN", "PFN", "GUID", "Size", "SubRequestID",
+                              "Addler", "Md5", "Status", "Attempt",  "Error"),  
+                            None )
   
   def __init__( self, fromDict=None ):
     """c'tor
@@ -57,17 +62,14 @@ class SubReqFile( object ):
     """
     if fromDict:
       for attrName, attrValue in fromDict.items():
-        if attrName not in self.__attrs:
+        if attrName not in self.__data__:
           raise AttributeError( "unknown SubReqFile attribute %s" % str(attrName) )
         setattr( self, attrName, attrValue )
-    self.updated( reset = True )
+    #self.updated( reset = True )
 
   def __eq__( self, other ):
-    """ == operator, comparing LFNs """
-    return self.LFN == other.LFN
-
-  def __subRequestID( ):
-    pass
+    """ == operator, comparing str """
+    return str(self) == str(other)
 
   ## props  
   def __fileID():
@@ -75,22 +77,32 @@ class SubReqFile( object ):
     doc = "FileID"
     def fset( self, value ):
       """ FileID setter """
-      self.__attrs["FileID"] = long(value)
+      self.__data__["FileID"] = long(value)
     def fget( self ):
       """ FileID getter """
-      return self.__attrs["FileID"]
+      return self.__data__["FileID"]
     return locals()
   FileID = property( **__fileID() ) 
+
+  def __subRequestID():
+    """ sub request ID, this one is ro """
+    doc = "sub request ID"
+    def fget( self ):
+      """ SubRequestID getter """
+      if self.parent:
+        return self.parent.SubRequestID
+    return locals()
+  SubRequestID = property( **__subRequestID() )
 
   def __size():
     """ file size prop """
     doc = "file size in bytes"
     def fset( self, value ):
       """ file size setter """
-      self.__attrs["Size"] = long(value)
+      self.__data__["Size"] = long(value)
     def fget( self ):
       """ file size getter """
-      return self.__attrs["Size"]
+      return self.__data__["Size"]
     return locals()
   Size = property( **__size() )
 
@@ -101,10 +113,12 @@ class SubReqFile( object ):
       """ lfn setter """
       if type(value) != str:
         raise TypeError("lfn has to be a string!")
-      self.__attrs["LFN"] = value
+      if not os.path.isabs( value ):
+        raise ValueError("lfn should be an absolute path!")
+      self.__data__["LFN"] = value
     def fget( self ):
       """ lfn getter """
-      return self.__attrs["LFN"]
+      return self.__data__["LFN"]
     return locals()
   LFN = property( **__lfn() )
 
@@ -115,10 +129,12 @@ class SubReqFile( object ):
       """ pfn setter """
       if type(value) != str:
         raise TypeError("pfn has to be a string!")
-      self.__attrs["PFN"] = value
+      if not urlparse.urlparse( value ).scheme:
+        raise ValueError("wrongly formatted URI!")
+      self.__data__["PFN"] = value
     def fget( self ):
       """ pfn getter """
-      return self.__attrs["PFN"]
+      return self.__data__["PFN"]
     return locals()
   PFN = property( **__pfn() )
 
@@ -129,10 +145,10 @@ class SubReqFile( object ):
       """ GUID setter """
       if not checkGuid( value ):
         raise TypeError("%s is not a GUID" % str(value) )
-      self.__attrs["GUID"] = value
+      self.__data__["GUID"] = value
     def fget( self ):
       """ GUID getter """
-      return self.__attrs["GUID"]
+      return self.__data__["GUID"]
     return locals()
   GUID = property( **__guid() )
 
@@ -141,10 +157,10 @@ class SubReqFile( object ):
     doc = "ADDLER32 checksum"
     def fset( self, value ):
       """ ADDLER32 setter """
-      self.__attrs["Addler"] = value
+      self.__data__["Addler"] = value
     def fget( self ):
       """ ADDLER32 getter """
-      return self.__attrs["Addler"]
+      return self.__data__["Addler"]
     return locals()
   Addler = property( **__addler() ) 
 
@@ -153,10 +169,10 @@ class SubReqFile( object ):
     doc = "MD5 checksum"
     def fset( self, value ):
       """ MD5 setter """
-      self.__attrs["Md5"] = value
+      self.__data__["Md5"] = value
     def fget( self ):
       """ MD5 getter """
-      return self.__attrs["Md5"] 
+      return self.__data__["Md5"] 
     return locals()
   Md5 = property( **__md5() )
   
@@ -167,10 +183,10 @@ class SubReqFile( object ):
       """ attempt getter """
       if type( value ) not in (int, long):
         raise TypeError("attempt has to ba an integer")
-      self.__attrs["Attempt"] = value
+      self.__data__["Attempt"] = value
     def fget( self ):
       """ attempt getter """
-      return self.__attrs["Attempt"]
+      return self.__data__["Attempt"]
     return locals()
   Attempt = property( **__attempt() )
 
@@ -181,10 +197,10 @@ class SubReqFile( object ):
       """ error setter """
       if type(value) != str:
         raise ValueError("error has to be a string!")
-      self.__attrs["Error"] = value[255:]
+      self.__data__["Error"] = value[255:]
     def fget( self ):
       """ error getter """
-      return self.__attrs["Error"]
+      return self.__data__["Error"]
     return locals()
   Error = property( **__error() )
     
@@ -195,45 +211,25 @@ class SubReqFile( object ):
       """ status setter """
       if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
         raise ValueError( "unknown status: %s" % str(value) )
-      self.__attrs["Status"] = value
+      self.__data__["Status"] = value
     def fget( self ):
       """ status getter """
-      return self.__attrs["Status"] 
+      return self.__data__["Status"] 
     return locals()
   Status = property( **__status() )
 
   ## (de)serialisation   
-
   def toXML( self ):
     """ serialise SubReqFile to XML """
-    attrs = dict( [ ( k, str(v) if v else "") for (k, v) in self.__attrs.items() ] )
+    attrs = dict( [ ( k, str(v) if v else "") for (k, v) in self.__data__.items() ] )
     return ElementTree.Element( "file", attrs )
 
   @classmethod
   def fromXML( cls, element ):
     """ build SubReqFile form ElementTree.Element :element: """
     if element.tag != "file":
-      raise ValueError("wrong tag, excpected file, got %s" % element.tag )
+      raise ValueError("wrong tag, excpected 'file', got %s" % element.tag )
     return SubReqFile( element.attrib )
-
-  def toSQL( self ):
-    """ insert or update """
-    if self.FileID and self.parent and self.parent.SubRequestID:
-      ## update 
-      pass
-    else:
-      ## insert
-      pass
-    query = "INSERT INTO `Files` (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s;"
-    colNames = ",".join( ["`%s`" % attr for attr in self.__attrs 
-                          if self.__attrs[attr] ] )
-    colValues = ",".join( [ "%s" % value if type(value) != str else "'%s'" % str(value) 
-                            for attr, value in self.__attrs.items() 
-                            if value ] )
-    updateValues = ",".join( [ "`%s`=%s" % ( attr, value if type(value) != str else "'%s'" % value ) 
-                               for (attr, value) in self.__attrs.items() if value ] )
-   
-    return "INSERT INTO `Files` (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s;" % ( colNames, colValues, updateValues )
   
   def __str__( self ):
     """ str operator """
