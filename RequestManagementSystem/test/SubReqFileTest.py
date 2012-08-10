@@ -70,14 +70,36 @@ class SubReqFileTests( unittest.TestCase ):
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( subReqFile, key ), value  )
 
+      
+
   def test_props( self ):
     """ test props """
     subReqFile = SubReqFile()
-    subReqFile.FileID = 1234567
-    self.assertEqual( subReqFile.updated(), [ "FileID" ] )
+    # valid props
+    subReqFile.FileID = 1
+    self.assertEqual( subReqFile.FileID, 1 )
     subReqFile.Status = "Done"
-    self.assertEqual( subReqFile.updated(), [ "FileID", "Status" ] )
+    self.assertEqual( subReqFile.Status, "Done" )
+    subReqFile.LFN = "/some/path/somewhere"
+    self.assertEqual( subReqFile.LFN, "/some/path/somewhere" )
+    subReqFile.PFN = "file:///some/path/somewhere"
+    self.assertEqual( subReqFile.PFN, "file:///some/path/somewhere" )
+    subReqFile.Attempt = 1
+    self.assertEqual( subReqFile.Attempt, 1 )
+    subReqFile.Size = 1
+    self.assertEqual( subReqFile.Size, 1 )
+    subReqFile.GUID = "2bbabe80-e2f1-11e1-9b23-0800200c9a66"
+    self.assertEqual( subReqFile.GUID, "2bbabe80-e2f1-11e1-9b23-0800200c9a66" )
+    subReqFile.Addler = "1234567"
+    self.assertEqual( subReqFile.Addler, "1234567" )
 
+    ## invalid props
+    try:
+      subReqFile.FileID = "foo"
+    except ValueError, error:
+      pass
+
+    
 ## test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
