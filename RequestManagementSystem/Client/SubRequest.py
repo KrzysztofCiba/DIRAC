@@ -14,6 +14,8 @@
 
     SubRequest implementation
 """
+# for properties 
+# pylint: disable=E0211,W0612,W0142 
 
 __RCSID__ = "$Id $"
 
@@ -29,8 +31,9 @@ try:
 except ImportError:
   import xml.etree.ElementTree
 from xml.parsers.expat import ExpatError
+import itertools
 ## from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
 
@@ -39,13 +42,12 @@ class SubRequest(object):
   """
   .. class:: SubRequest
   
-
-  
   """
   ## sub-request files
   __files = TypedList( allowedTypes = SubReqFile )
-  
-  __attrs = dict.fromkeys( ( "RequestType", "Operation", "Arguments", 
+
+  ## sub-request attributes
+  __data__ = dict.fromkeys( ( "RequestType", "Operation", "Arguments", "RequestID",
                              "SourceSE", "TargetSE", "Catalogue", "Error" ), None )
 
   def __init__( self, fromDict=None ):
@@ -53,7 +55,9 @@ class SubRequest(object):
 
     :param self: self reference
     """
-    pass
+    fromDict = fromDict if fromDict else {}
+    for key, value in fromDict:
+      setattr( self, key, value )
 
   ## SubReqFiles aritmetics   
   def __contains__( self, subFile ):
@@ -91,6 +95,7 @@ class SubRequest(object):
     return self - subFile
 
   ## props 
+  # pylint: disable=E0211,W0612 
   def __requestType():
     """ request type prop """
     doc = "request type"
@@ -98,10 +103,24 @@ class SubRequest(object):
       """ request type setter """
       if value not in ( "diset", "logupload", "register", "removal", "transfer" ):
         raise ValueError( "%s is not a valid request type!" % str(value) )
-      self.__attrs["RequestType"] = value
+      if self.Operation and value != { "commitRegisters" : "diset",
+                                       "setFileStatusForTransformation" : "diset",
+                                       "setJobStatusBulk" : "diset",
+                                       "sendXMLBookkeepingReport" : "diset",
+                                       "setJobParameters" : "diset",
+                                       "uploadLogFiles" : "loguplad",
+                                       "registerFile" : "register",
+                                       "reTransfer" : "register",
+                                       "replicaRemoval" : "removal",
+                                       "removeFile" : "removal",
+                                       "physicalRemoval" : "removal",
+                                       "putAndRegister" : "transfer",
+                                       "replicateAndRegister" : "transfer" }[self.Operation]:
+        raise ValueError("RequestType '%s' is not valid for Operation '%s'" % ( str(value), self.Operation) ) 
+      self.__data__["RequestType"] = value
     def fget( self ):
       """ request type getter """
-      return self.__attrs["RequestType"]
+      return self.__data__["RequestType"]
     return locals()
   RequestType = property( **__requestType() )
 
@@ -110,19 +129,20 @@ class SubRequest(object):
     doc = "operation"
     def fset( self, value ):
       """ operation setter """
-      if not self.RequestType:
-        raise Exception("unable to set operation when request type is not set!")
-      if value not in { "diset" : ( "commitRegisters", "setFileStatusForTransformation", "setJobStatusBulk",
+      operationDict = { "diset" : ( "commitRegisters", "setFileStatusForTransformation", "setJobStatusBulk",
                                     "sendXMLBookkeepingReport", "setJobParameters" ),
                         "logupload" : ( "uploadLogFiles", ),
-                        "register" : ( "registeFile", ),
+                        "register" : ( "registeFile", "reTransfer" ),
                         "removal" : ( "replicaRemoval", "removeFile", "physicalRemoval" ),
-                        "transfer" : ( "replicateAndRegister" ) }[ self.RequestType ]:
-        raise ValueError("opearion %s is not valid for %s request type!" % ( str(value),  self.RequestType ) )
-      self.__attrs["Operation"] = value
+                        "transfer" : ( "replicateAndRegister", "putAndRegister" ) } 
+      if value not in tuple( itertools.chain( *operationDict.values() ) ):
+        raise ValueError( "%s in not valid Operation!" % value )
+      if self.RequestType and value not in operationDict[ self.RequestType ]:
+        raise ValueError("Operation '%s' is not valid for '%s' request type!" % ( str(value),  self.RequestType ) )
+      self.__data__["Operation"] = value
     def fget( self ):
       """ operation getter """
-      return  self.__attrs["Operation"]
+      return  self.__data__["Operation"]
     return locals()
   Operation = property( **__operation() )
           
@@ -131,10 +151,10 @@ class SubRequest(object):
     doc = "sub-request arguments"
     def fset( self, value ):
       """ arguments setter """
-      self.__attrs["Arguments"] = value
+      self.__data__["Arguments"] = value
     def fget( self ):
       """ arguments getter """
-      return self.__attrs["Arguments"]
+      return self.__data__["Arguments"]
     return locals()
   Arguments = property( **__arguments() )
   
@@ -143,10 +163,10 @@ class SubRequest(object):
     doc = "source SE"
     def fset( self, value ):
       """ source SE setter """
-      self.__attrs["SourceSE"] = value
+      self.__data__["SourceSE"] = value
     def fget( self ):
       """ source SE getter """
-      return self.__attrs["SourceSE"] 
+      return self.__data__["SourceSE"] 
     return locals()
   SourceSE = property( **__sourceSE() )
   
@@ -155,10 +175,10 @@ class SubRequest(object):
     doc = "source SE"
     def fset( self, value ):
       """ target SE setter """
-      self.__attrs["TargetSE"] = value
+      self.__data__["TargetSE"] = value
     def fget( self ):
       """ target SE getter """
-      return self.__attrs["TargetSE"]
+      return self.__data__["TargetSE"]
     return locals()
   TargetSE = property( **__targetSE() )
   
@@ -168,10 +188,10 @@ class SubRequest(object):
     def fset( self, value ):
       """ catalogue setter """
       # TODO check type == list or comma separated str 
-      self.__attrs["Catalogue"] = value
+      self.__data__["Catalogue"] = value
     def fget( self ):
       """ catalogue getter """
-      return self.__attrs["Catalogue"]
+      return self.__data__["Catalogue"]
     return locals()
   Catalogue = property( **__catalogue() )
 
@@ -182,20 +202,35 @@ class SubRequest(object):
       """ error setter """
       if type(value) != str:
         raise ValueError("error has to be a string!")
-      self.__attrs["Error"] = value[255:]
+      self.__data__["Error"] = value[255:]
     def fget( self ):
       """ error getter """
-      return self.__attrs["Error"]
+      return self.__data__["Error"]
     return locals()
   Error = property( **__error() )
 
   def toXML( self ):
     """ dump subrequest to XML """
-    element = ElementTree.Element( "subrequest", self.__attrs ) 
+    element = ElementTree.Element( "subrequest", self.__data__ ) 
     for subFile in self.__files:
-      element.insert( subFile.toXML() )
+      element.append( subFile.toXML() )
     return element
   
   @classmethod
-  def fromXML( cls  ):
+  def fromXML( cls, element ):
+    """ generate SubRequest instance from :element: 
     
+    :param ElementTree.Element element: subrequest element
+    """
+    if not isinstance( element, ElementTree.Element):
+      raise TypeError("wrong argument type %s, excpected ElementTree.Element" % type(element) )
+    if element.tag != "subrequest":
+      raise ValueError("wrong tag <%s>, expected <subrequest>!" % element.tag )
+    subRequest = SubRequest( element.attrib )
+    for fileElement in element.findall( "file" ):
+      subRequest += SubReqFile.fromXML( fileElement )
+    return subRequest
+    
+  def __str__( self ):
+    """ str operator """
+    return ElementTree.tostring( self.toXML() )

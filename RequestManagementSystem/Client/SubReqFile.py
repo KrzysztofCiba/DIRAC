@@ -14,6 +14,8 @@
 
     sub-request file
 """
+# for properties 
+# pylint: disable=E0211,W0612,W0142 
 
 __RCSID__ = "$Id $"
 
@@ -60,13 +62,12 @@ class SubReqFile( object ):
 
     :param self: self reference
     """
-    if fromDict:
-      for attrName, attrValue in fromDict.items():
-        if attrName not in self.__data__:
-          raise AttributeError( "unknown SubReqFile attribute %s" % str(attrName) )
-        setattr( self, attrName, attrValue )
-    #self.updated( reset = True )
-
+    fromDict = fromdict if fromDict else {}
+    for attrName, attrValue in fromDict.items():
+      if attrName not in self.__data__:
+        raise AttributeError( "unknown SubReqFile attribute %s" % str(attrName) )
+      setattr( self, attrName, attrValue )
+   
   def __eq__( self, other ):
     """ == operator, comparing str """
     return str(self) == str(other)
