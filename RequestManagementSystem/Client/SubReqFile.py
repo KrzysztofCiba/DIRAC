@@ -62,7 +62,7 @@ class SubReqFile( object ):
 
     :param self: self reference
     """
-    fromDict = fromdict if fromDict else {}
+    fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
         raise AttributeError( "unknown SubReqFile attribute %s" % str(attrName) )

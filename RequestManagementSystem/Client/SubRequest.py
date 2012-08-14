@@ -48,7 +48,7 @@ class SubRequest(object):
 
   ## sub-request attributes
   __data__ = dict.fromkeys( ( "RequestType", "Operation", "Arguments", "RequestID",
-                             "SourceSE", "TargetSE", "Catalogue", "Error" ), None )
+                              "SourceSE", "TargetSE", "Catalogue", "Error" ), None )
 
   def __init__( self, fromDict=None ):
     """c'tor
@@ -56,7 +56,7 @@ class SubRequest(object):
     :param self: self reference
     """
     fromDict = fromDict if fromDict else {}
-    for key, value in fromDict:
+    for key, value in fromDict.items():
       setattr( self, key, value )
 
   ## SubReqFiles aritmetics   
@@ -95,7 +95,18 @@ class SubRequest(object):
     return self - subFile
 
   ## props 
-  # pylint: disable=E0211,W0612 
+  def __subRequestID():
+    """ SubRequestID prop"""
+    doc = "SubRequestID"
+    def fset( self, value ):
+      if type(value) not in ( int, long ):
+        raise TypeError("SubRequestID has to be an integer!")
+      self.__data__["SubRequestID"] = long(value)
+    def fget( self ):
+      return self.__data__["SubRequestID"]
+    return locals()
+  SubRequestID = property( **__subRequestID() )
+
   def __requestType():
     """ request type prop """
     doc = "request type"
@@ -136,7 +147,7 @@ class SubRequest(object):
                         "removal" : ( "replicaRemoval", "removeFile", "physicalRemoval" ),
                         "transfer" : ( "replicateAndRegister", "putAndRegister" ) } 
       if value not in tuple( itertools.chain( *operationDict.values() ) ):
-        raise ValueError( "%s in not valid Operation!" % value )
+        raise ValueError( "'%s' in not valid Operation!" % value )
       if self.RequestType and value not in operationDict[ self.RequestType ]:
         raise ValueError("Operation '%s' is not valid for '%s' request type!" % ( str(value),  self.RequestType ) )
       self.__data__["Operation"] = value
@@ -200,9 +211,10 @@ class SubRequest(object):
     doc = "error"
     def fset( self, value ):
       """ error setter """
-      if type(value) != str:
-        raise ValueError("error has to be a string!")
-      self.__data__["Error"] = value[255:]
+      if value:
+        if type(value) != str:
+          raise ValueError("Error has to be a string!")
+        self.__data__["Error"] = value[255:]
     def fget( self ):
       """ error getter """
       return self.__data__["Error"]
@@ -222,7 +234,7 @@ class SubRequest(object):
     
     :param ElementTree.Element element: subrequest element
     """
-    if not isinstance( element, ElementTree.Element):
+    if not isinstance( element, type(ElementTree.Element("subrequest")) ):
       raise TypeError("wrong argument type %s, excpected ElementTree.Element" % type(element) )
     if element.tag != "subrequest":
       raise ValueError("wrong tag <%s>, expected <subrequest>!" % element.tag )
