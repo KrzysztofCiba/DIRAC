@@ -13,6 +13,8 @@
 
     request implementation
 """
+# for properties 
+# pylint: disable=E0211,W0612,W0142 
 
 __RCSID__ = "$Id $"
 
@@ -32,10 +34,8 @@ from xml.parsers.expat import ExpatError
   
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.TypedList import TypedList
-##  
+from DIRAC.Core.Utilities.TypedList import TypedList 
 from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
-from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
   
 ########################################################################
 class Request(object):
@@ -56,40 +56,43 @@ class Request(object):
   :param TypedList subRequests: list of subrequests 
   """
 
-  __attrs = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status" 
+  __data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status" 
                              "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
 
   ## requets's id
-  __requestID = None
+  #__requestID = None
   ## request's name
-  __name = None
+  #__name = None
   ## request's owner DN
-  __ownerDN = None
+  #__ownerDN = None
   ## request's owner group
-  __ownerGroup = None
+  #__ownerGroup = None
   ## DIRAC setup
-  __setup = None
+  #__setup = None
   ## source component
-  __sourceComponent = None
+  #__sourceComponent = None
   ## jobID
-  __jobID = 0
+  #__jobID = 0
   ## creation time
-  __creationTime = None 
+  #__creationTime = None 
   ## submission time
-  __submissionTime = None 
+  #__submissionTime = None 
   ## last update 
-  __lastUpdate = None
+  #__lastUpdate = None
   ## status
-  __status = "Waiting"
+  #__status = "Waiting"
   ## list of sub-requests
   __subRequests = TypedList( allowedTypes=SubRequest )
 
-  def __init__( self ):
+  def __init__( self, fromDict=None ):
     """c'tor
 
     :param self: self reference
     """
-    self.__name = ""
+    fromDict = fromDict if fromDict else {}
+    for key, value in fromDict:
+      setattr( self, key, value )
+    #self.__name = ""
 
   ## SubRequest aritmetics
   def __contains__( self, subRequest ):
@@ -167,7 +170,8 @@ class Request(object):
     :param self: self reference
     :param SubRequest subRequest: SubRequest to be removed 
     """
-    self -= subRequest 
+    if subRequest in self:
+      self -= subRequest 
     return S_OK()
 
   def __iter__( self ):
@@ -179,10 +183,10 @@ class Request(object):
     doc = "request ID"
     def fset( self, value ):
       """ requestID setter """
-      self.__attrs["RequestID"] = long(value)
+      self.__data__["RequestID"] = long(value)
     def fget( self ):
       """ request ID getter """
-      return self.__attrs["RequestID"]
+      return self.__data__["RequestID"]
     return locals()
   RequestID = property( **__requestID() )
 
@@ -193,10 +197,10 @@ class Request(object):
       """ request owner DN setter """
       if type(value) != str:
         raise TypeError("ownerDN should be a string!")
-      self.__attrs["OwnerDN"] = value
+      self.__data__["OwnerDN"] = value
     def fget( self ):
       """ request owner DN getter """
-      return self.__attrs["OwnerDN"]
+      return self.__data__["OwnerDN"]
     return locals()
   OwnerDN = property( **__ownerDN() )
 
@@ -207,12 +211,12 @@ class Request(object):
       """ request owner group setter """
       if type(value) != str:
         raise TypeError("ownerGroup should be a string!")
-      self.__attrs["OwnerGroup"] = value
+      self.__data__["OwnerGroup"] = value
     def fget( self ):
       """ request owner group getter """
-      return self.__attrs["OwnerGroup"]
+      return self.__data__["OwnerGroup"]
     return locals()
-  ownerGroup = property( **__ownerGroup() )
+  OwnerGroup = property( **__ownerGroup() )
 
   def __setup():
     """ DIRAC setup prop """
@@ -221,10 +225,10 @@ class Request(object):
       """ DIRAC setup setter """
       if type(value) != str:
         raise TypeError("setup should be a string!")
-      self.__attrs["DIRACSetup"] = value
+      self.__data__["DIRACSetup"] = value
     def fget( self ):
       """ DIRAC setup getter """
-      return self.__attrs["DIRACSetup"]
+      return self.__data__["DIRACSetup"]
     return locals() 
   DIRACSetup = property( **__setup() )
 
@@ -235,10 +239,10 @@ class Request(object):
       """ source component setter """
       if type(value) != str:
         raise TypeError("setu should be a string!")
-      self.__attrs["SourceComponent"] = value
+      self.__data__["SourceComponent"] = value
     def fget( self ):
       """ source component getter """
-      return self.__attrs["SourceComponent"]
+      return self.__data__["SourceComponent"]
     return locals() 
   SourceComponent = property( **__sourceComponent() )
 
@@ -249,10 +253,10 @@ class Request(object):
       """ request name setter """
       if type(value) != str:
         raise TypeError("name should be a string")
-      self.__attrs["RequestName"] = value
+      self.__data__["RequestName"] = value
     def fget( self ):
       """ request name getter """
-      return self.__attrs["RequestName"]
+      return self.__data__["RequestName"]
     return locals()
   RequestName = property( **__name() )
 
@@ -261,10 +265,10 @@ class Request(object):
     doc = "jobID"
     def fset( self, value=0 ):
       """ jobID setter """
-      self.__attrs["JobID"] = long(value)
+      self.__data__["JobID"] = long(value)
     def fget( self ):
       """ jobID getter """
-      return self.__attrs["JobID"]
+      return self.__data__["JobID"]
     return locals()
   JobID = property( **__jobID() )
 
@@ -277,10 +281,10 @@ class Request(object):
         raise TypeError("creationTime should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-        self.__attrs["CreationTime"] = value
+        self.__data__["CreationTime"] = value
     def fget( self ):
       """ creation time getter """
-      return self.__attrs["CreationTime"]
+      return self.__data__["CreationTime"]
     return locals()
   CreationTime = property( **__creationTime() )
 
@@ -293,10 +297,10 @@ class Request(object):
         raise TypeError("submissionTime should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-      self.__attrs["SubmissionTime"] = value
+      self.__data__["SubmissionTime"] = value
     def fget( self ):
       """ submisssion time getter """
-      return self.__attrs["SubmissionTime"]
+      return self.__data__["SubmissionTime"]
     return locals()
   SubmissionTime = property( **__submissionTime() )
 
@@ -309,49 +313,58 @@ class Request(object):
         raise TypeError("lastUpdate should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-      self.__attrs["LastUpdate"] = value
+      self.__data__["LastUpdate"] = value
     def fget( self ):
       """ submisssion time getter """
-      return self.__attrs["LastUpdate"]
+      return self.__data__["LastUpdate"]
     return locals()
   LastUpdate = property( **__lastUpdate() )
 
   ## status
-  def status( self ):
+  def __status():
     """ status prop
     
     TODO: add more logic here
     """
+    doc = "request status"
+    def fset( self, value ):
+      """ status setter """
+      self.__status = value      
     def fget( self ):
+      """ status getter """
       subStatuses = list( set( [ subRequest.status() for subRequest in self.__subRequests ] ) ) 
-      self.__status = "New"
+      status = "New"
       if "Done" in subStatuses:
-        self.__status = "Done"
+        status = "Done"
       if "Assigned" in subStatuses:
-        self.__status = "Assigned"
+        status = "Assigned"
       if "Waiting" in subStatuses:
-        self.__status = "Waiting"
-      return self.__status  
-      
+        status = "Waiting"
+      self.__data__["Status"] = status
+      return self.__data__["Status"]
+    return locals()
+  Status = property( **__status() )
+
   def executionOrder( self ):
     """ get execution order """
-    subStatuses = [ subRequest.status() for subRequest in self.__subRequests ]
-    return S_OK( subStatuses["Waiting"] if "Waiting" in subStatuses else len(subStatuses) )
+    subStatuses = [ subRequest.Status() for subRequest in self.__subRequests ]
+    return S_OK( subStatuses.indexOf("Waiting") if "Waiting" in subStatuses else len(subStatuses) )
     
   @classmethod
   def fromXML( cls, xmlString ):
+    """ create Request object from xmlString or xml.ElementTree.Element """
     try:
       doc = ElementTree.parse( xmlString )
     except ExpatError, error:
-      self.log.exception("unable to deserialize request from xml string", error )
-      return S_ERROR( "unable to deserialise request: %s" % str(error) )
+      return S_ERROR( "unable to deserialise request from xml: %s" % str(error) )
     root = doc.getroot()
     if root.tag != "request":
       return S_ERROR( "unable to deserialise request, xml root element is not a 'request' " )
-    request = Request()
-    for attrName, attrValue in root.attrib.items():
-      setattr( request, attrName, attrValue )
-      
+    request = Request( root.attrib )
+    for subReqElement in root.findall( "subrequest" ):
+      request += SubRequest.fromXML( element=subReqElement )
+    return request
+
   def toXML( self ):
     """ dump request to XML 
 
@@ -367,23 +380,14 @@ class Request(object):
     root.attrib["JobID"] = str(self.JobID) if self.JobID else "0"
     root.attrib["SourceComponent"] = str(self.SourceComponent) if self.SourceComponent else "" 
     ## always calculate status, never set
-    root.attrib["Status"] = self.status()
+    root.attrib["Status"] = str(self.Status())
     ## datetime up to seconds
-    root.attrib["CreationTime"] = self.CreationTime.isoformat(" ").split(".")[0] is self.CreationTime else ""
+    root.attrib["CreationTime"] = self.CreationTime.isoformat(" ").split(".")[0] if self.CreationTime else ""
     root.attrib["SubmissionTime"] = self.SubmissionTime.isoformat(" ").split(".")[0] if self.SubmissionTime else ""
     root.attrib["LastUpdate"] = self.LastUpdate.isoformat(" ").split(".")[0] if self.LastUpdate else "" 
     for subRequest in self.__subRequests:
-      root.insert( subRequest.toXML() )
+      root.append( subRequest.toXML() )
     doc = ElementTree.ElementTree( root )
     xmlStr = ElementTree.tostring( doc, "utf-8", "xml" )
     return S_OK( xmlStr )
 
-  @classmethod
-  def fromSQL( cls, record ):
-    pass
-
-  
-  def toSQL( self ):
-    pass
-
-  
