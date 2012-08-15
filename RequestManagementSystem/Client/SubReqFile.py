@@ -89,10 +89,10 @@ class SubReqFile( object ):
     doc = "sub request ID"
     def fset( self, value ):
       """ SubRequestID setter """
-      if type(value) not in ( int, long ):
+      if value and type(value) not in ( int, long ):
         raise TypeError("SubRequestID should be an integer!")
       if self.parent and self.parent.SubRequestID and  self.parent.SubRequestID != value:
-        raise ValueError("parent subrequest id != %s" % value )
+        raise ValueError("Parent SubRequestID mismatch (%s != %s)" % ( self.parent.SubRequestID, value ) )
       self.__data__["SubRequestID"] = value
     def fget( self ):
       """ SubRequestID getter """
@@ -107,9 +107,11 @@ class SubReqFile( object ):
     doc = "parent subrequest"
     def fset( self, value ):
       """ parent setter """
-      if value and not isinstance( value, SubRequest ):
-        raise TypeError("parent should be a SubRequest!")
+      if value and value.__class__.__name__ != "SubRequest":
+        raise TypeError("parent should be a SubRequest object!")
       self._parent = value
+      if value == None:
+        self.SubRequestID = None
     def fget( self ):
       """ parent getter """
       return self._parent 
@@ -121,7 +123,10 @@ class SubReqFile( object ):
     doc = "file size in bytes"
     def fset( self, value ):
       """ file size setter """
-      self.__data__["Size"] = long(value)
+      value = long(value)
+      if value < 0:
+        raise ValueError("Size should be a positive integer!")
+      self.__data__["Size"] = value
     def fget( self ):
       """ file size getter """
       return self.__data__["Size"]
@@ -165,8 +170,10 @@ class SubReqFile( object ):
     doc = "GUID"
     def fset( self, value ):
       """ GUID setter """
+      if type(value) not in ( str, unicode ):
+        raise TypeError("GUID should be a string!")
       if not checkGuid( value ):
-        raise TypeError("%s is not a GUID" % str(value) )
+        raise ValueError("'%s' is not a valid GUID!" % str(value) )
       self.__data__["GUID"] = value
     def fget( self ):
       """ GUID getter """
@@ -204,7 +211,9 @@ class SubReqFile( object ):
     def fset( self, value ):
       """ attempt getter """
       if type( value ) not in (int, long):
-        raise TypeError("attempt has to ba an integer")
+        raise TypeError("Attempt should be a positive integer!")
+      if value < 0:
+        raise ValueError("Attempt should be a positive integer!")
       self.__data__["Attempt"] = value
     def fget( self ):
       """ attempt getter """

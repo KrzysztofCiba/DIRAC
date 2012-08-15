@@ -84,7 +84,6 @@ class SubRequest(object):
   def __isub__( self, subFile ):
     """ -= operator """
     if subFile in self:
-
       self.__files.remove( subFile )
       subFile.parent = None
     return self
@@ -94,6 +93,7 @@ class SubRequest(object):
     if subFile in self:
       self.__files.remove( subFile )
       subFile.parent = None
+  
   def removeFile( self, subFile ):
     """ remove :subFile: from sub-request """
     return self - subFile
