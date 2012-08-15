@@ -50,7 +50,7 @@ class SubReqFile( object ):
   __metaclass__ = Traced 
   _parent = None
   
-  ## SQL and XML description 
+  ## attributes 
   __data__ = dict.fromkeys( ( "FileID", "SubRequestID", "LFN", "PFN", "GUID", "Size", 
                               "Addler", "Md5", "Status", "Attempt",  "Error"),  
                             None )
