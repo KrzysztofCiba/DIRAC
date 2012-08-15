@@ -29,6 +29,8 @@ try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
   import xml.etree.ElementTree
+## from DIRAC
+from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
 ## SUT
 from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
 
@@ -70,7 +72,6 @@ class SubReqFileTests( unittest.TestCase ):
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( subReqFile, key ), value  )
       
-
   def test_props( self ):
     """ test props """
     subReqFile = SubReqFile()
@@ -100,27 +101,91 @@ class SubReqFileTests( unittest.TestCase ):
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
     
+    # SubRequestID
+    try:
+      subReqFile.SubRequestID = "a"
+    except Exception, error:
+      self.assertEqual( isinstance( error, TypeError ), True )
+      self.assertEqual( str(error), "SubRequestID should be an integer!")
+
+    # parent
+    parent = SubRequest( { "SubRequestID" : 99999 } )
+    parent += subReqFile
+    self.assertEqual( parent.SubRequestID, subReqFile.SubRequestID )
+    try:
+      subReqFile.SubRequestID = 111111
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError ), True )
+      self.assertEqual( str(error), "Parent SubRequestID mismatch (99999 != 111111)")
+
+    # remove from parent
+    parent -= subReqFile
+    self.assertEqual( subReqFile.SubRequestID, None )
+
     # LFN
     try:
       subReqFile.LFN = 1
     except Exception, error:
-      self.assertEqual( isinstance( error, TypeError), True )
+      self.assertEqual( isinstance( error, TypeError ), True )
       self.assertEqual( str(error), "LFN has to be a string!")
     try:
       subReqFile.LFN = "../some/path"
     except Exception, error:
-      self.assertEqual( isinstance( error, ValueError), True )
+      self.assertEqual( isinstance( error, ValueError ), True )
       self.assertEqual( str(error), "LFN should be an absolute path!")
     
-    # PFN  
+    # PFN
+    try:
+      subReqFile.PFN = 1
+    except Exception, error:
+      self.assertEqual( isinstance( error, TypeError ), True )
+      self.assertEqual( str(error), "PFN has to be a string!")
+    try:
+      subReqFile.PFN = "snafu"
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError ), True )
+      self.assertEqual( str(error), "wrongly formatted URI!")
+  
     # Size
+    try:
+      subReqFile.Size = "snafu"
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError ), True )
+    try:
+      subReqFile.Size = -1
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError ), True )
+      self.assertEqual( str(error), "Size should be a positive integer!")
+  
     # GUID
+    try:
+      subReqFile.GUID = "snafuu-uuu-uuu-uuu-uuu-u"
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError ), True )
+      self.assertEqual( str(error), "'snafuu-uuu-uuu-uuu-uuu-u' is not a valid GUID!")
+    try:
+      subReqFile.GUID = 2233345
+    except Exception, error:
+      self.assertEqual( isinstance( error, TypeError ), True )
+      self.assertEqual( str(error), "GUID should be a string!")
+  
     # Addler
     # Md5
+      
     # Attempt
-    # parent
-    # SubRequestID  
+    try:
+      subReqFile.Attempt = "snafu"
+    except Exception, error:
+      self.assertEqual( isinstance( error, TypeError ), True )
+      self.assertEqual( str(error), "Attempt should be a positive integer!")
+    try:
+      subReqFile.Attempt = -1
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError ), True )
+      self.assertEqual( str(error), "Attempt should be a positive integer!")
 
+    # Status
+  
     
 ## test execution
 if __name__ == "__main__":
