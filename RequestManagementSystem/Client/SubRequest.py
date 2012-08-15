@@ -68,13 +68,15 @@ class SubRequest(object):
     """ += operator """
     if subFile not in self:
       self.__files.append( subFile )
+      subFile.parent = self 
     return self
 
   def __add__( self, subFile ):
     """ + operator """
     if subFile not in self:
       self.__files.append( subFile )
-      
+      subFile.parent = self 
+
   def addFile( self, subFile ):
     """ add :subFile: to subrequest """
     return self + subFile
@@ -82,14 +84,16 @@ class SubRequest(object):
   def __isub__( self, subFile ):
     """ -= operator """
     if subFile in self:
+
       self.__files.remove( subFile )
+      subFile.parent = None
     return self
 
   def __sub__( self, subFile ):
     """ - operator """
     if subFile in self:
       self.__files.remove( subFile )
-
+      subFile.parent = None
   def removeFile( self, subFile ):
     """ remove :subFile: from sub-request """
     return self - subFile

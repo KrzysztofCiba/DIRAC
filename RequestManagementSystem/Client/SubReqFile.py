@@ -45,7 +45,6 @@ class SubReqFile( object ):
   A bag object holding sub-request file attributes.
 
   :param SubRequest parent: sub-request reference
-  
   :param SubRequest parent: reference to parent SubRequest
   """
   __metaclass__ = Traced 
@@ -88,12 +87,34 @@ class SubReqFile( object ):
   def __subRequestID():
     """ sub request ID, this one is ro """
     doc = "sub request ID"
+    def fset( self, value ):
+      """ SubRequestID setter """
+      if type(value) not in ( int, long ):
+        raise TypeError("SubRequestID should be an integer!")
+      if self.parent and self.parent.SubRequestID and  self.parent.SubRequestID != value:
+        raise ValueError("parent subrequest id != %s" % value )
+      self.__data__["SubRequestID"] = value
     def fget( self ):
       """ SubRequestID getter """
       if self.parent:
-        return self.parent.SubRequestID
+        self.__data__["SubRequestID"] = self.parent.SubRequestID
+      return self.__data__["SubRequestID"]
     return locals()
   SubRequestID = property( **__subRequestID() )
+
+  def __parent():
+    """ reference to parent sub-request """
+    doc = "parent subrequest"
+    def fset( self, value ):
+      """ parent setter """
+      if value and not isinstance( value, SubRequest ):
+        raise TypeError("parent should be a SubRequest!")
+      self._parent = value
+    def fget( self ):
+      """ parent getter """
+      return self._parent 
+    return locals()
+  parent = property( **__parent() )
 
   def __size():
     """ file size prop """
@@ -109,13 +130,13 @@ class SubReqFile( object ):
 
   def __lfn():
     """ LFN prop """
-    doc = "lfn"
+    doc = "LFN"
     def fset( self, value ):
       """ lfn setter """
       if type(value) != str:
-        raise TypeError("lfn has to be a string!")
+        raise TypeError("LFN has to be a string!")
       if not os.path.isabs( value ):
-        raise ValueError("lfn should be an absolute path!")
+        raise ValueError("LFN should be an absolute path!")
       self.__data__["LFN"] = value
     def fget( self ):
       """ lfn getter """
@@ -129,7 +150,7 @@ class SubReqFile( object ):
     def fset( self, value ):
       """ pfn setter """
       if type(value) != str:
-        raise TypeError("pfn has to be a string!")
+        raise TypeError("PFN has to be a string!")
       if not urlparse.urlparse( value ).scheme:
         raise ValueError("wrongly formatted URI!")
       self.__data__["PFN"] = value
@@ -197,7 +218,7 @@ class SubReqFile( object ):
     def fset( self, value ):
       """ error setter """
       if type(value) != str:
-        raise ValueError("error has to be a string!")
+        raise ValueError("Error has to be a string!")
       self.__data__["Error"] = value[255:]
     def fget( self ):
       """ error getter """
@@ -211,7 +232,7 @@ class SubReqFile( object ):
     def fset( self, value ):
       """ status setter """
       if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
-        raise ValueError( "unknown status: %s" % str(value) )
+        raise ValueError( "unknown Status: %s" % str(value) )
       self.__data__["Status"] = value
     def fget( self ):
       """ status getter """
