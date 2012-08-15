@@ -44,15 +44,14 @@ class SubReqFile( object ):
 
   A bag object holding sub-request file attributes.
 
-  :param SubRequest parent: sub-request reference
-  :param SubRequest parent: reference to parent SubRequest
+  :param SubRequest _parent: reference to parent SubRequest
+  :param dict __data__: attrs dict
   """
   __metaclass__ = Traced 
-
-  parent = None
+  _parent = None
   
   ## SQL and XML description 
-  __data__ = dict.fromkeys( ( "FileID", "LFN", "PFN", "GUID", "Size", "SubRequestID",
+  __data__ = dict.fromkeys( ( "FileID", "SubRequestID", "LFN", "PFN", "GUID", "Size", 
                               "Addler", "Md5", "Status", "Attempt",  "Error"),  
                             None )
   
@@ -157,7 +156,7 @@ class SubReqFile( object ):
       if type(value) != str:
         raise TypeError("PFN has to be a string!")
       if not urlparse.urlparse( value ).scheme:
-        raise ValueError("wrongly formatted URI!")
+        raise ValueError("Wrongly formatted URI!")
       self.__data__["PFN"] = value
     def fget( self ):
       """ pfn getter """
@@ -186,7 +185,7 @@ class SubReqFile( object ):
     doc = "ADDLER32 checksum"
     def fset( self, value ):
       """ ADDLER32 setter """
-      self.__data__["Addler"] = value
+      self.__data__["Addler"] = str(value)
     def fget( self ):
       """ ADDLER32 getter """
       return self.__data__["Addler"]
@@ -198,7 +197,7 @@ class SubReqFile( object ):
     doc = "MD5 checksum"
     def fset( self, value ):
       """ MD5 setter """
-      self.__data__["Md5"] = value
+      self.__data__["Md5"] = str(value)
     def fget( self ):
       """ MD5 getter """
       return self.__data__["Md5"] 
@@ -227,7 +226,7 @@ class SubReqFile( object ):
     def fset( self, value ):
       """ error setter """
       if type(value) != str:
-        raise ValueError("Error has to be a string!")
+        raise TypeError("Error has to be a string!")
       self.__data__["Error"] = value[255:]
     def fget( self ):
       """ error getter """
@@ -241,7 +240,7 @@ class SubReqFile( object ):
     def fset( self, value ):
       """ status setter """
       if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
-        raise ValueError( "unknown Status: %s" % str(value) )
+        raise ValueError( "Unknown Status: %s!" % str(value) )
       self.__data__["Status"] = value
     def fget( self ):
       """ status getter """

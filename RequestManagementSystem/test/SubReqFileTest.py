@@ -52,7 +52,7 @@ class SubReqFileTests( unittest.TestCase ):
     del self.fromDict
 
   def test_ctors( self ):
-    """ SubReqFile construction """
+    """ SubReqFile construction and (de)serialisation """
     ## empty defautl ctor
     subReqFile = SubReqFile()
     self.assertEqual( isinstance( subReqFile, SubReqFile), True )
@@ -73,11 +73,13 @@ class SubReqFileTests( unittest.TestCase ):
       self.assertEqual( getattr( subReqFile, key ), value  )
       
   def test_props( self ):
-    """ test props """
+    """ test props and attributes  """
     subReqFile = SubReqFile()
     # valid props
     subReqFile.FileID = 1
     self.assertEqual( subReqFile.FileID, 1 )
+    subReqFile.SubRequestID = 1
+    self.assertEqual( subReqFile.SubRequestID, 1 )
     subReqFile.Status = "Done"
     self.assertEqual( subReqFile.Status, "Done" )
     subReqFile.LFN = "/some/path/somewhere"
@@ -92,6 +94,8 @@ class SubReqFileTests( unittest.TestCase ):
     self.assertEqual( subReqFile.GUID, "2bbabe80-e2f1-11e1-9b23-0800200c9a66" )
     subReqFile.Addler = "1234567"
     self.assertEqual( subReqFile.Addler, "1234567" )
+    subReqFile.Md5 = "123456"
+    self.assertEqual( subReqFile.Md5, "123456" )
 
     ## invalid props
     
@@ -144,7 +148,7 @@ class SubReqFileTests( unittest.TestCase ):
       subReqFile.PFN = "snafu"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "wrongly formatted URI!")
+      self.assertEqual( str(error), "Wrongly formatted URI!")
   
     # Size
     try:
@@ -168,9 +172,6 @@ class SubReqFileTests( unittest.TestCase ):
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
       self.assertEqual( str(error), "GUID should be a string!")
-  
-    # Addler
-    # Md5
       
     # Attempt
     try:
@@ -185,7 +186,20 @@ class SubReqFileTests( unittest.TestCase ):
       self.assertEqual( str(error), "Attempt should be a positive integer!")
 
     # Status
-  
+    try:
+      subReqFile.Status = None
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError ), True )
+      self.assertEqual( str(error), "Unknown Status: None!")
+
+    # Error
+    try:
+      subReqFile.Error = Exception("test")
+    except Exception, error:
+      self.assertEqual( isinstance( error, TypeError ), True )
+      self.assertEqual( str(error), "Error has to be a string!")
+      
+
     
 ## test execution
 if __name__ == "__main__":
