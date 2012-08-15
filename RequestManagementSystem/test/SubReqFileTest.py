@@ -69,7 +69,6 @@ class SubReqFileTests( unittest.TestCase ):
     self.assertEqual( isinstance( subReqFile, SubReqFile ), True )
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( subReqFile, key ), value  )
-
       
 
   def test_props( self ):
@@ -94,10 +93,33 @@ class SubReqFileTests( unittest.TestCase ):
     self.assertEqual( subReqFile.Addler, "1234567" )
 
     ## invalid props
+    
+    # FileID
     try:
       subReqFile.FileID = "foo"
-    except ValueError, error:
-      pass
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError ), True )
+    
+    # LFN
+    try:
+      subReqFile.LFN = 1
+    except Exception, error:
+      self.assertEqual( isinstance( error, TypeError), True )
+      self.assertEqual( str(error), "LFN has to be a string!")
+    try:
+      subReqFile.LFN = "../some/path"
+    except Exception, error:
+      self.assertEqual( isinstance( error, ValueError), True )
+      self.assertEqual( str(error), "LFN should be an absolute path!")
+    
+    # PFN  
+    # Size
+    # GUID
+    # Addler
+    # Md5
+    # Attempt
+    # parent
+    # SubRequestID  
 
     
 ## test execution
