@@ -109,8 +109,7 @@ class SubReqFileTests( unittest.TestCase ):
     try:
       subReqFile.SubRequestID = "a"
     except Exception, error:
-      self.assertEqual( isinstance( error, TypeError ), True )
-      self.assertEqual( str(error), "SubRequestID should be an integer!")
+      self.assertEqual( isinstance( error, ValueError ), True )
 
     # parent
     parent = SubRequest( { "SubRequestID" : 99999 } )
@@ -177,8 +176,7 @@ class SubReqFileTests( unittest.TestCase ):
     try:
       subReqFile.Attempt = "snafu"
     except Exception, error:
-      self.assertEqual( isinstance( error, TypeError ), True )
-      self.assertEqual( str(error), "Attempt should be a positive integer!")
+      self.assertEqual( isinstance( error, ValueError ), True )
     try:
       subReqFile.Attempt = -1
     except Exception, error:

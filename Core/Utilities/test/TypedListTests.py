@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 ## SUT
-from DIRAC.Core.Utilities.TypedList import TypedList
+from DIRAC.Core.Utilities.TypedList import TypedList, TDeque
 
 class TestClass( object ):
   """ dummy class """
@@ -84,6 +84,17 @@ class TypedListTestCase(unittest.TestCase):
   def test03_setitem_append_extend_insert( self ):
     pass
 
+
+  def test_deque( self ):
+    class A( object ):
+      def __init__(self, i):
+        self.i = i
+      def __str__( self ):
+        return str(self.i)
+
+    d = TDeque( [A(1), A(2)],allowedTypes=(A,) )
+    d.append(A(3))
+  
 
 ## test execution
 if __name__ == "__main__":

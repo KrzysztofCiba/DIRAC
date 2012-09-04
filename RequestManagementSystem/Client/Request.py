@@ -59,29 +59,6 @@ class Request(object):
   __data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status" 
                              "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
 
-  ## requets's id
-  #__requestID = None
-  ## request's name
-  #__name = None
-  ## request's owner DN
-  #__ownerDN = None
-  ## request's owner group
-  #__ownerGroup = None
-  ## DIRAC setup
-  #__setup = None
-  ## source component
-  #__sourceComponent = None
-  ## jobID
-  #__jobID = 0
-  ## creation time
-  #__creationTime = None 
-  ## submission time
-  #__submissionTime = None 
-  ## last update 
-  #__lastUpdate = None
-  ## status
-  #__status = "Waiting"
-  ## list of sub-requests
   __subRequests = TypedList( allowedTypes=SubRequest )
 
   def __init__( self, fromDict=None ):
@@ -175,7 +152,9 @@ class Request(object):
     return S_OK()
 
   def __iter__( self ):
+    """ iterator for sub-request """
     return self.__subRequests.__iter__()
+
   
   ## props
   def __requestID():
@@ -238,7 +217,7 @@ class Request(object):
     def fset( self, value ):
       """ source component setter """
       if type(value) != str:
-        raise TypeError("setu should be a string!")
+        raise TypeError("Setup should be a string!")
       self.__data__["SourceComponent"] = value
     def fget( self ):
       """ source component getter """
@@ -252,7 +231,7 @@ class Request(object):
     def fset( self, value ):
       """ request name setter """
       if type(value) != str:
-        raise TypeError("name should be a string")
+        raise TypeError("RequestName should be a string")
       self.__data__["RequestName"] = value
     def fget( self ):
       """ request name getter """
@@ -278,7 +257,7 @@ class Request(object):
     def fset( self, value = None ):
       """ creation time setter """
       if type(value) not in ( datetime.datetime, str ) :
-        raise TypeError("creationTime should be a datetime.datetime!")
+        raise TypeError("CreationTime should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
         self.__data__["CreationTime"] = value
@@ -294,7 +273,7 @@ class Request(object):
     def fset( self, value = None ):
       """ submission time setter """
       if type(value) not in ( datetime.datetime, str ):
-        raise TypeError("submissionTime should be a datetime.datetime!")
+        raise TypeError("SubmissionTime should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
       self.__data__["SubmissionTime"] = value
@@ -310,7 +289,7 @@ class Request(object):
     def fset( self, value = None ):
       """ last update setter """
       if type( value != type(datetime.datetime) ):
-        raise TypeError("lastUpdate should be a datetime.datetime!")
+        raise TypeError("LastUpdate should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
       self.__data__["LastUpdate"] = value
@@ -345,7 +324,12 @@ class Request(object):
     return locals()
   Status = property( **__status() )
 
-  def executionOrder( self ):
+
+  def notify( self, subRequest ):
+    """ IMPLEMENT ME: state machine for status and execution order """
+    pass
+
+  def currertEecutionOrder( self ):
     """ get execution order """
     subStatuses = [ subRequest.Status() for subRequest in self.__subRequests ]
     return S_OK( subStatuses.indexOf("Waiting") if "Waiting" in subStatuses else len(subStatuses) )
