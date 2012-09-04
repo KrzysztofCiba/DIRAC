@@ -23,9 +23,34 @@ __RCSID__ = "$Id $"
 # @date 2012/07/19 08:21:22
 # @brief Definition of TypedList class.
 
+from collections import deque
+
 class Unsortable( list ):
   def sort( self, *args, **kwargs ):
     return 
+
+
+#class TypedDeque( type ):
+#  
+#  def __new__( cls, name, bases, classdict ):
+#    pass
+#
+#  def __init__( cls, name, bases, classdict ):
+#    pass
+
+
+class TDeque( deque ):
+
+  def __init__( self, iterable, allowedTypes = None ):
+    types = allowedTypes if isinstance( allowedTypes, tuple ) else ( allowedTypes, )
+    for item in types:
+      if not isinstance( item, type ):
+        raise TypeError("%s is not a type" % repr(item) )
+    deque.__init__( self, iterable )
+    
+  
+  
+
 
 class TypedList( list ):
   """ 
@@ -43,7 +68,7 @@ class TypedList( list ):
     iterable = list() if not iterable else iterable
     ## make sure it is iterable
     iter(iterable) 
-    
+  
     types = allowedTypes if isinstance( allowedTypes, tuple ) else ( allowedTypes, )
     for item in types:
       if not isinstance( item, type ):

@@ -51,9 +51,17 @@ class SubReqFile( object ):
   _parent = None
   
   ## attributes 
-  __data__ = dict.fromkeys( ( "FileID", "SubRequestID", "LFN", "PFN", "GUID", "Size", 
-                              "Addler", "Md5", "Status", "Attempt",  "Error"),  
-                            None )
+  __data__ = dict( ( ( "FileID", None ),
+                     ( "SubRequestID", None ),
+                     ( "LFN", None ),
+                     ( "PFN",  None ),
+                     ( "GUID", None ),
+                     ( "Size", None ),
+                     ( "Addler", None ),
+                     ( "Md5", None ),
+                     ( "Status", "Waiting" ),
+                     ( "Attempt", 1),
+                     ( "Error", "" ) ) )
   
   def __init__( self, fromDict=None ):
     """c'tor
@@ -76,7 +84,8 @@ class SubReqFile( object ):
     doc = "FileID"
     def fset( self, value ):
       """ FileID setter """
-      self.__data__["FileID"] = long(value)
+      value = long(value) if value else None
+      self.__data__["FileID"] = value
     def fget( self ):
       """ FileID getter """
       return self.__data__["FileID"]
@@ -88,8 +97,9 @@ class SubReqFile( object ):
     doc = "sub request ID"
     def fset( self, value ):
       """ SubRequestID setter """
-      if value and type(value) not in ( int, long ):
-        raise TypeError("SubRequestID should be an integer!")
+      value = long(value) if value else None
+      #if value and type(value) not in ( int, long ):
+      #  raise TypeError("SubRequestID should be an integer!")
       if self.parent and self.parent.SubRequestID and  self.parent.SubRequestID != value:
         raise ValueError("Parent SubRequestID mismatch (%s != %s)" % ( self.parent.SubRequestID, value ) )
       self.__data__["SubRequestID"] = value
@@ -153,10 +163,11 @@ class SubReqFile( object ):
     doc = "pfn"
     def fset( self, value ):
       """ pfn setter """
-      if type(value) != str:
-        raise TypeError("PFN has to be a string!")
-      if not urlparse.urlparse( value ).scheme:
-        raise ValueError("Wrongly formatted URI!")
+      if value:
+        if type(value) != str:
+          raise TypeError("PFN has to be a string!")
+        if not urlparse.urlparse( value ).scheme:
+          raise ValueError("Wrongly formatted URI!")
       self.__data__["PFN"] = value
     def fget( self ):
       """ pfn getter """
@@ -169,10 +180,11 @@ class SubReqFile( object ):
     doc = "GUID"
     def fset( self, value ):
       """ GUID setter """
-      if type(value) not in ( str, unicode ):
-        raise TypeError("GUID should be a string!")
-      if not checkGuid( value ):
-        raise ValueError("'%s' is not a valid GUID!" % str(value) )
+      if value:
+        if type(value) not in ( str, unicode ):
+          raise TypeError("GUID should be a string!")
+        if not checkGuid( value ):
+          raise ValueError("'%s' is not a valid GUID!" % str(value) )
       self.__data__["GUID"] = value
     def fget( self ):
       """ GUID getter """
@@ -209,13 +221,11 @@ class SubReqFile( object ):
     doc = "attempt"
     def fset( self, value ):
       """ attempt getter """
-      if type( value ) not in (int, long):
-        raise TypeError("Attempt should be a positive integer!")
-      if value < 0:
-        raise ValueError("Attempt should be a positive integer!")
-      self.__data__["Attempt"] = value
+      self.__data__["Attempt"] = int(value)
     def fget( self ):
       """ attempt getter """
+      if not self.__data__["Attempt"]:
+        self.__data__["Attempt"] = 1
       return self.__data__["Attempt"]
     return locals()
   Attempt = property( **__attempt() )
@@ -244,6 +254,8 @@ class SubReqFile( object ):
       self.__data__["Status"] = value
     def fget( self ):
       """ status getter """
+      if not self.__data__["Status"]:
+        self.__data__["Status"] = "Waiting"
       return self.__data__["Status"] 
     return locals()
   Status = property( **__status() )
@@ -251,7 +263,7 @@ class SubReqFile( object ):
   ## (de)serialisation   
   def toXML( self ):
     """ serialise SubReqFile to XML """
-    attrs = dict( [ ( k, str(v) if v else "") for (k, v) in self.__data__.items() ] )
+    attrs = dict( [ ( k, str( getattr(self, k) ) if getattr(self, k) else "") for k in self.__data__ ] )
     return ElementTree.Element( "file", attrs )
 
   @classmethod

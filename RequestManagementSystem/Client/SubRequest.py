@@ -37,6 +37,9 @@ from DIRAC import S_OK
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
 
+
+
+
 ########################################################################
 class SubRequest(object):
   """
@@ -44,11 +47,19 @@ class SubRequest(object):
   
   """
   ## sub-request files
-  __files = TypedList( allowedTypes = SubReqFile )
+  __files__ = TypedList( allowedTypes = SubReqFile )
 
   ## sub-request attributes
-  __data__ = dict.fromkeys( ( "RequestType", "Operation", "Arguments", "RequestID",
-                              "SourceSE", "TargetSE", "Catalogue", "Error" ), None )
+  __data__ = dict( [ ( "RequestID", { "types" : ( int, long), "value" : None } ),
+                     ( "SubRequestID", { "types" ( int, long ), "value" : None } ),
+                     ( "Status", { } ),
+                     ( "RequestType", "" ),
+                     ( "Operation", "", ),
+                     ( "Arguments", "" ),
+                     ( "SourceSE", "" ),
+                     ( "TargetSE", "" ),
+                     ( "Catalogue", "" ),
+                     ( "Error", "" ) ] )
 
   def __init__( self, fromDict=None ):
     """c'tor
@@ -59,24 +70,33 @@ class SubRequest(object):
     for key, value in fromDict.items():
       setattr( self, key, value )
 
-  ## SubReqFiles aritmetics   
+  def notify( self, caller ):
+    if isinstance(caller, SubReqFile):
+      self.__updateStatus()
+      
+
+  def __updateStatus( self ):
+    pass
+
+  ## SubReqFiles aritmetics 
+  
   def __contains__( self, subFile ):
     """ in operator """
-    return subFile in self.__files
+    return subFile in self.__files__
 
   def __iadd__( self, subFile ):
     """ += operator """
     if subFile not in self:
-      self.__files.append( subFile )
+      self.__files__.append( subFile )
       subFile.parent = self 
     return self
 
   def __add__( self, subFile ):
     """ + operator """
     if subFile not in self:
-      self.__files.append( subFile )
+      self.__files__.append( subFile )
       subFile.parent = self 
-
+      
   def addFile( self, subFile ):
     """ add :subFile: to subrequest """
     return self + subFile
@@ -84,14 +104,14 @@ class SubRequest(object):
   def __isub__( self, subFile ):
     """ -= operator """
     if subFile in self:
-      self.__files.remove( subFile )
+      self.__files__.remove( subFile )
       subFile.parent = None
     return self
 
   def __sub__( self, subFile ):
     """ - operator """
     if subFile in self:
-      self.__files.remove( subFile )
+      self.__files__.remove( subFile )
       subFile.parent = None
   
   def removeFile( self, subFile ):
@@ -99,10 +119,29 @@ class SubRequest(object):
     return self - subFile
 
   ## props 
+  def __requestID():
+    """ RequertID prop """
+    doc = "RequestID"
+    def fset( self, value ):
+      """ RequestID setter """
+      if value:
+        value = long(value)
+        if self.parent and self.parent.RequestID and  self.parent.RequestID != value:
+          raise ValueError("Parent RequestID mismatch (%s != %s)" % ( self.parent.RequestID, value ) )
+        self.__data__["RequestID"] = value
+    def fget():
+      """ RequestID getter """
+      if self.parent:
+        self.__data__["RequestID"] = self.parent.RequestID
+      return self.__data__["RequestID"]
+    return locals()
+  RequestID = property( **__requestID() )
+
   def __subRequestID():
     """ SubRequestID prop"""
     doc = "SubRequestID"
     def fset( self, value ):
+      """ SubRequestID setter """
       if type(value) not in ( int, long ):
         raise TypeError("SubRequestID has to be an integer!")
       self.__data__["SubRequestID"] = long(value)
@@ -228,7 +267,7 @@ class SubRequest(object):
   def toXML( self ):
     """ dump subrequest to XML """
     element = ElementTree.Element( "subrequest", self.__data__ ) 
-    for subFile in self.__files:
+    for subFile in self.__files__:
       element.append( subFile.toXML() )
     return element
   
