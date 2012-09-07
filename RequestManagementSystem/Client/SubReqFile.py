@@ -48,6 +48,7 @@ class SubReqFile( object ):
   :param dict __data__: attrs dict
   """
   __metaclass__ = Traced 
+
   _parent = None
   
   ## attributes 

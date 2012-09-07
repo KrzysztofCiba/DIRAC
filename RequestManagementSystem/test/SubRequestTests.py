@@ -39,15 +39,16 @@ class SubRequestTests(unittest.TestCase):
 
   def setUp( self ):
     """ test set up """
+    print "setup"
     self.fromDict = { "SubRequestID" : 1,
                       "RequestType" : "transfer",
                       "Operation" : "replicateAndRegister",
                       "TargetSE" : "CERN-USER,PIC-USER",
-                      "SourceSE" : ""
-                      }
+                      "SourceSE" : "" }
     self.subFile = SubReqFile( { "LFN" : "/lhcb/user/c/cibak/testFile",
                                  "Addler" : "1234567",
-                                 "Size" : 1024 } )
+                                 "Size" : 1024,
+                                 "Status" : "Waiting" } )
     
   def tearDown( self ):
     """ test case tear down """
@@ -77,15 +78,19 @@ class SubRequestTests(unittest.TestCase):
     for key, value in self.fromDict.items():
       self.assertEqual( getattr(subReq, key), value )
 
-
-
-
-
-
   def testProps( self ):
     """ test properties """
     pass
 
+  def testStatus( self ):
+    """ test status """
+    subReq = SubRequest( self.fromDict )
+    self.subFile.Status = "Waiting"
+    subReq.Status = "Done"
+    #print subReq.Status
+    #subReq += self.subFile
+    #print subReq.Status
+    #print self.subFile.Status
 
 ## test execution
 if __name__ == "__main__":

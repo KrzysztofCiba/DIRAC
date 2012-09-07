@@ -16,7 +16,7 @@
 # for properties 
 # pylint: disable=E0211,W0612,W0142 
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ##
 # @file Request.py
@@ -60,7 +60,7 @@ class Request(object):
                              "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
 
   __subRequests = TypedList( allowedTypes=SubRequest )
-
+  
   def __init__( self, fromDict=None ):
     """c'tor
 
@@ -69,7 +69,29 @@ class Request(object):
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict:
       setattr( self, key, value )
-    #self.__name = ""
+
+  def _notify( self ):
+    """ simple state machine for sub request statuses """
+    waitingFound = False
+    ## update sub-requets statuses
+    for subReq in self:
+      status = subReq.Status
+      if status in ( "Done", "Failed" ):
+        continue
+      elif status == "Waiting":
+        if waitingFound:
+          subReq._setQueued() #  Status = "Queued" ## flip to queued, another one is waiting
+        else:
+          waitingFound = True 
+      elif status == "Queued" and not waitingFound:
+        subReq._setWaiting() # Status = "Waiting" ## this is 1st queued, flip to waiting
+        waitingFound = True 
+    # now update self status
+    if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
+     if self.Status != "Waiting":
+       self.Status = "Waiting"
+    else:
+      self.Status = "Done"
 
   ## SubRequest aritmetics
   def __contains__( self, subRequest ):
@@ -80,7 +102,7 @@ class Request(object):
     """
     return bool( subRequest in self.__subRequests ) 
 
-  def __iadd__( self, subRequest ):
+  def __add__( self, subRequest ):
     """ += operator for subRequest
 
     :param self: self reference
@@ -88,10 +110,10 @@ class Request(object):
     """
     if subRequest not in self:
       self.__subRequests.append( subRequest )
-      subRequest.parent = self
-    return self
+      subRequest._parent = self
+    return S_OK()
 
-  def __isub__( self, subRequest ):
+  def __sub__( self, subRequest ):
     """ -= operator for subRequest
 
     :param self: self reference
@@ -99,8 +121,8 @@ class Request(object):
     """
     if subRequest in self:
       self.__subRequests.remove( subRequest )
-      subRequest.parent = None
-    return self
+      subRequest._parent = None
+    return S_OK()
    
   def insertBefore( self, newSubRequest, existingSubRequest ):
     """ insert :newSubRequest: just before :existingSubRequest:
@@ -114,8 +136,9 @@ class Request(object):
     if newSubRequest in self:
       return S_ERROR( "%s is already in" % newSubRequest )
     self.__subRequests.insert( self.__subRequests.index( existingSubRequest ), newSubRequest )
+    newSubRequest._parent = self
     return S_OK()
- 
+    
   def insertAfter( self, newSubRequest, existingSubRequest ):
     """ insert :newSubRequest: just after :existingSubRequest: 
     
@@ -128,6 +151,7 @@ class Request(object):
     if newSubRequest in self:
       return S_ERROR( "%s is already in" % newSubRequest )
     self.__subRequests.insert( self.__subRequests.index( existingSubRequest )+1, newSubRequest )
+    newSubRequest._parent = self 
     return S_OK()
 
   def addSubRequest( self, subRequest ):
@@ -136,9 +160,8 @@ class Request(object):
     :param self: self reference
     :param SubRequest subRequest: SubRequest to be insterted
     """
-    if subRequest in self:
-      return S_ERROR( "%s is already in" % subRequest )
-    self += subRequest
+    if subRequest not in self:
+      self + subRequest
     return S_OK()
 
   def removeSubRequest( self, subRequest ):
@@ -148,14 +171,21 @@ class Request(object):
     :param SubRequest subRequest: SubRequest to be removed 
     """
     if subRequest in self:
-      self -= subRequest 
+      self - subRequest 
     return S_OK()
 
   def __iter__( self ):
     """ iterator for sub-request """
     return self.__subRequests.__iter__()
 
-  
+  def __len__( self ):
+    """ nb of subRequests """
+    return len( self.__subRequests )
+
+  def subStatusList( self ):
+    """ list of statuses for all subRequest """
+    return [ subReq.Status for subReq in self ]
+
   ## props
   def __requestID():
     """ request ID prop """
@@ -323,7 +353,6 @@ class Request(object):
       return self.__data__["Status"]
     return locals()
   Status = property( **__status() )
-
 
   def notify( self, subRequest ):
     """ IMPLEMENT ME: state machine for status and execution order """
