@@ -37,13 +37,17 @@ class RequestTests(unittest.TestCase):
   """
 
   def setUp( self ):
-    """c'tor
+    """ set up
 
     :param self: self reference
     """
     pass
 
-  def testSubRequests( self ):
+  def tearDown( self ):
+    """ tear down """
+    pass
+
+  def testCtor( self ):
     """ c'tor """
     pass
 
@@ -58,7 +62,7 @@ class RequestTests(unittest.TestCase):
 ## test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
-  suite = testLoader.loadTestsFromTestCase(RequestsTests)     
+  suite = testLoader.loadTestsFromTestCase(RequestTests)     
   unittest.TextTestRunner(verbosity=3).run(suite)
 
 

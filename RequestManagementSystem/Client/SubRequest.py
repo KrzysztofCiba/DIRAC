@@ -37,49 +37,62 @@ from DIRAC import S_OK
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
 
-
-
-
 ########################################################################
 class SubRequest(object):
   """
   .. class:: SubRequest
-  
+ 
+  :param long SubRequestID: SubRequestID as read from DB backend
+  :param long RequestID: parent RequestID 
+  :param str Status: execution status
+  :param str RequestType: one of ( "diset", "logupload", "register", "removal", "transfer" )
+  :param str Operation: operation to perform
+  :param str Arguments: additional arguments
+  :param str SourceSE: source SE name
+  :param str TargetSE: target SE names as comma separated list
+  :param str Catalogue: catalogue to use as comma separated list
+  :param str Error: error string if any
+  :param Request parent: parent Request instance
   """
   ## sub-request files
   __files__ = TypedList( allowedTypes = SubReqFile )
 
   ## sub-request attributes
-  __data__ = dict( [ ( "RequestID", { "types" : ( int, long), "value" : None } ),
-                     ( "SubRequestID", { "types" ( int, long ), "value" : None } ),
-                     ( "Status", { } ),
-                     ( "RequestType", "" ),
-                     ( "Operation", "", ),
-                     ( "Arguments", "" ),
-                     ( "SourceSE", "" ),
-                     ( "TargetSE", "" ),
-                     ( "Catalogue", "" ),
-                     ( "Error", "" ) ] )
+  __data__ = { "RequestID" : -1,
+               "SubRequestID" : -1, 
+               "Status" : "Queued",
+               "RequestType" : "",
+               "Operation" : "", 
+               "Argument" : "", 
+               "SourceSE" : "",
+               "TargetSE" : "", 
+               "Catalogue" : "", 
+               "Error" : "" } 
 
   def __init__( self, fromDict=None ):
-    """c'tor
+    """ c'tor
 
     :param self: self reference
+    :param dict fromDict: attributes dictionary
     """
+    self._parent = None
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
-      setattr( self, key, value )
+      if value != None:
+        setattr( self, key, value )
 
-  def notify( self, caller ):
-    if isinstance(caller, SubReqFile):
-      self.__updateStatus()
-      
+  def _notify( self ):
+    """ notify self about file status change """
+    if "Scheduled" in self.fileStatusList() or "Waiting" in self.fileStatusList() and self.Status != "Waiting":
+      self.Status = "Waiting"
 
-  def __updateStatus( self ):
-    pass
+  def _setQueued( self ):
+    self.__data__["Status"] = "Queued"
+    
+  def _setWaiting( self ):
+    self.__data__["Status"] = "Waiting"
 
   ## SubReqFiles aritmetics 
-  
   def __contains__( self, subFile ):
     """ in operator """
     return subFile in self.__files__
@@ -89,50 +102,61 @@ class SubRequest(object):
     if subFile not in self:
       self.__files__.append( subFile )
       subFile.parent = self 
+      self._notify()
     return self
 
   def __add__( self, subFile ):
     """ + operator """
-    if subFile not in self:
-      self.__files__.append( subFile )
-      subFile.parent = self 
+    self += subFile
       
   def addFile( self, subFile ):
     """ add :subFile: to subrequest """
-    return self + subFile
+    self += subFile
 
   def __isub__( self, subFile ):
     """ -= operator """
     if subFile in self:
       self.__files__.remove( subFile )
-      subFile.parent = None
+      self._notify()
+      subFile._parent = None
+      subFile.SubRequestID = None
     return self
 
   def __sub__( self, subFile ):
     """ - operator """
-    if subFile in self:
-      self.__files__.remove( subFile )
-      subFile.parent = None
-  
+    self -= subFile
+
   def removeFile( self, subFile ):
     """ remove :subFile: from sub-request """
-    return self - subFile
+    self -= subFile
+
+  def __iter__( self ):
+    """ subrequest files iterator """
+    return self.__files__.__iter__()
+
+  def fileStatusList( self ):
+    """ get list of files statuses """
+    return [ subFile.Status for subFile in self ] 
+
+  def __len__( self ):
+    """ nb of subFiles """
+    return len( self.__files__ )
 
   ## props 
   def __requestID():
-    """ RequertID prop """
+    """ RequestID prop """
     doc = "RequestID"
     def fset( self, value ):
       """ RequestID setter """
       if value:
         value = long(value)
-        if self.parent and self.parent.RequestID and  self.parent.RequestID != value:
-          raise ValueError("Parent RequestID mismatch (%s != %s)" % ( self.parent.RequestID, value ) )
+        if self._parent and self._parent.RequestID and self._parent.RequestID != value:
+          raise ValueError("Parent RequestID mismatch (%s != %s)" % ( self._parent.RequestID, value ) )
         self.__data__["RequestID"] = value
     def fget():
       """ RequestID getter """
-      if self.parent:
-        self.__data__["RequestID"] = self.parent.RequestID
+      if self._parent:
+        self.__data__["RequestID"] = self._parent.RequestID
       return self.__data__["RequestID"]
     return locals()
   RequestID = property( **__requestID() )
@@ -142,9 +166,12 @@ class SubRequest(object):
     doc = "SubRequestID"
     def fset( self, value ):
       """ SubRequestID setter """
-      if type(value) not in ( int, long ):
-        raise TypeError("SubRequestID has to be an integer!")
-      self.__data__["SubRequestID"] = long(value)
+      if value:
+        try:
+          value = long(value)
+        except ( TypeError, ValueError ), error:
+          raise TypeError("SubRequestID has to be an integer!")
+        self.__data__["SubRequestID"] = long(value)
     def fget( self ):
       return self.__data__["SubRequestID"]
     return locals()
@@ -264,9 +291,31 @@ class SubRequest(object):
     return locals()
   Error = property( **__error() )
 
+  def __status():
+    """ Status prop """
+    doc = "Status"
+    def fset( self, value ):
+      """ Status setter """
+      if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done" ):
+        raise ValueError("unknown Status '%s'" % str(value) )
+      if value in ( "Failed", "Done" ) and self.__files__:
+        if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():
+          return 
+          #raise ValueError("unable to set status to '%s', there are waiting files" % value )
+      ## update? notify parent
+      if value != self.Status and self._parent:       
+        self._parent._notify()
+      self.__data__["Status"] = value
+    def fget( self ):
+      """ Status getter """
+      return self.__data__["Status"]
+    return locals()
+  Status = property( **__status() )
+
   def toXML( self ):
     """ dump subrequest to XML """
-    element = ElementTree.Element( "subrequest", self.__data__ ) 
+    data = dict( [ ( key, str(val) ) for key, val in self.__data__.items() ] )
+    element = ElementTree.Element( "subrequest", data ) 
     for subFile in self.__files__:
       element.append( subFile.toXML() )
     return element
@@ -284,6 +333,12 @@ class SubRequest(object):
     subRequest = SubRequest( element.attrib )
     for fileElement in element.findall( "file" ):
       subRequest += SubReqFile.fromXML( fileElement )
+    return subRequest
+
+  @classmethod
+  def fromSQL( cls, dictRec ):
+    """ """
+    subRequest = SubRequest()
     return subRequest
     
   def __str__( self ):
