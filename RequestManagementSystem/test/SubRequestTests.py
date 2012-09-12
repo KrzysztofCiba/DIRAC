@@ -39,7 +39,6 @@ class SubRequestTests(unittest.TestCase):
 
   def setUp( self ):
     """ test set up """
-    print "setup"
     self.fromDict = { "SubRequestID" : 1,
                       "RequestType" : "transfer",
                       "Operation" : "replicateAndRegister",
@@ -49,13 +48,14 @@ class SubRequestTests(unittest.TestCase):
                                  "Addler" : "1234567",
                                  "Size" : 1024,
                                  "Status" : "Waiting" } )
-    
+    self.subReq = None
+
   def tearDown( self ):
     """ test case tear down """
     del self.fromDict
     del self.subFile
-
-  def testCtor( self ):
+ 
+  def test_ctor( self ):
     """ test constructors and (de)serialisation """
     ## empty ctor
     self.assertEqual( isinstance( SubRequest(), SubRequest), True )
@@ -63,30 +63,97 @@ class SubRequestTests(unittest.TestCase):
     subReq = SubRequest( self.fromDict )
     self.assertEqual( isinstance( subReq, SubRequest), True )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr(subReq, key), value )
+      self.assertEqual( getattr( subReq, key), value )
     ## from XML
     subReq = SubRequest.fromXML( subReq.toXML() )
     self.assertEqual( isinstance( subReq, SubRequest), True )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr(subReq, key), value )
+      self.assertEqual( getattr( subReq, key), value )
     ## same with file
     subReq = SubRequest( self.fromDict )
     subReq += self.subFile
-    
+
     subReq = SubRequest.fromXML( subReq.toXML() )
     self.assertEqual( isinstance( subReq, SubRequest), True )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr(subReq, key), value )
+      self.assertEqual( getattr( subReq, key), value )
 
-  def testProps( self ):
+
+  def test_props( self ):
     """ test properties """
-    pass
+    ## valid values
+    subReq = SubRequest()
+    subReq.SubRequestID = 1
+    self.assertEqual( subReq.SubRequestID, 1 )
+    subReq.SubRequestID = "1"
+    self.assertEqual( subReq.SubRequestID, 1 )
+    subReq.RequestID = 1
+    self.assertEqual( subReq.RequestID, 1 )
+    subReq.RequestID = "1"
+    self.assertEqual( subReq.RequestID, 1 )
 
+    operationDict = { "diset" : ( "commitRegisters", "setFileStatusForTransformation", "setJobStatusBulk",
+                                  "sendXMLBookkeepingReport", "setJobParameters" ),
+                      "logupload" : ( "uploadLogFiles", ),
+                      "register" : ( "registeFile", "reTransfer" ),
+                      "removal" : ( "replicaRemoval", "removeFile", "physicalRemoval" ),
+                      "transfer" : ( "replicateAndRegister", "putAndRegister" ) }     
+    for reqType, operations in operationDict.items():
+      subReq = SubRequest()
+      subReq.RequestType = reqType
+      self.assertEqual( subReq.RequestType, reqType )
+      for operation in operations:
+        subReq.Operation = operation
+        self.assertEqual( subReq.Operation, operation )
+
+    subReq.Argument = "foobar"
+    self.assertEqual( subReq.Argument, "foobar" )
+
+    subReq.SourceSE = "CERN-RAW"
+    self.assertEqual( subReq.SourceSE, "CERN-RAW" )
+
+    subReq.TargetSE = "CERN-RAW"
+    self.assertEqual( subReq.TargetSE, "CERN-RAW" )
+
+    subReq.Catalogue = ""
+    self.assertEqual( subReq.Catalogue, "" )
+
+    subReq.Catalogue = "Bookkeeping"
+    self.assertEqual( subReq.Catalogue, "Bookkeeping" )
+
+    subReq.Error = "error"
+    self.assertEqual( subReq.Error, "error" )
+
+    ## wrong props
+    try:
+      subReq.RequestID = "foo"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+
+    try:
+      subReq.SubRequestID = "foo"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+    
+    try:
+      subReq.RequestType = 1
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "1 is not a valid request type!" )
+
+    try:
+      subReq.RequestType = "foo"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "foo is not a valid request type!" )
+
+      
   def testStatus( self ):
     """ test status """
-    subReq = SubRequest( self.fromDict )
-    self.subFile.Status = "Waiting"
-    subReq.Status = "Done"
+    pass
+    #subReq = SubRequest( self.fromDict )
+    #self.subFile.Status = "Waiting"
+    #subReq.Status = "Done"
     #print subReq.Status
     #subReq += self.subFile
     #print subReq.Status

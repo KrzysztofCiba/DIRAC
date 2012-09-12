@@ -48,27 +48,25 @@ class SubReqFile( object ):
   :param dict __data__: attrs dict
   """
   __metaclass__ = Traced 
-
-  _parent = None
-  
-  ## attributes 
-  __data__ = dict( ( ( "FileID", None ),
-                     ( "SubRequestID", None ),
-                     ( "LFN", None ),
-                     ( "PFN",  None ),
-                     ( "GUID", None ),
-                     ( "Size", None ),
-                     ( "Addler", None ),
-                     ( "Md5", None ),
-                     ( "Status", "Waiting" ),
-                     ( "Attempt", 1),
-                     ( "Error", "" ) ) )
   
   def __init__( self, fromDict=None ):
     """c'tor
 
     :param self: self reference
     """
+    self._parent = None
+    self.__data__ = dict( ( ( "FileID", None ),
+                            ( "SubRequestID", None ),
+                            ( "LFN", None ),
+                            ( "PFN",  None ),
+                            ( "GUID", None ),
+                            ( "Size", None ),
+                            ( "Addler", None ),
+                            ( "Md5", None ),
+                            ( "Status", "Waiting" ),
+                            ( "Attempt", 1),
+                            ( "Error", "" ) ) )
+    
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
@@ -99,8 +97,6 @@ class SubReqFile( object ):
     def fset( self, value ):
       """ SubRequestID setter """
       value = long(value) if value else None
-      #if value and type(value) not in ( int, long ):
-      #  raise TypeError("SubRequestID should be an integer!")
       if self.parent and self.parent.SubRequestID and  self.parent.SubRequestID != value:
         raise ValueError("Parent SubRequestID mismatch (%s != %s)" % ( self.parent.SubRequestID, value ) )
       self.__data__["SubRequestID"] = value
@@ -160,10 +156,10 @@ class SubReqFile( object ):
   LFN = property( **__lfn() )
 
   def __pfn():
-    """ pfn prop """
-    doc = "pfn"
+    """ PFN prop """
+    doc = "PFN"
     def fset( self, value ):
-      """ pfn setter """
+      """ PFN setter """
       if value:
         if type(value) != str:
           raise TypeError("PFN has to be a string!")
@@ -171,7 +167,7 @@ class SubReqFile( object ):
           raise ValueError("Wrongly formatted URI!")
       self.__data__["PFN"] = value
     def fget( self ):
-      """ pfn getter """
+      """ PFN getter """
       return self.__data__["PFN"]
     return locals()
   PFN = property( **__pfn() )

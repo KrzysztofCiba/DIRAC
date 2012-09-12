@@ -112,17 +112,6 @@ class Request(object):
       self.__subRequests.append( subRequest )
       subRequest._parent = self
     return S_OK()
-
-  def __sub__( self, subRequest ):
-    """ -= operator for subRequest
-
-    :param self: self reference
-    :param SubRequest subRequest: sub-request to add
-    """
-    if subRequest in self:
-      self.__subRequests.remove( subRequest )
-      subRequest._parent = None
-    return S_OK()
    
   def insertBefore( self, newSubRequest, existingSubRequest ):
     """ insert :newSubRequest: just before :existingSubRequest:
@@ -162,16 +151,6 @@ class Request(object):
     """
     if subRequest not in self:
       self + subRequest
-    return S_OK()
-
-  def removeSubRequest( self, subRequest ):
-    """ delete :subRequest: from request 
-
-    :param self: self reference
-    :param SubRequest subRequest: SubRequest to be removed 
-    """
-    if subRequest in self:
-      self - subRequest 
     return S_OK()
 
   def __iter__( self ):
@@ -318,7 +297,7 @@ class Request(object):
     doc = "request's last update"
     def fset( self, value = None ):
       """ last update setter """
-      if type( value != type(datetime.datetime) ):
+      if type( value ) not in  ( datetime.datetime, str ):
         raise TypeError("LastUpdate should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
@@ -353,10 +332,6 @@ class Request(object):
       return self.__data__["Status"]
     return locals()
   Status = property( **__status() )
-
-  def notify( self, subRequest ):
-    """ IMPLEMENT ME: state machine for status and execution order """
-    pass
 
   def currertEecutionOrder( self ):
     """ get execution order """
