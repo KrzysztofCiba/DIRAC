@@ -12,7 +12,7 @@
     :synopsis: test cases for SubReqFiles
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    test cases for SUbReqFiles
+    test cases for SubReqFiles
 """
 
 __RCSID__ = "$Id $"
@@ -121,10 +121,6 @@ class SubReqFileTests( unittest.TestCase ):
       self.assertEqual( isinstance( error, ValueError ), True )
       self.assertEqual( str(error), "Parent SubRequestID mismatch (99999 != 111111)")
 
-    # remove from parent
-    parent -= subReqFile
-    self.assertEqual( subReqFile.SubRequestID, None )
-
     # LFN
     try:
       subReqFile.LFN = 1
@@ -196,8 +192,6 @@ class SubReqFileTests( unittest.TestCase ):
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
       self.assertEqual( str(error), "Error has to be a string!")
-      
-
     
 ## test execution
 if __name__ == "__main__":

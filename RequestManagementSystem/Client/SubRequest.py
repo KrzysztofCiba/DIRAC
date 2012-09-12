@@ -33,7 +33,6 @@ except ImportError:
 from xml.parsers.expat import ExpatError
 import itertools
 ## from DIRAC
-from DIRAC import S_OK
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
 
@@ -54,21 +53,7 @@ class SubRequest(object):
   :param str Error: error string if any
   :param Request parent: parent Request instance
   """
-  ## sub-request files
-  __files__ = TypedList( allowedTypes = SubReqFile )
-
-  ## sub-request attributes
-  __data__ = { "RequestID" : -1,
-               "SubRequestID" : -1, 
-               "Status" : "Queued",
-               "RequestType" : "",
-               "Operation" : "", 
-               "Argument" : "", 
-               "SourceSE" : "",
-               "TargetSE" : "", 
-               "Catalogue" : "", 
-               "Error" : "" } 
-
+ 
   def __init__( self, fromDict=None ):
     """ c'tor
 
@@ -76,6 +61,23 @@ class SubRequest(object):
     :param dict fromDict: attributes dictionary
     """
     self._parent = None
+    ## sub-request attributes
+    self.__data__ = { "RequestID" : -1,
+                      "SubRequestID" : -1, 
+                      "Status" : "Queued",
+                      "RequestType" : "",
+                      "Operation" : "", 
+                      "Argument" : "", 
+                      "SourceSE" : "",
+                      "TargetSE" : "", 
+                      "Catalogue" : "", 
+                      "Error" : "", 
+                      "CreationTime" : "",
+                      "SubmissionTime" : "",
+                      "LastUpdate" : "" } 
+    ## sub-request files
+    self.__files__ = TypedList( allowedTypes = SubReqFile )
+
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if value != None:
@@ -83,13 +85,15 @@ class SubRequest(object):
 
   def _notify( self ):
     """ notify self about file status change """
-    if "Scheduled" in self.fileStatusList() or "Waiting" in self.fileStatusList() and self.Status != "Waiting":
+    if "Scheduled" in self.fileStatusList() or "Waiting" in self.fileStatusList() and self.Status not in ( "Waiting", "Queued" ):
       self.Status = "Waiting"
 
   def _setQueued( self ):
+    """ don't touch """
     self.__data__["Status"] = "Queued"
     
   def _setWaiting( self ):
+    """ don't touch as well """
     self.__data__["Status"] = "Waiting"
 
   ## SubReqFiles aritmetics 
@@ -113,23 +117,6 @@ class SubRequest(object):
     """ add :subFile: to subrequest """
     self += subFile
 
-  def __isub__( self, subFile ):
-    """ -= operator """
-    if subFile in self:
-      self.__files__.remove( subFile )
-      self._notify()
-      subFile._parent = None
-      subFile.SubRequestID = None
-    return self
-
-  def __sub__( self, subFile ):
-    """ - operator """
-    self -= subFile
-
-  def removeFile( self, subFile ):
-    """ remove :subFile: from sub-request """
-    self -= subFile
-
   def __iter__( self ):
     """ subrequest files iterator """
     return self.__files__.__iter__()
@@ -148,12 +135,11 @@ class SubRequest(object):
     doc = "RequestID"
     def fset( self, value ):
       """ RequestID setter """
-      if value:
-        value = long(value)
-        if self._parent and self._parent.RequestID and self._parent.RequestID != value:
-          raise ValueError("Parent RequestID mismatch (%s != %s)" % ( self._parent.RequestID, value ) )
-        self.__data__["RequestID"] = value
-    def fget():
+      value = long(value) if value else None
+      if self._parent and self._parent.RequestID and self._parent.RequestID != value:
+        raise ValueError("Parent RequestID mismatch (%s != %s)" % ( self._parent.RequestID, value ) )
+      self.__data__["RequestID"] = value
+    def fget( self ):
       """ RequestID getter """
       if self._parent:
         self.__data__["RequestID"] = self._parent.RequestID
@@ -166,13 +152,9 @@ class SubRequest(object):
     doc = "SubRequestID"
     def fset( self, value ):
       """ SubRequestID setter """
-      if value:
-        try:
-          value = long(value)
-        except ( TypeError, ValueError ), error:
-          raise TypeError("SubRequestID has to be an integer!")
-        self.__data__["SubRequestID"] = long(value)
+      self.__data__["SubRequestID"] = long(value) if value else None
     def fget( self ):
+      """ SubRequestID getter """
       return self.__data__["SubRequestID"]
     return locals()
   SubRequestID = property( **__subRequestID() )
@@ -244,7 +226,7 @@ class SubRequest(object):
     doc = "source SE"
     def fset( self, value ):
       """ source SE setter """
-      self.__data__["SourceSE"] = value
+      self.__data__["SourceSE"] = str(value) if value else ""
     def fget( self ):
       """ source SE getter """
       return self.__data__["SourceSE"] 
@@ -281,10 +263,7 @@ class SubRequest(object):
     doc = "error"
     def fset( self, value ):
       """ error setter """
-      if value:
-        if type(value) != str:
-          raise ValueError("Error has to be a string!")
-        self.__data__["Error"] = value[255:]
+      self.__data__["Error"] = value[:255] if value else ""
     def fget( self ):
       """ error getter """
       return self.__data__["Error"]
@@ -312,6 +291,33 @@ class SubRequest(object):
     return locals()
   Status = property( **__status() )
 
+  
+  def __executionOrder():
+    """ ExecutionOrder prop """
+    doc = "ExecutionOrder"
+    def fset( self, value ):
+      """ ExecutionOrder setter """
+      ## if parent present
+      pass
+    def fget( self ):
+      """ ExecutionOrder getter """
+      return self.__data__["ExecutionOrder"]
+    return locals()
+  ExecutionOrder = property( **__executionOrder() )
+
+  def __creationTime():
+    """ CreationTime prop """
+    pass
+
+  def __submissionTime():
+    """ CreationTime prop """
+    pass
+
+  def __LastUpdate():
+    """ CreationTime prop """
+    pass
+
+
   def toXML( self ):
     """ dump subrequest to XML """
     data = dict( [ ( key, str(val) ) for key, val in self.__data__.items() ] )
@@ -337,10 +343,19 @@ class SubRequest(object):
 
   @classmethod
   def fromSQL( cls, dictRec ):
-    """ """
+    """ TODO """
     subRequest = SubRequest()
     return subRequest
     
   def __str__( self ):
     """ str operator """
     return ElementTree.tostring( self.toXML() )
+
+  def toSQL( self ):
+    """ get SQL statement for insert or update """
+    query = []
+    if self.SubRequestID:
+      query.append( "UPDATE SubRequests SET ")
+    else:
+      query.append( "INSERT INTO SubRequests " )
+      colVals = [ ( column, str(value) ) for column, value in  self.__data__ if value and column not in  ( "SubRequestID",  ] 
