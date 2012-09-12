@@ -39,8 +39,7 @@ class SubRequestTests(unittest.TestCase):
 
   def setUp( self ):
     """ test set up """
-    self.fromDict = { "SubRequestID" : 1,
-                      "RequestType" : "transfer",
+    self.fromDict = { "RequestType" : "transfer",
                       "Operation" : "replicateAndRegister",
                       "TargetSE" : "CERN-USER,PIC-USER",
                       "SourceSE" : "" }
@@ -59,6 +58,10 @@ class SubRequestTests(unittest.TestCase):
     """ test constructors and (de)serialisation """
     ## empty ctor
     self.assertEqual( isinstance( SubRequest(), SubRequest), True )
+
+    subReq = SubRequest()
+    print subReq.toSQL()
+
     ## using fromDict
     subReq = SubRequest( self.fromDict )
     self.assertEqual( isinstance( subReq, SubRequest), True )
@@ -76,8 +79,7 @@ class SubRequestTests(unittest.TestCase):
     subReq = SubRequest.fromXML( subReq.toXML() )
     self.assertEqual( isinstance( subReq, SubRequest), True )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( subReq, key), value )
-
+      self.assertEqual( getattr( subReq, key ), value )
 
   def test_props( self ):
     """ test properties """

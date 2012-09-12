@@ -152,7 +152,7 @@ class SubRequest(object):
     doc = "SubRequestID"
     def fset( self, value ):
       """ SubRequestID setter """
-      self.__data__["SubRequestID"] = long(value) if value else None
+      self.__data__["SubRequestID"] = long(value) if value else 0
     def fget( self ):
       """ SubRequestID getter """
       return self.__data__["SubRequestID"]
@@ -352,10 +352,20 @@ class SubRequest(object):
     return ElementTree.tostring( self.toXML() )
 
   def toSQL( self ):
-    """ get SQL statement for insert or update """
+    """ get SQL INSTERT or UPDATE statement """
+  
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) == str else str(value) ) for column, value in self.__data__.items()
+                if value and column not in  ( "SubRequestID", "LastUpdate" ) ] 
+    colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
-    if self.SubRequestID:
-      query.append( "UPDATE SubRequests SET ")
+    if self.SubRequestID >= 0:
+      query.append( "UPDATE SubRequests SET " )
+      query.append( ",".join( [ "%s=%s" % item for item in colVals  ] ) )
+      query.append( "WHERE SubRequestID = %d;" % self.SubRequestID )
     else:
       query.append( "INSERT INTO SubRequests " )
-      colVals = [ ( column, str(value) ) for column, value in  self.__data__ if value and column not in  ( "SubRequestID",  ] 
+      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
+      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+      query.append( columns )
+      query.append(" VALUES %s;" % values )
+    return "".join( query )

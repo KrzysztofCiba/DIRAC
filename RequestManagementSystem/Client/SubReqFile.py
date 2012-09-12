@@ -97,32 +97,32 @@ class SubReqFile( object ):
     def fset( self, value ):
       """ SubRequestID setter """
       value = long(value) if value else None
-      if self.parent and self.parent.SubRequestID and  self.parent.SubRequestID != value:
-        raise ValueError("Parent SubRequestID mismatch (%s != %s)" % ( self.parent.SubRequestID, value ) )
+      if self._parent and self._parent.SubRequestID != value:
+        raise ValueError("Parent SubRequestID mismatch (%s != %s)" % ( self._parent.SubRequestID, value ) )
       self.__data__["SubRequestID"] = value
     def fget( self ):
       """ SubRequestID getter """
-      if self.parent:
-        self.__data__["SubRequestID"] = self.parent.SubRequestID
+      if self._parent:
+        self.__data__["SubRequestID"] = self._parent.SubRequestID
       return self.__data__["SubRequestID"]
     return locals()
   SubRequestID = property( **__subRequestID() )
 
-  def __parent():
-    """ reference to parent sub-request """
-    doc = "parent subrequest"
-    def fset( self, value ):
-      """ parent setter """
-      if value and value.__class__.__name__ != "SubRequest":
-        raise TypeError("parent should be a SubRequest object!")
-      self._parent = value
-      if value == None:
-        self.SubRequestID = None
-    def fget( self ):
-      """ parent getter """
-      return self._parent 
-    return locals()
-  parent = property( **__parent() )
+  #def __parent():
+  #  """ reference to parent sub-request """
+  #  doc = "parent subrequest"
+  #  def fset( self, value ):
+  #    """ parent setter """
+  #    if value and value.__class__.__name__ != "SubRequest":
+  #      raise TypeError("parent should be a SubRequest object!")
+  #    self._parent = value
+  #    if value == None:
+  #      self.SubRequestID = None
+  #  def fget( self ):
+  #    """ parent getter """
+  #    return self._parent 
+  #  return locals()
+  #parent = property( **__parent() )
 
   def __size():
     """ file size prop """
@@ -274,4 +274,6 @@ class SubReqFile( object ):
     """ str operator """
     return ElementTree.tostring( self.toXML() )
 
-
+  def toSQL( self ):
+    """ get SQL INSERT or UPDATE statement """
+    pass
