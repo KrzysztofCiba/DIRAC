@@ -1,5 +1,5 @@
 ########################################################################
-# $HeadURL $
+# $HeadURL$
 # File: SubReqFileTest.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/06 13:48:54
@@ -15,7 +15,7 @@
     test cases for SubReqFiles
 """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ##
 # @file SubReqFileTest.py
@@ -55,7 +55,7 @@ class SubReqFileTests( unittest.TestCase ):
     """ SubReqFile construction and (de)serialisation """
     ## empty defautl ctor
     subReqFile = SubReqFile()
-    self.assertEqual( isinstance( subReqFile, SubReqFile), True )
+    self.assertEqual( isinstance( subReqFile, SubReqFile ), True )
 
     ## fromDict
     try:
@@ -114,6 +114,7 @@ class SubReqFileTests( unittest.TestCase ):
     # parent
     parent = SubRequest( { "SubRequestID" : 99999 } )
     parent += subReqFile
+
     self.assertEqual( parent.SubRequestID, subReqFile.SubRequestID )
     try:
       subReqFile.SubRequestID = 111111

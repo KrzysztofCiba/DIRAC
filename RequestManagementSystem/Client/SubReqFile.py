@@ -55,24 +55,18 @@ class SubReqFile( object ):
     :param self: self reference
     """
     self._parent = None
-    self.__data__ = dict( ( ( "FileID", None ),
-                            ( "SubRequestID", None ),
-                            ( "LFN", None ),
-                            ( "PFN",  None ),
-                            ( "GUID", None ),
-                            ( "Size", None ),
-                            ( "Addler", None ),
-                            ( "Md5", None ),
-                            ( "Status", "Waiting" ),
-                            ( "Attempt", 1),
-                            ( "Error", "" ) ) )
-    
+    self.__data__ = dict.fromkeys( ( "FileID", "SubRequestID", "LFN", "PFN", "GUID", "Size",  
+                                     "Addler", "Md5", "Status", "Attempt", "Error" ) ) 
+    self.__data__["Status"] = "Waiting"
+    self.__data__["Attempt"] = 1
+    self.__data__["SubRequestID"] = 0
+    self.__data__["FileID"] = 0
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
         raise AttributeError( "unknown SubReqFile attribute %s" % str(attrName) )
       setattr( self, attrName, attrValue )
-   
+
   def __eq__( self, other ):
     """ == operator, comparing str """
     return str(self) == str(other)
@@ -107,22 +101,6 @@ class SubReqFile( object ):
       return self.__data__["SubRequestID"]
     return locals()
   SubRequestID = property( **__subRequestID() )
-
-  #def __parent():
-  #  """ reference to parent sub-request """
-  #  doc = "parent subrequest"
-  #  def fset( self, value ):
-  #    """ parent setter """
-  #    if value and value.__class__.__name__ != "SubRequest":
-  #      raise TypeError("parent should be a SubRequest object!")
-  #    self._parent = value
-  #    if value == None:
-  #      self.SubRequestID = None
-  #  def fget( self ):
-  #    """ parent getter """
-  #    return self._parent 
-  #  return locals()
-  #parent = property( **__parent() )
 
   def __size():
     """ file size prop """
@@ -276,4 +254,18 @@ class SubReqFile( object ):
 
   def toSQL( self ):
     """ get SQL INSERT or UPDATE statement """
-    pass
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) in ( str, datetime.datetime ) else str(value) ) 
+                for column, value in self.__data__.items()
+                if value and column != "FileID" ] 
+    query = []
+    if self.FileID:
+      query.append( "UPDATE Files SET " )
+      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+      query.append( " WHERE FileID = %d;" % self.FileID )
+    else:
+      query.append( "INSERT INTO Files " )
+      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
+      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+      query.append( columns )
+      query.append(" VALUES %s;" % values )
+    return "".join( query )
