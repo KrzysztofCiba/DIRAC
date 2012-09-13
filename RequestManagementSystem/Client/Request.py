@@ -56,16 +56,20 @@ class Request(object):
   :param TypedList subRequests: list of subrequests 
   """
 
-  __data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status" 
-                             "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
-
-  __subRequests = TypedList( allowedTypes=SubRequest )
-  
   def __init__( self, fromDict=None ):
     """c'tor
 
     :param self: self reference
     """
+    self.__data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status" 
+                                     "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
+    now = datetime.datetime.utcnow().replace( microseconds = 0 )
+    self.__data__["CreationTime"] = now 
+    self.__data__["SubmissionTime"] = now
+    self.__data__["LastUpdate"] = now
+    self.__data__["Status"] = "Waiting"
+    self.__data__["JobID"] = 0
+    self.__subRequests = TypedList( allowedTypes=SubRequest )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict:
       setattr( self, key, value )
@@ -317,6 +321,8 @@ class Request(object):
     doc = "request status"
     def fset( self, value ):
       """ status setter """
+      if value not in ( "Done", "Waiting", "Failed" ):
+        raise ValueError( "Unknown status: %s" % str(value) )
       self.__status = value      
     def fget( self ):
       """ status getter """
@@ -379,3 +385,25 @@ class Request(object):
     xmlStr = ElementTree.tostring( doc, "utf-8", "xml" )
     return S_OK( xmlStr )
 
+  def toSQL( self ):
+    """ prepare SQL INSERT or UDPATE statement """
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) in ( str, datetime.datetime ) else str(value) ) 
+                for column, value in self.__data__.items()
+                if value and column not in  ( "RequestID", "LastUpdate" ) ] 
+    colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
+    query = []
+    if self.SubRequestID:
+      query.append( "UPDATE Requests SET " )
+      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+      query.append( " WHERE RequestID = %d;" % self.RequestID )
+    else:
+      query.append( "INSERT INTO Requests " )
+      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
+      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+      query.append( columns )
+      query.append(" VALUES %s;" % values )
+    for subReq in self:
+      query.append( subReq.toSQL() )
+
+    return "".join( query )
+    

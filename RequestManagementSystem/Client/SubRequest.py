@@ -31,6 +31,7 @@ try:
 except ImportError:
   import xml.etree.ElementTree
 from xml.parsers.expat import ExpatError
+import datetime
 import itertools
 ## from DIRAC
 from DIRAC.Core.Utilities.TypedList import TypedList
@@ -62,22 +63,21 @@ class SubRequest(object):
     """
     self._parent = None
     ## sub-request attributes
-    self.__data__ = { "RequestID" : -1,
-                      "SubRequestID" : -1, 
-                      "Status" : "Queued",
-                      "RequestType" : "",
-                      "Operation" : "", 
-                      "Argument" : "", 
-                      "SourceSE" : "",
-                      "TargetSE" : "", 
-                      "Catalogue" : "", 
-                      "Error" : "", 
-                      "CreationTime" : "",
-                      "SubmissionTime" : "",
-                      "LastUpdate" : "" } 
+    self.__data__ = dict.fromkeys( ( "RequestID",  "SubRequestID", "Status", "RequestType", "Operation", 
+                                     "Argument", "SourceSE", "TargetSE", "Catalogue", "Error",
+                                     "CreationTime", "SubmissionTime", "LastUpdate" ) )
+
+    now = datetime.datetime.utcnow().replace( microsecond=0 )
+    self.__data__["CreationTime"] = now
+    self.__data__["SubmissionTime"] = now
+    self.__data__["LastUpdate"] = now
+    self.__data__["SubRequestID"] = 0
+    self.__data__["RequestID"] = 0
+    self.__data__["Status"] = "Queued"
+
     ## sub-request files
     self.__files__ = TypedList( allowedTypes = SubReqFile )
-
+    ## initilise
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if value != None:
@@ -105,7 +105,7 @@ class SubRequest(object):
     """ += operator """
     if subFile not in self:
       self.__files__.append( subFile )
-      subFile.parent = self 
+      subFile._parent = self 
       self._notify()
     return self
 
@@ -353,19 +353,21 @@ class SubRequest(object):
 
   def toSQL( self ):
     """ get SQL INSTERT or UPDATE statement """
-  
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) == str else str(value) ) for column, value in self.__data__.items()
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) in ( str, datetime.datetime ) else str(value) ) 
+                for column, value in self.__data__.items()
                 if value and column not in  ( "SubRequestID", "LastUpdate" ) ] 
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
-    if self.SubRequestID >= 0:
+    if self.SubRequestID:
       query.append( "UPDATE SubRequests SET " )
-      query.append( ",".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( "WHERE SubRequestID = %d;" % self.SubRequestID )
+      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+      query.append( " WHERE SubRequestID = %d;" % self.SubRequestID )
     else:
       query.append( "INSERT INTO SubRequests " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append(" VALUES %s;" % values )
+    for subFile in self:
+      query.append( subFile.toSQL() )
     return "".join( query )
