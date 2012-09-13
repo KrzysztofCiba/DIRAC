@@ -393,17 +393,17 @@ class Request(object):
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.SubRequestID:
-      query.append( "UPDATE Requests SET " )
+      query.append( "UPDATE `Requests` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE RequestID = %d;" % self.RequestID )
+      query.append( " WHERE `RequestID`=%d;\n" % self.RequestID )
     else:
-      query.append( "INSERT INTO Requests " )
+      query.append( "INSERT INTO `Requests` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
-      query.append(" VALUES %s;" % values )
-    for subReq in self:
-      query.append( subReq.toSQL() )
+      query.append(" VALUES %s;\n" % values )
+    #for subReq in self:
+    #  query.append( subReq.toSQL() )
 
     return "".join( query )
     

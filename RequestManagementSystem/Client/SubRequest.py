@@ -359,15 +359,15 @@ class SubRequest(object):
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.SubRequestID:
-      query.append( "UPDATE SubRequests SET " )
+      query.append( "UPDATE `SubRequests` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE SubRequestID = %d;" % self.SubRequestID )
+      query.append( " WHERE `SubRequestID`=%d;\n" % self.SubRequestID )
     else:
-      query.append( "INSERT INTO SubRequests " )
+      query.append( "INSERT INTO `SubRequests` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
-      query.append(" VALUES %s;" % values )
-    for subFile in self:
-      query.append( subFile.toSQL() )
+      query.append(" VALUES %s;\n" % values )
+    #for subFile in self:
+    #  query.append( subFile.toSQL() )
     return "".join( query )

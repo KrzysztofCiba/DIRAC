@@ -259,13 +259,13 @@ class SubReqFile( object ):
                 if value and column != "FileID" ] 
     query = []
     if self.FileID:
-      query.append( "UPDATE Files SET " )
+      query.append( "UPDATE `Files` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE FileID = %d;" % self.FileID )
+      query.append( " WHERE `FileID`=%d;\n" % self.FileID )
     else:
       query.append( "INSERT INTO Files " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
-      query.append(" VALUES %s;" % values )
+      query.append(" VALUES %s;\n" % values )
     return "".join( query )
