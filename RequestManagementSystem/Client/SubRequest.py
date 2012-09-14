@@ -359,11 +359,12 @@ class SubRequest(object):
 
   def toXML( self ):
     """ dump subrequest to XML """
+  
     data = dict( [ ( key, str(val) if val else "" ) for key, val in self.__data__.items() ] )
     element = ElementTree.Element( "subrequest", data ) 
     for subFile in self.__files__:
       element.append( subFile.toXML() )
-    return element
+    return S_OK( element )
   
   @classmethod
   def fromXML( cls, element ):
