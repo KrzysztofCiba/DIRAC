@@ -61,9 +61,9 @@ class Request(object):
 
     :param self: self reference
     """
-    self.__data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status" 
+    self.__data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status", 
                                      "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
-    now = datetime.datetime.utcnow().replace( microseconds = 0 )
+    now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now 
     self.__data__["SubmissionTime"] = now
     self.__data__["LastUpdate"] = now
@@ -71,7 +71,7 @@ class Request(object):
     self.__data__["JobID"] = 0
     self.__subReqs__ = TypedList( allowedTypes=SubRequest )
     fromDict = fromDict if fromDict else {}
-    for key, value in fromDict:
+    for key, value in fromDict.items():
       setattr( self, key, value )
 
   def _notify( self ):
@@ -93,8 +93,8 @@ class Request(object):
         waitingFound = True 
     # now update self status
     if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
-     if self.Status != "Waiting":
-       self.Status = "Waiting"
+      if self.Status != "Waiting":
+        self.Status = "Waiting"
     else:
       self.Status = "Done"
 
@@ -159,7 +159,7 @@ class Request(object):
     :param SubRequest subRequest: SubRequest to be insterted
     """
     if subRequest not in self:
-      self + subRequest
+      added = self + subRequest
     return S_OK()
 
   def __iter__( self ):
@@ -168,7 +168,7 @@ class Request(object):
 
   def indexOf( self, subReq ):
     """ return index of subReq (execution order) """
-    return self.__subReqs__.index( subReq )in subReq in self else -1
+    return self.__subReqs__.index( subReq ) if subReq in self else -1
 
   def __len__( self ):
     """ nb of subRequests """
@@ -184,7 +184,7 @@ class Request(object):
     doc = "request ID"
     def fset( self, value ):
       """ requestID setter """
-      self.__data__["RequestID"] = long(value)
+      self.__data__["RequestID"] = long(value) if value else 0
     def fget( self ):
       """ request ID getter """
       return self.__data__["RequestID"]
@@ -323,10 +323,7 @@ class Request(object):
 
   ## status
   def __status():
-    """ status prop
-    
-    TODO: add more logic here
-    """
+    """ status prop """
     doc = "request status"
     def fset( self, value ):
       """ status setter """
@@ -336,7 +333,7 @@ class Request(object):
     def fget( self ):
       """ status getter """
       subStatuses = list( set( [ subRequest.status() for subRequest in self.__subReqs__ ] ) ) 
-      status = "New"
+      status = "Waiting"
       if "Done" in subStatuses:
         status = "Done"
       if "Assigned" in subStatuses:
@@ -348,7 +345,7 @@ class Request(object):
     return locals()
   Status = property( **__status() )
 
-  def currertEecutionOrder( self ):
+  def currentExecutionOrder( self ):
     """ get execution order """
     subStatuses = [ subRequest.Status() for subRequest in self.__subReqs__ ]
     return S_OK( subStatuses.indexOf("Waiting") if "Waiting" in subStatuses else len(subStatuses) )
@@ -357,16 +354,15 @@ class Request(object):
   def fromXML( cls, xmlString ):
     """ create Request object from xmlString or xml.ElementTree.Element """
     try:
-      doc = ElementTree.parse( xmlString )
+      root = ElementTree.fromstring( xmlString )
     except ExpatError, error:
       return S_ERROR( "unable to deserialise request from xml: %s" % str(error) )
-    root = doc.getroot()
     if root.tag != "request":
       return S_ERROR( "unable to deserialise request, xml root element is not a 'request' " )
     request = Request( root.attrib )
     for subReqElement in root.findall( "subrequest" ):
       request += SubRequest.fromXML( element=subReqElement )
-    return request
+    return S_OK( request )
 
   def toXML( self ):
     """ dump request to XML 
@@ -383,15 +379,15 @@ class Request(object):
     root.attrib["JobID"] = str(self.JobID) if self.JobID else "0"
     root.attrib["SourceComponent"] = str(self.SourceComponent) if self.SourceComponent else "" 
     ## always calculate status, never set
-    root.attrib["Status"] = str(self.Status())
+    root.attrib["Status"] = str(self.Status)
     ## datetime up to seconds
     root.attrib["CreationTime"] = self.CreationTime.isoformat(" ").split(".")[0] if self.CreationTime else ""
     root.attrib["SubmissionTime"] = self.SubmissionTime.isoformat(" ").split(".")[0] if self.SubmissionTime else ""
     root.attrib["LastUpdate"] = self.LastUpdate.isoformat(" ").split(".")[0] if self.LastUpdate else "" 
+    ## trigger xml dump of a whole subrequests and their files tree
     for subRequest in self.__subReqs__:
       root.append( subRequest.toXML() )
-    doc = ElementTree.ElementTree( root )
-    xmlStr = ElementTree.tostring( doc, "utf-8", "xml" )
+    xmlStr = ElementTree.tostring( root )
     return S_OK( xmlStr )
 
   def toSQL( self ):
@@ -401,7 +397,7 @@ class Request(object):
                 if value and column not in  ( "RequestID", "LastUpdate" ) ] 
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
-    if self.SubRequestID:
+    if self.RequestID:
       query.append( "UPDATE `Requests` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
       query.append( " WHERE `RequestID`=%d;\n" % self.RequestID )
@@ -411,6 +407,5 @@ class Request(object):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append(" VALUES %s;\n" % values )
-
     return "".join( query )
     
