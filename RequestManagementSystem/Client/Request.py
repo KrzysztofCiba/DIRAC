@@ -69,7 +69,7 @@ class Request(object):
     self.__data__["LastUpdate"] = now
     self.__data__["Status"] = "Waiting"
     self.__data__["JobID"] = 0
-    self.__subRequests = TypedList( allowedTypes=SubRequest )
+    self.__subReqs__ = TypedList( allowedTypes=SubRequest )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict:
       setattr( self, key, value )
@@ -79,6 +79,7 @@ class Request(object):
     waitingFound = False
     ## update sub-requets statuses
     for subReq in self:
+      subReq.ExecutionOrder = self.indexOf( subReq )
       status = subReq.Status
       if status in ( "Done", "Failed" ):
         continue
@@ -104,7 +105,7 @@ class Request(object):
     :param self: self reference
     :param SubRequest subRequest: a subRequest 
     """
-    return bool( subRequest in self.__subRequests ) 
+    return bool( subRequest in self.__subReqs__ ) 
 
   def __add__( self, subRequest ):
     """ += operator for subRequest
@@ -113,8 +114,9 @@ class Request(object):
     :param SubRequest subRequest: sub-request to add
     """
     if subRequest not in self:
-      self.__subRequests.append( subRequest )
+      self.__subReqs__.append( subRequest )
       subRequest._parent = self
+      subRequest.ExecutionOrder = self.indexOf( subRequest )
     return S_OK()
    
   def insertBefore( self, newSubRequest, existingSubRequest ):
@@ -128,8 +130,10 @@ class Request(object):
       return S_ERROR( "%s is not in" % existingSubRequest )
     if newSubRequest in self:
       return S_ERROR( "%s is already in" % newSubRequest )
-    self.__subRequests.insert( self.__subRequests.index( existingSubRequest ), newSubRequest )
+    self.__subReqs__.insert( self.__subReqs__.index( existingSubRequest ), newSubRequest )
     newSubRequest._parent = self
+    newSubRequest.ExecutionOrder = self.indexOf( newSubRequest )
+
     return S_OK()
     
   def insertAfter( self, newSubRequest, existingSubRequest ):
@@ -143,8 +147,9 @@ class Request(object):
       return S_ERROR( "%s is not in" % existingSubRequest )
     if newSubRequest in self:
       return S_ERROR( "%s is already in" % newSubRequest )
-    self.__subRequests.insert( self.__subRequests.index( existingSubRequest )+1, newSubRequest )
+    self.__subReqs__.insert( self.__subReqs__.index( existingSubRequest )+1, newSubRequest )
     newSubRequest._parent = self 
+    newSubRequest.ExecutionOrder = self.indexOf( newSubRequest )
     return S_OK()
 
   def addSubRequest( self, subRequest ):
@@ -159,11 +164,15 @@ class Request(object):
 
   def __iter__( self ):
     """ iterator for sub-request """
-    return self.__subRequests.__iter__()
+    return self.__subReqs__.__iter__()
+
+  def indexOf( self, subReq ):
+    """ return index of subReq (execution order) """
+    return self.__subReqs__.index( subReq )in subReq in self else -1
 
   def __len__( self ):
     """ nb of subRequests """
-    return len( self.__subRequests )
+    return len( self.__subReqs__ )
 
   def subStatusList( self ):
     """ list of statuses for all subRequest """
@@ -245,7 +254,7 @@ class Request(object):
       """ request name setter """
       if type(value) != str:
         raise TypeError("RequestName should be a string")
-      self.__data__["RequestName"] = value
+      self.__data__["RequestName"] = value[:128]
     def fget( self ):
       """ request name getter """
       return self.__data__["RequestName"]
@@ -291,7 +300,7 @@ class Request(object):
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
       self.__data__["SubmissionTime"] = value
     def fget( self ):
-      """ submisssion time getter """
+      """ submission time getter """
       return self.__data__["SubmissionTime"]
     return locals()
   SubmissionTime = property( **__submissionTime() )
@@ -307,7 +316,7 @@ class Request(object):
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
       self.__data__["LastUpdate"] = value
     def fget( self ):
-      """ submisssion time getter """
+      """ last update time getter """
       return self.__data__["LastUpdate"]
     return locals()
   LastUpdate = property( **__lastUpdate() )
@@ -326,7 +335,7 @@ class Request(object):
       self.__status = value      
     def fget( self ):
       """ status getter """
-      subStatuses = list( set( [ subRequest.status() for subRequest in self.__subRequests ] ) ) 
+      subStatuses = list( set( [ subRequest.status() for subRequest in self.__subReqs__ ] ) ) 
       status = "New"
       if "Done" in subStatuses:
         status = "Done"
@@ -341,7 +350,7 @@ class Request(object):
 
   def currertEecutionOrder( self ):
     """ get execution order """
-    subStatuses = [ subRequest.Status() for subRequest in self.__subRequests ]
+    subStatuses = [ subRequest.Status() for subRequest in self.__subReqs__ ]
     return S_OK( subStatuses.indexOf("Waiting") if "Waiting" in subStatuses else len(subStatuses) )
     
   @classmethod
@@ -379,7 +388,7 @@ class Request(object):
     root.attrib["CreationTime"] = self.CreationTime.isoformat(" ").split(".")[0] if self.CreationTime else ""
     root.attrib["SubmissionTime"] = self.SubmissionTime.isoformat(" ").split(".")[0] if self.SubmissionTime else ""
     root.attrib["LastUpdate"] = self.LastUpdate.isoformat(" ").split(".")[0] if self.LastUpdate else "" 
-    for subRequest in self.__subRequests:
+    for subRequest in self.__subReqs__:
       root.append( subRequest.toXML() )
     doc = ElementTree.ElementTree( root )
     xmlStr = ElementTree.tostring( doc, "utf-8", "xml" )
@@ -402,8 +411,6 @@ class Request(object):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append(" VALUES %s;\n" % values )
-    #for subReq in self:
-    #  query.append( subReq.toSQL() )
 
     return "".join( query )
     
