@@ -60,8 +60,7 @@ class SubRequestTests(unittest.TestCase):
     self.assertEqual( isinstance( SubRequest(), SubRequest), True )
 
     subReq = SubRequest()
-    print subReq.toSQL()
-
+  
     ## using fromDict
     subReq = SubRequest( self.fromDict )
     self.assertEqual( isinstance( subReq, SubRequest), True )
@@ -75,11 +74,17 @@ class SubRequestTests(unittest.TestCase):
     ## same with file
     subReq = SubRequest( self.fromDict )
     subReq += self.subFile
-
     subReq = SubRequest.fromXML( subReq.toXML() )
     self.assertEqual( isinstance( subReq, SubRequest), True )
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( subReq, key ), value )
+
+    ## toSQL no SubRequestID
+    self.assertEqual( subReq.toSQL().startswith("INSERT"), True )
+    ## toSQL SubRequestID set
+    subReq.SubRequestID = 10
+    self.assertEqual( subReq.toSQL().startswith("UPDATE"), True )
+
 
   def test_props( self ):
     """ test properties """
@@ -126,6 +131,10 @@ class SubRequestTests(unittest.TestCase):
     subReq.Error = "error"
     self.assertEqual( subReq.Error, "error" )
 
+    subReq.ExecutionOrder = 1
+    self.assertEqual( subReq.ExecutionOrder, 1 )
+
+
     ## wrong props
     try:
       subReq.RequestID = "foo"
@@ -137,29 +146,98 @@ class SubRequestTests(unittest.TestCase):
     except Exception, error:
       self.assertEqual( type(error), ValueError )
     
+    ## Request type and Operation
+    subReq = SubRequest()
     try:
       subReq.RequestType = 1
     except Exception, error:
       self.assertEqual( type(error), ValueError )
       self.assertEqual( str(error), "1 is not a valid request type!" )
 
+    subReq = SubRequest()
     try:
       subReq.RequestType = "foo"
     except Exception, error:
       self.assertEqual( type(error), ValueError )
       self.assertEqual( str(error), "foo is not a valid request type!" )
 
+    subReq = SubRequest()
+    try:
+      subReq.Operation = "foo"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "'foo' in not valid Operation!")
+    
+    ## mismatch of Operation 
+    subReq = SubRequest()
+    subReq.RequestType = "transfer"
+    try:
+      subReq.Operation = "removeFile"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "Operation 'removeFile' is not valid for 'transfer' request type!")
+
+    ## mismacth of RequestType
+    subReq = SubRequest()
+    subReq.Operation = "removeFile"
+    try:
+      subReq.RequestType = "transfer"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "RequestType 'transfer' is not valid for Operation 'removeFile'")
+    
+    ## timestamps
+    subReq = SubRequest()
+    try:
+      subReq.CreationTime = "foo"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
+
+    try:
+      subReq.SubmissionTime = "foo"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
+
+    try:
+      subReq.LastUpdate = "foo"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
       
-  def testStatus( self ):
-    """ test status """
-    pass
-    #subReq = SubRequest( self.fromDict )
-    #self.subFile.Status = "Waiting"
-    #subReq.Status = "Done"
-    #print subReq.Status
-    #subReq += self.subFile
-    #print subReq.Status
-    #print self.subFile.Status
+    ## Status
+    subReq = SubRequest()
+    try:
+      subReq.Status = "foo"
+    except Exception, error:
+      self.assertEqual( type(error), ValueError )
+      self.assertEqual( str(error), "unknown Status 'foo'" )
+
+    subReq += SubReqFile( { "Status" : "Waiting" } )
+    oldStatus = subReq.Status 
+    ## won't modify - there are Waiting files
+    subReq.Status = "Done"
+    self.assertEqual( subReq.Status, oldStatus )
+    ## won't modify - there are Scheduled files 
+    for subFile in subReq:
+      subFile.Status = "Scheduled"
+    subReq.Status = "Done"
+    self.assertEqual( subReq.Status, oldStatus )
+    ## will modify - all fileas are Done now
+    for subFile in subReq:
+      subFile.Status = "Done"
+
+
+    subReq.Status = "Done"
+    self.assertEqual( subReq.Status, "Done" )
+
+    subReq = SubRequest()
+    subReq += SubReqFile( { "Status" : "Done" } )
+    self.assertEqual( subReq.Status, "Done" )
+    subReq += SubReqFile( { "Status" : "Waiting" } )
+    self.assertEqual( subReq.Status, "Queued" )
+     
 
 ## test execution
 if __name__ == "__main__":

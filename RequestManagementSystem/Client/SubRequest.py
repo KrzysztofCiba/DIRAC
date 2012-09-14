@@ -1,5 +1,5 @@
 ########################################################################
-# $HeadURL $
+# $HeadURL$
 # File: SubRequest.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/24 12:12:05
@@ -17,7 +17,7 @@
 # for properties 
 # pylint: disable=E0211,W0612,W0142 
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ##
 # @file SubRequest.py
@@ -64,29 +64,31 @@ class SubRequest(object):
     self._parent = None
     ## sub-request attributes
     self.__data__ = dict.fromkeys( ( "RequestID",  "SubRequestID", "Status", "RequestType", "Operation", 
-                                     "Argument", "SourceSE", "TargetSE", "Catalogue", "Error",
+                                     "Argument", "SourceSE", "TargetSE", "Catalogue", "Error", "ExecutionOrder"
                                      "CreationTime", "SubmissionTime", "LastUpdate" ) )
-
     now = datetime.datetime.utcnow().replace( microsecond=0 )
     self.__data__["CreationTime"] = now
     self.__data__["SubmissionTime"] = now
     self.__data__["LastUpdate"] = now
     self.__data__["SubRequestID"] = 0
     self.__data__["RequestID"] = 0
+    self.__data__["ExecutionOrder"] = -1
     self.__data__["Status"] = "Queued"
-
     ## sub-request files
     self.__files__ = TypedList( allowedTypes = SubReqFile )
-    ## initilise
+    ## init from dict
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if value != None:
         setattr( self, key, value )
 
+  ## protected methods for parent only
   def _notify( self ):
     """ notify self about file status change """
-    if "Scheduled" in self.fileStatusList() or "Waiting" in self.fileStatusList() and self.Status not in ( "Waiting", "Queued" ):
-      self.Status = "Waiting"
+    if "Scheduled" not in self.fileStatusList() and "Waiting" not in self.fileStatusList():
+      self.Status = "Done"
+    else:
+      self.Status = "Queued"
 
   def _setQueued( self ):
     """ don't touch """
@@ -117,6 +119,7 @@ class SubRequest(object):
     """ add :subFile: to subrequest """
     self += subFile
 
+  ## helpers for iterations 
   def __iter__( self ):
     """ subrequest files iterator """
     return self.__files__.__iter__()
@@ -129,7 +132,7 @@ class SubRequest(object):
     """ nb of subFiles """
     return len( self.__files__ )
 
-  ## props 
+  ## properties  
   def __requestID():
     """ RequestID prop """
     doc = "RequestID"
@@ -214,7 +217,7 @@ class SubRequest(object):
     doc = "sub-request arguments"
     def fset( self, value ):
       """ arguments setter """
-      self.__data__["Arguments"] = value
+      self.__data__["Arguments"] = value if value else ""
     def fget( self ):
       """ arguments getter """
       return self.__data__["Arguments"]
@@ -226,7 +229,7 @@ class SubRequest(object):
     doc = "source SE"
     def fset( self, value ):
       """ source SE setter """
-      self.__data__["SourceSE"] = str(value) if value else ""
+      self.__data__["SourceSE"] = str(value)[:32] if value else ""
     def fget( self ):
       """ source SE getter """
       return self.__data__["SourceSE"] 
@@ -238,7 +241,7 @@ class SubRequest(object):
     doc = "source SE"
     def fset( self, value ):
       """ target SE setter """
-      self.__data__["TargetSE"] = value
+      self.__data__["TargetSE"] = value[:255] if value else ""
     def fget( self ):
       """ target SE getter """
       return self.__data__["TargetSE"]
@@ -250,8 +253,7 @@ class SubRequest(object):
     doc = "catalogue"
     def fset( self, value ):
       """ catalogue setter """
-      # TODO check type == list or comma separated str 
-      self.__data__["Catalogue"] = value
+      self.__data__["Catalogue"] = value if value else ""
     def fget( self ):
       """ catalogue getter """
       return self.__data__["Catalogue"]
@@ -280,7 +282,6 @@ class SubRequest(object):
       if value in ( "Failed", "Done" ) and self.__files__:
         if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():
           return 
-          #raise ValueError("unable to set status to '%s', there are waiting files" % value )
       ## update? notify parent
       if value != self.Status and self._parent:       
         self._parent._notify()
@@ -291,36 +292,74 @@ class SubRequest(object):
     return locals()
   Status = property( **__status() )
 
-  
   def __executionOrder():
     """ ExecutionOrder prop """
     doc = "ExecutionOrder"
     def fset( self, value ):
       """ ExecutionOrder setter """
-      ## if parent present
-      pass
+      value = int(value)
+      if self._parent and self._parent.indexOf( self ) != value:
+        raise ValueError("Parent ExecutionOrder value mismatch!")
+      self.__data__["ExecutionOrder"] = value 
     def fget( self ):
       """ ExecutionOrder getter """
+      if self._parent:
+        self.__data__["ExecutionOrder"] = self._parent.indexOf( self )
       return self.__data__["ExecutionOrder"]
     return locals()
   ExecutionOrder = property( **__executionOrder() )
 
   def __creationTime():
-    """ CreationTime prop """
-    pass
+    """ subrequest's creation time prop """
+    doc = "subrequest's creation time"
+    def fset( self, value = None ):
+      """ creation time setter """
+      if type(value) not in ( datetime.datetime, str ) :
+        raise TypeError("CreationTime should be a datetime.datetime!")
+      if type(value) == str:
+        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+        self.__data__["CreationTime"] = value
+    def fget( self ):
+      """ creation time getter """
+      return self.__data__["CreationTime"]
+    return locals()
+  CreationTime = property( **__creationTime() )
 
   def __submissionTime():
-    """ CreationTime prop """
-    pass
+    """ subrequest's submission time prop """
+    doc = "subrequest's submisssion time"
+    def fset( self, value = None ):
+      """ submission time setter """
+      if type(value) not in ( datetime.datetime, str ):
+        raise TypeError("SubmissionTime should be a datetime.datetime!")
+      if type(value) == str:
+        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+      self.__data__["SubmissionTime"] = value
+    def fget( self ):
+      """ submission time getter """
+      return self.__data__["SubmissionTime"]
+    return locals()
+  SubmissionTime = property( **__submissionTime() )
 
-  def __LastUpdate():
-    """ CreationTime prop """
-    pass
-
+  def __lastUpdate():
+    """ last update prop """ 
+    doc = "subrequest's last update"
+    def fset( self, value = None ):
+      """ last update setter """
+      if type( value ) not in  ( datetime.datetime, str ):
+        raise TypeError("LastUpdate should be a datetime.datetime!")
+      if type(value) == str:
+        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+      self.__data__["LastUpdate"] = value
+    def fget( self ):
+      """ submission time getter """
+      return self.__data__["LastUpdate"]
+    return locals()
+  LastUpdate = property( **__lastUpdate() )
 
   def toXML( self ):
     """ dump subrequest to XML """
-    data = dict( [ ( key, str(val) ) for key, val in self.__data__.items() ] )
+    data = dict( [ ( key, str(val) if val else "" ) for key, val in self.__data__.items() ] )
     element = ElementTree.Element( "subrequest", data ) 
     for subFile in self.__files__:
       element.append( subFile.toXML() )
@@ -341,21 +380,15 @@ class SubRequest(object):
       subRequest += SubReqFile.fromXML( fileElement )
     return subRequest
 
-  @classmethod
-  def fromSQL( cls, dictRec ):
-    """ TODO """
-    subRequest = SubRequest()
-    return subRequest
-    
   def __str__( self ):
     """ str operator """
     return ElementTree.tostring( self.toXML() )
 
   def toSQL( self ):
-    """ get SQL INSTERT or UPDATE statement """
+    """ get SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) in ( str, datetime.datetime ) else str(value) ) 
                 for column, value in self.__data__.items()
-                if value and column not in  ( "SubRequestID", "LastUpdate" ) ] 
+                if value and column not in ( "SubRequestID", "LastUpdate" ) ] 
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.SubRequestID:
@@ -368,6 +401,4 @@ class SubRequest(object):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append(" VALUES %s;\n" % values )
-    #for subFile in self:
-    #  query.append( subFile.toSQL() )
     return "".join( query )
