@@ -109,13 +109,27 @@ class RequestTests(unittest.TestCase):
     req.LastUpdate = datetime.datetime( 1970, 1, 1, 0, 0, 0)
     self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
 
-
-
   def test_subreq( self ):
     """ test subRequest arithemtic 
     
     TODO: add tests here
     """
+    req = Request()
+    self.assertEqual( len(req), 0 )
+    
+
+    transfer = SubRequest()
+    transfer.RequestType = "transfer"
+    transfer.Operation = "replicateAndRegister"
+
+    req.addSubRequest( transfer )
+    self.assertEqual( len(req), 1 )
+    print req.currentExecutionOrder()
+    print transfer.ExecutionOrder
+    
+
+  def test_stateMachine( self ):
+    """ test request state machine """
     pass
 
   

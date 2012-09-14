@@ -332,7 +332,7 @@ class Request(object):
       self.__status = value      
     def fget( self ):
       """ status getter """
-      subStatuses = list( set( [ subRequest.status() for subRequest in self.__subReqs__ ] ) ) 
+      subStatuses = list( set( [ subRequest.Status for subRequest in self.__subReqs__ ] ) ) 
       status = "Waiting"
       if "Done" in subStatuses:
         status = "Done"
@@ -347,8 +347,9 @@ class Request(object):
 
   def currentExecutionOrder( self ):
     """ get execution order """
-    subStatuses = [ subRequest.Status() for subRequest in self.__subReqs__ ]
-    return S_OK( subStatuses.indexOf("Waiting") if "Waiting" in subStatuses else len(subStatuses) )
+    self._notify()
+    subStatuses = [ subRequest.Status for subRequest in self.__subReqs__ ]
+    return S_OK( subStatuses.index("Waiting") if "Waiting" in subStatuses else len(subStatuses) )
     
   @classmethod
   def fromXML( cls, xmlString ):
