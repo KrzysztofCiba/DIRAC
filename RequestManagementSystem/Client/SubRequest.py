@@ -277,15 +277,17 @@ class SubRequest(object):
     doc = "Status"
     def fset( self, value ):
       """ Status setter """
+      
       if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done" ):
         raise ValueError("unknown Status '%s'" % str(value) )
       if value in ( "Failed", "Done" ) and self.__files__:
         if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():
           return 
       ## update? notify parent
-      if value != self.Status and self._parent:       
-        self._parent._notify()
+      old = self.Status
       self.__data__["Status"] = value
+      if value != old and self._parent:       
+        self._parent._notify()
     def fget( self ):
       """ Status getter """
       return self.__data__["Status"]
