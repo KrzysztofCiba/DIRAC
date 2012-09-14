@@ -76,21 +76,25 @@ class Request(object):
 
   def _notify( self ):
     """ simple state machine for sub request statuses """
+
     waitingFound = False
     ## update sub-requets statuses
     for subReq in self:
+      
       subReq.ExecutionOrder = self.indexOf( subReq )
       status = subReq.Status
+  
       if status in ( "Done", "Failed" ):
         continue
+      elif status == "Queued" and not waitingFound:
+        subReq._setWaiting() # Status = "Waiting" ## this is 1st queued, flip to waiting
+        waitingFound = True 
       elif status == "Waiting":
         if waitingFound:
           subReq._setQueued() #  Status = "Queued" ## flip to queued, another one is waiting
         else:
           waitingFound = True 
-      elif status == "Queued" and not waitingFound:
-        subReq._setWaiting() # Status = "Waiting" ## this is 1st queued, flip to waiting
-        waitingFound = True 
+
     # now update self status
     if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
       if self.Status != "Waiting":

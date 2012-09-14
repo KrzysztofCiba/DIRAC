@@ -110,27 +110,37 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
 
   def test_subreq( self ):
-    """ test subRequest arithemtic 
-    
-    TODO: add tests here
-    """
+    """ test subrequest's arithemtic and state machine """
     req = Request()
     self.assertEqual( len(req), 0 )
     
-
     transfer = SubRequest()
     transfer.RequestType = "transfer"
     transfer.Operation = "replicateAndRegister"
 
     req.addSubRequest( transfer )
     self.assertEqual( len(req), 1 )
-    print req.currentExecutionOrder()
-    print transfer.ExecutionOrder
-    
+    self.assertEqual( transfer.ExecutionOrder, req.currentExecutionOrder()["Value"] )
+    self.assertEqual( transfer.Status, "Waiting" )
 
-  def test_stateMachine( self ):
-    """ test request state machine """
-    pass
+    removal = SubRequest( { "RequestType": "removal", "Operation" : "removeFile" } )
+    req.insertBefore( removal, transfer )
+
+    self.assertEqual( removal.ExecutionOrder, 0 )
+    self.assertEqual( removal.ExecutionOrder, req.currentExecutionOrder()["Value"] )
+
+    self.assertEqual( transfer.ExecutionOrder, 1 )
+
+    self.assertEqual( removal.Status, "Waiting" )
+    self.assertEqual( transfer.Status, "Queued" )
+
+    removal.Status = "Done"
+    self.assertEqual( removal.Status, "Done" )
+
+    self.assertEqual( transfer.Status, "Waiting" )
+    self.assertEqual( transfer.ExecutionOrder, req.currentExecutionOrder()["Value"] )
+
+
 
   
 ## test execution
