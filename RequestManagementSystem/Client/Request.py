@@ -25,6 +25,7 @@ __RCSID__ = "$Id$"
 # @brief Definition of Request class.
 
 ## imports 
+import os
 import datetime
 try:
   import xml.etree.cElementTree as ElementTree
@@ -169,6 +170,10 @@ class Request(object):
   def __iter__( self ):
     """ iterator for sub-request """
     return self.__subReqs__.__iter__()
+
+  def __getitem__( self, i ):
+    """ [] op for sub requests """
+    return self.__subReqs__.__getitem__( i )
 
   def indexOf( self, subReq ):
     """ return index of subReq (execution order) """
@@ -414,3 +419,21 @@ class Request(object):
       query.append(" VALUES %s;\n" % values )
     return "".join( query )
     
+
+  ## digest
+  def getDigest( self ):
+    """ get digest for a web """
+    digestString = []
+    for subReq in self:
+      digestList = [ str(subReq.RequestType), 
+                     str(subReq.Operation), 
+                     str(subReq.Status), 
+                     str(subReq.ExecutionOrder), 
+                     str(subReq.TargetSE) if subReq.TargetSE else "", 
+                     str(subReq.Catalogue) if subReq.Catalogue else "" ]
+      if len(subReq):
+        subFile = subReq[0]
+        digestList.append( "%s,...<%d files>" % ( os.path.basename( subFile.LFN ), len(subReq) ) )
+      digestString.append( ":".join(digestList ) )
+    return S_OK( "\n".join( digestString ) ) 
+

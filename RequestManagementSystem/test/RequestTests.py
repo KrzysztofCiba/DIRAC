@@ -25,9 +25,11 @@ __RCSID__ = "$Id$"
 
 ## imports 
 import unittest
+import datetime
 ## from DIRAC
 from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
-import datetime
+from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
+
 ## SUT
 from DIRAC.RequestManagementSystem.Client.Request import Request
 
@@ -117,6 +119,7 @@ class RequestTests(unittest.TestCase):
     transfer = SubRequest()
     transfer.RequestType = "transfer"
     transfer.Operation = "replicateAndRegister"
+    transfer.addFile( SubReqFile( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
 
     req.addSubRequest( transfer )
     self.assertEqual( len(req), 1 )
@@ -124,6 +127,8 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( transfer.Status, "Waiting" )
 
     removal = SubRequest( { "RequestType": "removal", "Operation" : "removeFile" } )
+    removal.addFile( SubReqFile( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
+
     req.insertBefore( removal, transfer )
 
     self.assertEqual( removal.ExecutionOrder, 0 )
@@ -134,15 +139,25 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( removal.Status, "Waiting" )
     self.assertEqual( transfer.Status, "Queued" )
 
+    for subFile in removal:
+      subFile.Status = "Done"
     removal.Status = "Done"
+
     self.assertEqual( removal.Status, "Done" )
 
     self.assertEqual( transfer.Status, "Waiting" )
     self.assertEqual( transfer.ExecutionOrder, req.currentExecutionOrder()["Value"] )
 
+    ## len, looping
+    self.assertEqual( len(req), 2 )
+    self.assertEqual( [ subReq.Status for subReq in req ], ["Done", "Waiting"] )
+    self.assertEqual( req.subStatusList() , ["Done", "Waiting"] )
 
+    digest = req.getDigest()
+    self.assertEqual( digest["OK"], True )
+    self.assertEqual( digest["Value"], 
+                      "removal:removeFile:Done:0:::c,...<1 files>\ntransfer:replicateAndRegister:Waiting:1:::c,...<1 files>")
 
-  
 ## test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
