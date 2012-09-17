@@ -254,7 +254,7 @@ class SubReqFile( object ):
 
   def toSQL( self ):
     """ get SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) in ( str, datetime.datetime ) else str(value) ) 
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) == str else str(value) ) 
                 for column, value in self.__data__.items()
                 if value and column != "FileID" ] 
     query = []
