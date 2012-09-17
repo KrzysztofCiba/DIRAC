@@ -29,7 +29,6 @@ import datetime
 ## from DIRAC
 from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
 from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
-
 ## SUT
 from DIRAC.RequestManagementSystem.Client.Request import Request
 
@@ -163,5 +162,3 @@ if __name__ == "__main__":
   testLoader = unittest.TestLoader()
   suite = testLoader.loadTestsFromTestCase(RequestTests)     
   unittest.TextTestRunner(verbosity=3).run(suite)
-
-

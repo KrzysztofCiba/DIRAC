@@ -34,6 +34,7 @@ from xml.parsers.expat import ExpatError
 import datetime
 import itertools
 ## from DIRAC
+from DIRAC import S_OK
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
 
@@ -90,13 +91,15 @@ class SubRequest(object):
     else:
       self.Status = "Queued"
 
-  def _setQueued( self ):
+  def _setQueued( self, caller ):
     """ don't touch """
-    self.__data__["Status"] = "Queued"
+    if caller == self._parent:
+      self.__data__["Status"] = "Queued"
     
-  def _setWaiting( self ):
+  def _setWaiting( self, caller ):
     """ don't touch as well """
-    self.__data__["Status"] = "Waiting"
+    if caller == self._parent:
+      self.__data__["Status"] = "Waiting"
 
   ## SubReqFiles aritmetics 
   def __contains__( self, subFile ):

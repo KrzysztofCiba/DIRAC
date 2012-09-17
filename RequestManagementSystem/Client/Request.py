@@ -88,11 +88,11 @@ class Request(object):
       if status in ( "Done", "Failed" ):
         continue
       elif status == "Queued" and not waitingFound:
-        subReq._setWaiting() # Status = "Waiting" ## this is 1st queued, flip to waiting
+        subReq._setWaiting( self ) # Status = "Waiting" ## this is 1st queued, flip to waiting
         waitingFound = True 
       elif status == "Waiting":
         if waitingFound:
-          subReq._setQueued() #  Status = "Queued" ## flip to queued, another one is waiting
+          subReq._setQueued( self ) #  Status = "Queued" ## flip to queued, another one is waiting
         else:
           waitingFound = True 
 
