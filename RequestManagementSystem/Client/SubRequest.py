@@ -119,10 +119,14 @@ class SubRequest(object):
     """ add :subFile: to subrequest """
     self += subFile
 
-  ## helpers for iterations 
+  ## helpers for looping
   def __iter__( self ):
     """ subrequest files iterator """
     return self.__files__.__iter__()
+
+  def __getitem__( self, i ):
+    """ [] op for files """
+    return self.__files__.__getitem__( i )
 
   def fileStatusList( self ):
     """ get list of files statuses """
