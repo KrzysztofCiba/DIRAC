@@ -43,11 +43,23 @@ class RequestValidator(object):
                     "removal" : ( "replicaRemoval", "removeFile", "physicalRemoval" ),
                     "transfer" : ( "replicateAndRegister", "putAndRegister" ) } 
   
-  @classmethod
-  def validate( request ):
-    
-
-    pass
+  def __init__( self ):
+    """ c'tor """
+    self.validator = ( self.RequestNameSet, 
+                       self.SubRequestsSet, 
+                       self.SubRequestTypeSet,
+                       self.SubRequestOperationSet,
+                       self.RequestTypeAndOperationMatch, 
+                       self.FilesInSubRequest )
+ 
+  def validate( self, request ):
+    """ simple validator """
+    for validator in self.validator:
+      isValid = validator( request )
+      if not isValid["OK"]:
+        return isValid
+    ## if we're here request is valid 
+    return S_OK()
 
   @staticmethod
   def RequestNameSet( request ):
@@ -60,28 +72,28 @@ class RequestValidator(object):
   def SubRequestsSet( request ):
     """ at least one subrequest """
     if not len(request):
-      return S_ERROR("SubRequests not present in request")
+      return S_ERROR("SubRequests are not present in request '%s'" % request.RequestName )
     return S_OK()
 
-  @staticmethod
-  def SubRequestTypeSet( request ):
+  @classmethod
+  def SubRequestTypeSet( cls, request ):
     """ required attribute for subRequest: RequestType """
     for subReq in request:
       if subReq.RequestType not in cls.operationDict:
-        return S_ERROR("SubRequest #%d hasn't got a proper RequestType set" % req.indexOf( subReq ) )
+        return S_ERROR("SubRequest #%d hasn't got a proper RequestType set" % request.indexOf( subReq ) )
     return S_OK()
       
-  @staticmethod
-  def SubRequestOperationSet( request ):
+  @classmethod
+  def SubRequestOperationSet( cls, request ):
     """ required attribute for subRequest: Operation """
     for subReq in request:
       if subReq.Operation not in reduce( tuple.__add__, [ op for op in cls.operationDict.values() ] ):
-        return S_ERROR("SubRequest #%d hasn't got a proper Operation set" % req.indexOf( subReq ) )
+        return S_ERROR("SubRequest #%d hasn't got a proper Operation set" % request.indexOf( subReq ) )
     return S_OK()
 
   @classmethod
   def RequestTypeAndOperationMatch( cls, request ):
-    """ """
+    """ check RequestType and Operation """
     for subReq in request:
       if subReq.Operation not in cls.operationDict[subReq.RequestType]:
         return S_ERROR("SubRequest #%d Operation (%s) doesn't match RequestType (%s)" % ( request.indexOf( subReq ),
@@ -97,3 +109,5 @@ class RequestValidator(object):
           return S_ERROR( "SubRequest #%d of type '%s' hasn't got files to process" % ( request.indexOf( subReq ),
                                                                                         subReq.RequestType ) )
     return S_OK()
+
+  

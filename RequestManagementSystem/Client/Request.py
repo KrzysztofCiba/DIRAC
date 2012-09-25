@@ -68,7 +68,7 @@ class Request(object):
     self.__data__["CreationTime"] = now 
     self.__data__["SubmissionTime"] = now
     self.__data__["LastUpdate"] = now
-    self.__data__["Status"] = "Waiting"
+    self.__data__["Status"] = "Queued"
     self.__data__["JobID"] = 0
     self.__subReqs__ = TypedList( allowedTypes=SubRequest )
     fromDict = fromDict if fromDict else {}
@@ -113,7 +113,7 @@ class Request(object):
     return bool( subRequest in self.__subReqs__ ) 
 
   def __add__( self, subRequest ):
-    """ += operator for subRequest
+    """ + operator for subRequest
 
     :param self: self reference
     :param SubRequest subRequest: sub-request to add
@@ -138,7 +138,6 @@ class Request(object):
     self.__subReqs__.insert( self.__subReqs__.index( existingSubRequest ), newSubRequest )
     newSubRequest._parent = self
     newSubRequest.ExecutionOrder = self.indexOf( newSubRequest )
-
     return S_OK()
     
   def insertAfter( self, newSubRequest, existingSubRequest ):
@@ -419,7 +418,6 @@ class Request(object):
       query.append(" VALUES %s;\n" % values )
     return "".join( query )
     
-
   ## digest
   def getDigest( self ):
     """ get digest for a web """
