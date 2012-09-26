@@ -14,26 +14,23 @@
 
     request validator
 """
-
 __RCSID__ = "$Id$"
-
 ##
 # @file RequestValidator.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/09/18 07:55:37
 # @brief Definition of RequestValidator class.
-
 ## imports
-from DIRAC import S_OK, S_ERROR, gConfig 
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
-from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
-
+import re
+## from DIRAC
+from DIRAC import S_OK, S_ERROR
 ########################################################################
 class RequestValidator(object):
   """
   .. class:: RequestValidator
   
+  This class validates newly created requests (before setting them in RequestManager) for
+  required attributes.
   """
 
   operationDict = { "diset" : ( "commitRegisters", "setFileStatusForTransformation", "setJobStatusBulk",
@@ -42,41 +39,54 @@ class RequestValidator(object):
                     "register" : ( "registeFile", "reTransfer" ),
                     "removal" : ( "replicaRemoval", "removeFile", "physicalRemoval" ),
                     "transfer" : ( "replicateAndRegister", "putAndRegister" ) } 
-  
+  reqAttrs = { re.compile("diset") : { "SubRequest": [ "Arguments" ],  "Files" : [] },
+               re.compile("transfer.putAndRegister") : { "SubRequest" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
+               re.compile("transfer.replicateAndRegister") : { "SubRequest" : [ "TargetSE" ], "Files" : [ "LFN" ] },
+               re.compile("removal.physicalRemoval") : { "SubRequest" : ["TargetSE" ], "Files" : [ "LFN", "PFN" ] },
+               re.compile("removal.removeFile") : { "SubRequest" : [], "Files" : [ "LFN" ] },
+               re.compile("removal.replicaRemoval") : { "SubRequest" : [ "TargetSE" ], "Files" : [ "LFN" ] },
+               re.compile("removal.reTransfer") : { "SubRequest" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
+               re.compile("register.registerFile") : { "SubRequest" : [], "Files" : [ "LFN", "PFN", "Size", 
+                                                                                      "Adler", "GUID"] } }
+
   def __init__( self ):
-    """ c'tor """
-    self.validator = ( self.RequestNameSet, 
-                       self.SubRequestsSet, 
-                       self.SubRequestTypeSet,
-                       self.SubRequestOperationSet,
-                       self.RequestTypeAndOperationMatch, 
-                       self.FilesInSubRequest )
- 
+    """ c'tor 
+
+    just setting order of validators
+    """
+    self.validator = ( self.nameSet, 
+                       self.hasSubRequests, 
+                       self.requestTypeSet,
+                       self.operationSet,
+                       self.typeAndOperationMatch, 
+                       self.hasFiles,
+                       self.requiredAttrs )
+    
   def validate( self, request ):
     """ simple validator """
     for validator in self.validator:
       isValid = validator( request )
       if not isValid["OK"]:
         return isValid
-    ## if we're here request is valid 
+    ## if we're here request is probably valid 
     return S_OK()
 
   @staticmethod
-  def RequestNameSet( request ):
+  def nameSet( request ):
     """ required attribute: RequestName """
     if not request.RequestName:
       return S_ERROR("RequestName not set")
     return S_OK()
     
   @staticmethod
-  def SubRequestsSet( request ):
+  def hasSubRequests( request ):
     """ at least one subrequest """
     if not len(request):
       return S_ERROR("SubRequests are not present in request '%s'" % request.RequestName )
     return S_OK()
 
   @classmethod
-  def SubRequestTypeSet( cls, request ):
+  def requestTypeSet( cls, request ):
     """ required attribute for subRequest: RequestType """
     for subReq in request:
       if subReq.RequestType not in cls.operationDict:
@@ -84,7 +94,7 @@ class RequestValidator(object):
     return S_OK()
       
   @classmethod
-  def SubRequestOperationSet( cls, request ):
+  def operationSet( cls, request ):
     """ required attribute for subRequest: Operation """
     for subReq in request:
       if subReq.Operation not in reduce( tuple.__add__, [ op for op in cls.operationDict.values() ] ):
@@ -92,7 +102,7 @@ class RequestValidator(object):
     return S_OK()
 
   @classmethod
-  def RequestTypeAndOperationMatch( cls, request ):
+  def typeAndOperationMatch( cls, request ):
     """ check RequestType and Operation """
     for subReq in request:
       if subReq.Operation not in cls.operationDict[subReq.RequestType]:
@@ -102,12 +112,34 @@ class RequestValidator(object):
     return S_OK()
 
   @staticmethod
-  def FilesInSubRequest( request ):
+  def hasFiles( request ):
+    """ check for files presence """
     for subReq in request:
       if subReq.RequestType in ( "logupload", "register", "removal", "transfer" ):
         if not len( subReq ):
           return S_ERROR( "SubRequest #%d of type '%s' hasn't got files to process" % ( request.indexOf( subReq ),
                                                                                         subReq.RequestType ) )
+        if subReq.RequestType == "diset" and len( subReq ):
+          return S_ERROR( "SubRequest #%d of type '%s' has got files to process" % ( request.indexOf( subReq ),
+                                                                                     subReq.RequestType ) )
     return S_OK()
 
-  
+  @classmethod
+  def requiredAttrs( cls, request ):
+    """ check required attrbutes for subrequests and files """
+    for subReq in request:
+      for rePat, reqVal in cls.reqAttrs.items():
+        if rePat.match( "%s.%s" % ( subReq.RequestType, subReq.Operation ) ):
+          reqAttrs = reqVal["SubRequest"]
+          fileAttrs = reqVal["Files"]
+          for reqAttr in reqAttrs:
+            if getattr( subReq, reqAttr ) in ( "", None ):
+              return S_ERROR("SubRequest #%d of type %s and operation %s is missing %s attribute." %\
+                               ( request.indexOf(subReq), subReq.RequestType, subReq.Operation, reqAttr ) )
+          fileAttrs = reqVal["Files"]
+          for fileAttr in fileAttrs:
+            for subFile in subReq:
+              if getattr( subFile, fileAttr ) in ( "", None ):
+                return S_ERROR("SubRequest #%d of type %s and operation %s is missing %s attribute for file." %\
+                                 ( request.indexOf(subReq), subReq.RequestType, subReq.Operation, fileAttr ) )
+    return S_OK()

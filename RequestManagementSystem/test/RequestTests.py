@@ -43,7 +43,6 @@ class RequestTests(unittest.TestCase):
     """ set up """  
     self.fromDict = { "RequestName" : "test", "JobID" : 12345 }
 
-
   def tearDown( self ):
     """ tear down """
     del self.fromDict
@@ -120,15 +119,32 @@ class RequestTests(unittest.TestCase):
     transfer.Operation = "replicateAndRegister"
     transfer.addFile( SubReqFile( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
 
+    getWaiting = req.getWaiting()
+    self.assertEqual( getWaiting["OK"], True )
+    self.assertEqual( getWaiting["Value"], None )
+
     req.addSubRequest( transfer )
     self.assertEqual( len(req), 1 )
     self.assertEqual( transfer.ExecutionOrder, req.currentExecutionOrder()["Value"] )
     self.assertEqual( transfer.Status, "Waiting" )
 
+    getWaiting = req.getWaiting()
+    self.assertEqual( getWaiting["OK"], True )
+    self.assertEqual( getWaiting["Value"], transfer )
+
     removal = SubRequest( { "RequestType": "removal", "Operation" : "removeFile" } )
     removal.addFile( SubReqFile( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
 
     req.insertBefore( removal, transfer )
+
+    getWaiting = req.getWaiting()
+    self.assertEqual( getWaiting["OK"], True )
+    self.assertEqual( getWaiting["Value"], removal )
+
+    self.assertEqual( len(req), 2 )
+    self.assertEqual( [ subReq.Status for subReq in req ], ["Waiting", "Queued"] )
+    self.assertEqual( req.subStatusList() , ["Waiting", "Queued"] )
+
 
     self.assertEqual( removal.ExecutionOrder, 0 )
     self.assertEqual( removal.ExecutionOrder, req.currentExecutionOrder()["Value"] )
@@ -156,6 +172,11 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( digest["OK"], True )
     self.assertEqual( digest["Value"], 
                       "removal:removeFile:Done:0:::c,...<1 files>\ntransfer:replicateAndRegister:Waiting:1:::c,...<1 files>")
+
+    getWaiting = req.getWaiting()
+    self.assertEqual( getWaiting["OK"], True )
+    self.assertEqual( getWaiting["Value"], transfer )
+
 
 ## test execution
 if __name__ == "__main__":

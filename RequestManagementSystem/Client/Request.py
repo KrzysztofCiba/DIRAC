@@ -62,6 +62,7 @@ class Request(object):
 
     :param self: self reference
     """
+    self.__waiting = None 
     self.__data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status", 
                                      "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
@@ -78,7 +79,7 @@ class Request(object):
   def _notify( self ):
     """ simple state machine for sub request statuses """
 
-    waitingFound = False
+    self.__waiting = None 
     ## update sub-requets statuses
     for subReq in self:
       
@@ -87,21 +88,27 @@ class Request(object):
   
       if status in ( "Done", "Failed" ):
         continue
-      elif status == "Queued" and not waitingFound:
+      elif status == "Queued" and not self.__waiting:
         subReq._setWaiting( self ) # Status = "Waiting" ## this is 1st queued, flip to waiting
-        waitingFound = True 
+        self.__waiting = subReq 
       elif status == "Waiting":
-        if waitingFound:
+        if self.__waiting:
           subReq._setQueued( self ) #  Status = "Queued" ## flip to queued, another one is waiting
         else:
-          waitingFound = True 
-
+          self.__waiting = subReq
+          
     # now update self status
     if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
       if self.Status != "Waiting":
         self.Status = "Waiting"
     else:
       self.Status = "Done"
+
+  def getWaiting( self ):
+    """ get waiting subrequets if any """
+    ## update states
+    self._notify()
+    return S_OK(self.__waiting) 
 
   ## SubRequest aritmetics
   def __contains__( self, subRequest ):
