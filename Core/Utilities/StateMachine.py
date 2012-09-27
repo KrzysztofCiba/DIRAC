@@ -146,14 +146,10 @@ if __name__ == "__main__":
 
   ao = AO()
   a = A()
-
   a.registerObserver( ao, "a" )
-
   a.seta(10)
   a.unregisterObserver( "a" )
-
   a.seta(12)
   a.registerObserver( ao, "a" )
-
   a.seta(13)
 
