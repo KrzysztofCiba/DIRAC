@@ -44,42 +44,46 @@ class Observable( type ):
       """ to be applied exclusively on __setattr__ """
       def wrapper( *args, **kwargs ):
         instance, attr, newVal = args[0], args[1], args[2]
-        oldVal = None
-        if hasattr( instance, attr ):
-          oldVal = getattr( instance, attr )
+        oldVal = getattr( instance, attr ) if hasattr( instance, attr ) else None
         ret = func( *args, **kwargs )
-        if not oldVal:
-          instance.notify( attr, "EVSET" )
-        elif oldVal != newVal:
-          instance.notify( attr, "EVCHG" )
+        if oldVal != getattr( instance, attr ) and attr in instance.observers():
+          instance._notify( attr, oldVal )
         return ret
       return wrapper
 
     def registerObserver( self, observer, watchedAttribute ):
       """ add new :observer: """
+      ## check observer 
+      if not isinstance( observer, Observer ):
+        raise TypeError("registerObserver: supplied argument for observer should be inherited from Observer class")
       ## check for attribute, could raise AttributeError 
       getattr( self, watchedAttribute )
       if watchedAttribute not in self.observers():
-        self.observers()[watchedAttribute] = observer
-        
-    def unregisterObserver( self, watchedAttribute ):
-      """ remove :observer: """
-      if watchedAttribute in self.observers():
-        del self.observers()[watchedAttribute]
+        self.observers()[watchedAttribute] = observer 
 
-    def notify( self, attribute=None, event=None ):
+    def unregisterObserver( self, observer, watchedAttribute=None ):
+      """ remove :observer: """
+      if not watchedAttribute:
+        for watchedAttribute, regObserver in self.observers().items():
+          if regObserver == observer:
+            del self.observers()[watchedAttribute]
+      else:
+        if watchedAttribute in self.observers():
+          del self.observers()[watchedAttribute]
+
+    def _notify( self, attribute=None, oldVal=None ):
       """ notify observers """
       if attribute and attribute in self.observers():
-          self.observers()[attribute].notify( getattr(self, attribute), self, event )
+        self.observers()[attribute].notify( attribute, oldVal, getattr(self, attribute), self )
       else:
-        for attribute, observer in self.observers():
-          observer.notify( getattr(self, attribute), self )
+        for attribute, observer in self.observers().items():
+          observer.notify( attribute, oldVal, getattr(self, attribute), self )
 
     ## add functions 
     classdict["observers"] = observers
     classdict["registerObserver"] = registerObserver
     classdict["unregisterObserver"] = unregisterObserver
-    classdict["notify"] = notify
+    classdict["_notify"] = _notify
     aType = type.__new__( cls, name, bases, classdict )
     ## decorate setattr
     aType.__setattr__ = notifySetAttr( aType.__setattr__ )
@@ -91,8 +95,14 @@ class Observer( object ):
   
   generic class for Observer pattern
   """
-  def notify( self, attribute, observable, event=None ):
-    """ callback fruntion from :observable: on :attribute: change """
+  def notify( self, attr, oldVal, newVal, observable ):
+    """ callback fruntion from :observable: on :attribute: change
+
+    :param attr: attribute name
+    :param mixed oldVal: previous value 
+    :param mixed newVal: new value 
+    :param instance observable: observable
+    """
     raise NotImplementedError("'notify' has to be implemented in the child class")
 
 class State( object ):
@@ -107,49 +117,28 @@ class State( object ):
     self.action( event )
       
 class TranstionTable( dict ):
-  
+  """
+  .. class:: TransitionTable
+  """  
   def addTransition( stateA, stateB, event, action ):
     dict.__setitem__[stateA] = ( stateB, event, action )
-
 
 ########################################################################
 class StateMachine( Observer ):
   """
   .. class:: StateMachine
   
-  """
-  
+  """  
   def __init__( self ):
-    """c'tor
-
-    :param self: self reference
-    """
+    """ c'tor """
     self.transTable = TranstionTable()
-
+  
+  def notify( self, attr, oldVal, newVal, observable ):
     
-if __name__ == "__main__":
+    pass
 
-  class A( object ):
-    __metaclass__ = Observable
+  def registerState( self, state ):
 
-    a = None
+    pass
 
-    def __init__( self ):      
-      self.a = 1
-      
-    def seta( self, val ):
-      self.a = val
-
-  class AO( Observer ):
-    def notify( self, attr, caller, event ):
-      print "AO notify called by %s on event %s" % ( caller, event )  
-
-  ao = AO()
-  a = A()
-  a.registerObserver( ao, "a" )
-  a.seta(10)
-  a.unregisterObserver( "a" )
-  a.seta(12)
-  a.registerObserver( ao, "a" )
-  a.seta(13)
-
+  
