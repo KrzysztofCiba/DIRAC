@@ -25,6 +25,8 @@ __RCSID__ = "$Id $"
 
 ## for WeakValuesDictionary
 import weakref
+## from DIRAC
+from DIRAC.Core.Utilities.Graph import Graph, Node, Edge 
 
 class Observable( type ):
   """ 
@@ -105,23 +107,45 @@ class Observer( object ):
     """
     raise NotImplementedError("'notify' has to be implemented in the child class")
 
-class State( object ):
-  
-  def __init__( self, stateName ):
-    self.__stateName = stateName 
+class State( Node ):
+  """
+  .. class:: State
 
-  def stateName( self ):
-    return self.__stateName 
+  genetric state
+  """
+  def __init__( self, stateName, entryAction=None, exitAction=None ):
+    """ c'tor 
+    
+    :param str stateName: state name 
+    :param callable entryAction: function to call on state entry
+    :param callable exitAction: function to call on state exit
+    """
+    if entryAction: 
+      if not callable( entryAction ):
+        raise TypeError( "entryAction should be callable")
+    if exitAction: 
+      if not callable( exitAction ):
+        raise TypeError( "exitAction should be callable")
+    Node.__init__( self.stateName, roAttrs = { "entryAction" : entryAction, 
+                                               "action" : self.action,
+                                               "exitAction" : exitAction } )
 
-  def __call__( self, event ):
-    self.action( event )
-      
-class TranstionTable( dict ):
+  def action( self, *args, **kwargs ):
+    raise NotImplementedError("action should be implemented in the child class")
+
+  def __call__( self, *args, **kwargs ):
+    """ make it callable """
+    return self.action( *args, **kwargs )
+
+class StateGraph( Graph ):
   """
   .. class:: TransitionTable
   """  
-  def addTransition( stateA, stateB, event, action ):
-    dict.__setitem__[stateA] = ( stateB, event, action )
+  def __init__( self, name ):
+    Graph.__init__( self, name )
+
+  def addTransition( stateA, stateB, event ):
+    dict.__setitem__[stateA] = ( stateB, event )
 
 ########################################################################
 class StateMachine( Observer ):
@@ -138,7 +162,7 @@ class StateMachine( Observer ):
     pass
 
   def registerState( self, state ):
-
+    
     pass
 
   

@@ -179,8 +179,6 @@ class ObserverTests( unittest.TestCase ):
     observable.registerObserver( observable, "testVal1" )
     observable.testVal1 = 11
 
-
-
 ########################################################################
 class StateMachineTests(unittest.TestCase):
   """
