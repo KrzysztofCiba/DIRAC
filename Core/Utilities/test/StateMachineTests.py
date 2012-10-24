@@ -179,6 +179,14 @@ class ObserverTests( unittest.TestCase ):
     observable.registerObserver( observable, "testVal1" )
     observable.testVal1 = 11
 
+class StateTests( unitest.TestCase ):
+  """
+  .. class StateTests
+  """
+  def setUp( self ):
+    pass
+
+  
 ########################################################################
 class StateMachineTests(unittest.TestCase):
   """
@@ -191,6 +199,7 @@ class StateMachineTests(unittest.TestCase):
     :param self: self reference
     """
     pass
+
 
   
   

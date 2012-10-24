@@ -26,6 +26,7 @@ __RCSID__ = "$Id $"
 ## for WeakValuesDictionary
 import weakref
 ## from DIRAC
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge 
 
 class Observable( type ):
@@ -115,54 +116,94 @@ class State( Node ):
   """
   def __init__( self, stateName, entryAction=None, exitAction=None ):
     """ c'tor 
-    
+   
     :param str stateName: state name 
     :param callable entryAction: function to call on state entry
     :param callable exitAction: function to call on state exit
     """
     if entryAction: 
       if not callable( entryAction ):
-        raise TypeError( "entryAction should be callable")
+        raise TypeError( "entryAction should be callable")  
     if exitAction: 
       if not callable( exitAction ):
         raise TypeError( "exitAction should be callable")
     Node.__init__( self.stateName, roAttrs = { "entryAction" : entryAction, 
-                                               "action" : self.action,
                                                "exitAction" : exitAction } )
 
-  def action( self, *args, **kwargs ):
-    raise NotImplementedError("action should be implemented in the child class")
-
-  def __call__( self, *args, **kwargs ):
+  def __call__( self, context, *args, **kwargs ):
     """ make it callable """
-    return self.action( *args, **kwargs )
+    if context == "enter" and self.entryAction:
+      return self.entryAction( *args, **kwargs )
+    elif context == "exit" and self.exitAction:
+      return self.exitAction( *args, **kwargs )
+    return S_OK()
 
-class StateGraph( Graph ):
+class Action( Edge ):
+  """ 
+  .. class:: Action
+
   """
-  .. class:: TransitionTable
+  def __init__( self, fromState, toState, action ):
+    """ c'tor
+    
+    :param State fromState: start state
+    :param State toState: end state
+    :param callable action: state changing function
+    """
+    Edge.__init__( fromState, toState )
+    if not callable( action ):
+      raise TypeError("action argument should be callable")
+    self.makeProperty( "action", action )
+      
+  def __call__( self, *args, **kwargs ):      
+    """ """
+    self.fromNode( "exit", *args, **kwargs )
+    action = self.action( *args, **kwargs )
+    if action["OK"]:
+      self.graph.setCurrentState( self.toNode )
+      self.toNode( "entry", *args, **kwargs )
+    return action
+      
+class StateMachine( Graph ):
+  """
+  .. class:: StateGraph
+
+  using directed graph
   """  
+
   def __init__( self, name ):
-    Graph.__init__( self, name )
-
-  def addTransition( stateA, stateB, event ):
-    dict.__setitem__[stateA] = ( stateB, event )
-
-########################################################################
-class StateMachine( Observer ):
-  """
-  .. class:: StateMachine
-  
-  """  
-  def __init__( self ):
     """ c'tor """
-    self.transTable = TranstionTable()
-  
-  def notify( self, attr, oldVal, newVal, observable ):
-    
-    pass
+    Graph.__init__( self, name )
+    self.currentState = None
 
-  def registerState( self, state ):
-    
-    pass
+  def setCurrentState( self, state ):
+    if state not in self:
+      raise ValueError( "state not known!" )
+    self.currentState = state
 
+
+class DoorsClosed( State ):
   
+  def entryAction( self, *args, **kwargs ):
+    print "closing doors"
+    return S_OK()
+
+class DoorsOpened( State ):
+  pass
+
+class Doors( object ):
+  
+  __metaclass__ = Observable 
+  state = "open"
+
+class DoorsSTM( StateMachine ):
+
+  def __init__( self ):
+    StateMachine.__init__( self, "doors" )
+    self.doors = Doors()
+    self.doors.registerObserver( "state", self )
+    
+    
+
+     
+    
