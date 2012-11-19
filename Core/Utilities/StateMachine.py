@@ -127,12 +127,12 @@ class State( Node ):
     if exitAction: 
       if not callable( exitAction ):
         raise TypeError( "exitAction should be callable")
-    Node.__init__( self.stateName, roAttrs = { "entryAction" : entryAction, 
-                                               "exitAction" : exitAction } )
+    Node.__init__( self, stateName, roAttrs = { "entryAction" : entryAction, 
+                                                "exitAction" : exitAction } )
 
   def __call__( self, context, *args, **kwargs ):
     """ make it callable """
-    if context == "enter" and self.entryAction:
+    if context == "entry" and self.entryAction:
       return self.entryAction( *args, **kwargs )
     elif context == "exit" and self.exitAction:
       return self.exitAction( *args, **kwargs )
@@ -150,7 +150,7 @@ class Action( Edge ):
     :param State toState: end state
     :param callable action: state changing function
     """
-    Edge.__init__( fromState, toState )
+    Edge.__init__( self, fromState, toState )
     if not callable( action ):
       raise TypeError("action argument should be callable")
     self.makeProperty( "action", action )
@@ -181,27 +181,84 @@ class StateMachine( Graph ):
       raise ValueError( "state not known!" )
     self.currentState = state
 
+  def getCurrentState( self ):
+    return self.currentState
+
+  def step( self, *args, **kwargs ):
+    """ """
+    action = self.currentState.edges()[0]
+    action( *args, **kwargs )
+    self.currentState = action.toNode
+    
 
 class DoorsClosed( State ):
   
-  def entryAction( self, *args, **kwargs ):
-    print "closing doors"
+  def __init__( self ):
+    State.__init__( self, "closed", self.OnEntryAction, self.OnExitAction )
+
+  def OnEntryAction( self, *args, **kwargs ):
+    print self, " entry action"
     return S_OK()
 
-class DoorsOpened( State ):
-  pass
+  def OnExitAction( self, *args, **kwargs ):
+    print self, " exit action"
+    return S_OK()
 
-class Doors( object ):
+
+class DoorsOpened( State ):
   
+  def __init__( self ):
+    State.__init__( self, "opened", self.OnEntryAction, self.OnExitAction )
+
+  def OnExitAction( self ):
+    print self, " exit action"
+    return S_OK()
+
+  def OnEntryAction( self ):
+    print self, " entry action"
+    return S_OK()
+
+
+class Closing( Action ):
+  
+  def __init__( self, fromState, toState ):
+    Action.__init__( self, fromState, toState, self.OnAction )
+
+  def OnAction( self, *args, **kwargs ):
+    print self, " closing door now"
+    return S_OK()
+
+class Doors( Observer ):  
   __metaclass__ = Observable 
   state = "open"
 
-class DoorsSTM( StateMachine ):
+  def notify(  self, attr, oldVal, newVal, observable ):
+    print attr, oldVal, newVal, observable 
+    
 
+class DoorsSTM( StateMachine ):
+  
   def __init__( self ):
+    
     StateMachine.__init__( self, "doors" )
-    self.doors = Doors()
-    self.doors.registerObserver( "state", self )
+    
+    doorsClosed = DoorsClosed()
+    doorsOpened = DoorsOpened()
+    
+    closing = Closing( doorsOpened, doorsClosed )
+
+    self.addNode( doorsClosed )
+    self.addNode( doorsOpened )
+
+if __name__ == "__main__":
+
+  stm = DoorsSTM()
+  stm.setCurrentState( stm.getNode( "opened" ) )
+
+  stm.step( )
+    
+  curr = stm.getCurrentState()
+  print curr
     
     
 
