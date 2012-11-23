@@ -1,30 +1,27 @@
 ########################################################################
 # $HeadURL$
-# File: SubRequest.py
+# File: Operation.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/24 12:12:05
 ########################################################################
 
-""" :mod: SubRequest 
+""" :mod: Operation 
     =======================
  
-    .. module: SubRequest
-    :synopsis: SubRequest implementation
+    .. module: Operation
+    :synopsis: Operation implementation
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    SubRequest implementation
+    Operation implementation
 """
 # for properties 
 # pylint: disable=E0211,W0612,W0142 
-
 __RCSID__ = "$Id$"
-
 ##
-# @file SubRequest.py
+# @file Operation.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/07/24 12:12:18
-# @brief Definition of SubRequest class.
-
+# @brief Definition of Operation class.
 ## imports 
 try:
   import xml.etree.cElementTree as ElementTree
@@ -36,17 +33,16 @@ import itertools
 ## from DIRAC
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.TypedList import TypedList
-from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
+from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
-class SubRequest(object):
+class Operation(object):
   """
-  .. class:: SubRequest
+  .. class:: Operation
  
-  :param long SubRequestID: SubRequestID as read from DB backend
+  :param long OperationID: OperationID as read from DB backend
   :param long RequestID: parent RequestID 
   :param str Status: execution status
-  :param str RequestType: one of ( "diset", "logupload", "register", "removal", "transfer" )
   :param str Operation: operation to perform
   :param str Arguments: additional arguments
   :param str SourceSE: source SE name
@@ -64,19 +60,18 @@ class SubRequest(object):
     """
     self._parent = None
     ## sub-request attributes
-    self.__data__ = dict.fromkeys( ( "RequestID",  "SubRequestID", "Status", "RequestType", "Operation", 
-                                     "Argument", "SourceSE", "TargetSE", "Catalogue", "Error", "ExecutionOrder"
-                                     "CreationTime", "SubmissionTime", "LastUpdate" ) )
+    self.__data__ = dict.fromkeys( ( "RequestID",  "OperationID", "Status", "Error", "Type", 
+                                     "Arguments", "Order", "SourceSE", "TargetSE", "Catalogue", 
+                                     "SubmitTime", "LastUpdate" ) )
     now = datetime.datetime.utcnow().replace( microsecond=0 )
-    self.__data__["CreationTime"] = now
-    self.__data__["SubmissionTime"] = now
+    self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
-    self.__data__["SubRequestID"] = 0
+    self.__data__["OperationID"] = 0
     self.__data__["RequestID"] = 0
-    self.__data__["ExecutionOrder"] = -1
+    self.__data__["Order"] = -1
     self.__data__["Status"] = "Queued"
     ## sub-request files
-    self.__files__ = TypedList( allowedTypes = SubReqFile )
+    self.__files__ = TypedList( allowedTypes = File )
     ## init from dict
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
@@ -147,7 +142,7 @@ class SubRequest(object):
       """ RequestID setter """
       value = long(value) if value else None
       if self._parent and self._parent.RequestID and self._parent.RequestID != value:
-        raise ValueError("Parent RequestID mismatch (%s != %s)" % ( self._parent.RequestID, value ) )
+        raise ValueError("parent RequestID mismatch (%s != %s)" % ( self._parent.RequestID, value ) )
       self.__data__["RequestID"] = value
     def fget( self ):
       """ RequestID getter """
@@ -157,71 +152,33 @@ class SubRequest(object):
     return locals()
   RequestID = property( **__requestID() )
 
-  def __subRequestID():
-    """ SubRequestID prop"""
-    doc = "SubRequestID"
+  def __operationID():
+    """ OperationID prop"""
+    doc = "OperationID"
     def fset( self, value ):
-      """ SubRequestID setter """
-      self.__data__["SubRequestID"] = long(value) if value else 0
+      """ OperationID setter """
+      self.__data__["OperationID"] = long(value) if value else 0
     def fget( self ):
-      """ SubRequestID getter """
-      return self.__data__["SubRequestID"]
+      """ OperationID getter """
+      return self.__data__["OperationID"]
     return locals()
-  SubRequestID = property( **__subRequestID() )
+  OperationID = property( **__operationID() )
 
-  def __requestType():
-    """ request type prop """
-    doc = "request type"
+  def __type():
+    """ operation type prop """
+    doc = "operation type"
     def fset( self, value ):
-      """ request type setter """
-      if value not in ( "diset", "logupload", "register", "removal", "transfer" ):
-        raise ValueError( "%s is not a valid request type!" % str(value) )
-      if self.Operation and value != { "commitRegisters" : "diset",
-                                       "setFileStatusForTransformation" : "diset",
-                                       "setJobStatusBulk" : "diset",
-                                       "sendXMLBookkeepingReport" : "diset",
-                                       "setJobParameters" : "diset",
-                                       "uploadLogFiles" : "loguplad",
-                                       "registerFile" : "register",
-                                       "reTransfer" : "register",
-                                       "replicaRemoval" : "removal",
-                                       "removeFile" : "removal",
-                                       "physicalRemoval" : "removal",
-                                       "putAndRegister" : "transfer",
-                                       "replicateAndRegister" : "transfer" }[self.Operation]:
-        raise ValueError("RequestType '%s' is not valid for Operation '%s'" % ( str(value), self.Operation) ) 
-      self.__data__["RequestType"] = value
+      """ operation type setter """
+      self.__data__["Type"] = str(value)
     def fget( self ):
-      """ request type getter """
-      return self.__data__["RequestType"]
+      """ operation type getter """
+      return self.__data__["Type"]
     return locals()
-  RequestType = property( **__requestType() )
-
-  def __operation():
-    """ operation prop """
-    doc = "operation"
-    def fset( self, value ):
-      """ operation setter """
-      operationDict = { "diset" : ( "commitRegisters", "setFileStatusForTransformation", "setJobStatusBulk",
-                                    "sendXMLBookkeepingReport", "setJobParameters" ),
-                        "logupload" : ( "uploadLogFiles", ),
-                        "register" : ( "registeFile", "reTransfer" ),
-                        "removal" : ( "replicaRemoval", "removeFile", "physicalRemoval" ),
-                        "transfer" : ( "replicateAndRegister", "putAndRegister" ) } 
-      if value not in tuple( itertools.chain( *operationDict.values() ) ):
-        raise ValueError( "'%s' in not valid Operation!" % value )
-      if self.RequestType and value not in operationDict[ self.RequestType ]:
-        raise ValueError("Operation '%s' is not valid for '%s' request type!" % ( str(value),  self.RequestType ) )
-      self.__data__["Operation"] = value
-    def fget( self ):
-      """ operation getter """
-      return  self.__data__["Operation"]
-    return locals()
-  Operation = property( **__operation() )
+  Type = property( **__type() )
           
   def __arguments():
     """ arguments prop """
-    doc = "sub-request arguments"
+    doc = "operation arguments"
     def fset( self, value ):
       """ arguments setter """
       self.__data__["Arguments"] = value if value else ""
@@ -272,7 +229,7 @@ class SubRequest(object):
     doc = "error"
     def fset( self, value ):
       """ error setter """
-      self.__data__["Error"] = value[:255] if value else ""
+      self.__data__["Error"] = str(value)[:255] if value else ""
     def fget( self ):
       """ error getter """
       return self.__data__["Error"]
@@ -284,7 +241,6 @@ class SubRequest(object):
     doc = "Status"
     def fset( self, value ):
       """ Status setter """
-      
       if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done" ):
         raise ValueError("unknown Status '%s'" % str(value) )
       if value in ( "Failed", "Done" ) and self.__files__:
@@ -301,40 +257,24 @@ class SubRequest(object):
     return locals()
   Status = property( **__status() )
 
-  def __executionOrder():
-    """ ExecutionOrder prop """
-    doc = "ExecutionOrder"
+  def __order():
+    """ order prop """
+    doc = "execution order"
     def fset( self, value ):
-      """ ExecutionOrder setter """
+      """ order setter """
       value = int(value)
       if self._parent and self._parent.indexOf( self ) != value:
-        raise ValueError("Parent ExecutionOrder value mismatch!")
-      self.__data__["ExecutionOrder"] = value 
+        raise ValueError("parent order value mismatch!")
+      self.__data__["Order"] = value 
     def fget( self ):
-      """ ExecutionOrder getter """
+      """ order getter """
       if self._parent:
-        self.__data__["ExecutionOrder"] = self._parent.indexOf( self )
-      return self.__data__["ExecutionOrder"]
+        self.__data__["Order"] = self._parent.indexOf( self )
+      return self.__data__["Order"]
     return locals()
-  ExecutionOrder = property( **__executionOrder() )
-
-  def __creationTime():
-    """ subrequest's creation time prop """
-    doc = "subrequest's creation time"
-    def fset( self, value = None ):
-      """ creation time setter """
-      if type(value) not in ( datetime.datetime, str ) :
-        raise TypeError("CreationTime should be a datetime.datetime!")
-      if type(value) == str:
-        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-        self.__data__["CreationTime"] = value
-    def fget( self ):
-      """ creation time getter """
-      return self.__data__["CreationTime"]
-    return locals()
-  CreationTime = property( **__creationTime() )
-
-  def __submissionTime():
+  Order = property( **__order() )
+  
+  def __submitTime():
     """ subrequest's submission time prop """
     doc = "subrequest's submisssion time"
     def fset( self, value = None ):
@@ -343,19 +283,19 @@ class SubRequest(object):
         raise TypeError("SubmissionTime should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-      self.__data__["SubmissionTime"] = value
+      self.__data__["SubmitTime"] = value
     def fget( self ):
       """ submission time getter """
-      return self.__data__["SubmissionTime"]
+      return self.__data__["SubmitTime"]
     return locals()
-  SubmissionTime = property( **__submissionTime() )
+  SubmitTime = property( **__submitTime() )
 
   def __lastUpdate():
     """ last update prop """ 
     doc = "subrequest's last update"
     def fset( self, value = None ):
       """ last update setter """
-      if type( value ) not in  ( datetime.datetime, str ):
+      if type( value ) not in ( datetime.datetime, str ):
         raise TypeError("LastUpdate should be a datetime.datetime!")
       if type(value) == str:
         value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
@@ -368,27 +308,26 @@ class SubRequest(object):
 
   def toXML( self ):
     """ dump subrequest to XML """
-  
     data = dict( [ ( key, str(val) if val else "" ) for key, val in self.__data__.items() ] )
-    element = ElementTree.Element( "subrequest", data ) 
+    element = ElementTree.Element( "operation", data ) 
     for subFile in self.__files__:
       element.append( subFile.toXML() )
-    return S_OK( element )
+    return element
   
   @classmethod
   def fromXML( cls, element ):
-    """ generate SubRequest instance from :element: 
+    """ generate Operation instance from :element: 
     
     :param ElementTree.Element element: subrequest element
     """
-    if not isinstance( element, type(ElementTree.Element("subrequest")) ):
+    if not isinstance( element, type(ElementTree.Element("operation")) ):
       raise TypeError("wrong argument type %s, excpected ElementTree.Element" % type(element) )
-    if element.tag != "subrequest":
-      raise ValueError("wrong tag <%s>, expected <subrequest>!" % element.tag )
-    subRequest = SubRequest( element.attrib )
+    if element.tag != "operation":
+      raise ValueError("wrong tag <%s>, expected <operation>!" % element.tag )
+    operation = Operation( element.attrib )
     for fileElement in element.findall( "file" ):
-      subRequest += SubReqFile.fromXML( fileElement )
-    return subRequest
+      operation += File.fromXML( fileElement )
+    return operation
 
   def __str__( self ):
     """ str operator """
@@ -398,15 +337,15 @@ class SubRequest(object):
     """ get SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) in ( str, datetime.datetime ) else str(value) ) 
                 for column, value in self.__data__.items()
-                if value and column not in ( "SubRequestID", "LastUpdate" ) ] 
+                if value and column not in ( "OperationID", "LastUpdate" ) ] 
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
-    if self.SubRequestID:
-      query.append( "UPDATE `SubRequests` SET " )
+    if self.OperationID:
+      query.append( "UPDATE `Operation` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `SubRequestID`=%d;\n" % self.SubRequestID )
+      query.append( " WHERE `OperationID`=%d;\n" % self.OperationID )
     else:
-      query.append( "INSERT INTO `SubRequests` " )
+      query.append( "INSERT INTO `Operation` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )

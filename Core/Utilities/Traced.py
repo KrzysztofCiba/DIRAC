@@ -52,6 +52,8 @@ class Traced( type ):
 
     def trace_setattr( self, name, value ):
       """ __setattr__ tracing value update """
+      #if not name.startswith("_") and name not in dir(self):
+      #  raise AttributeError("'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
       if name != "__update__":
         if not hasattr( self, name ) or getattr( self, name ) != value:
           self.updated( name )
