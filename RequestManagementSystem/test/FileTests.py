@@ -1,27 +1,27 @@
 ########################################################################
 # $HeadURL$
-# File: SubReqFileTest.py
+# File: FileTest.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/06 13:48:54
 ########################################################################
 
-""" :mod: SubReqFileTest 
+""" :mod: FileTest 
     =======================
  
-    .. module: SubReqFileTest
-    :synopsis: test cases for SubReqFiles
+    .. module: FileTest
+    :synopsis: test cases for Files
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    test cases for SubReqFiles
+    test cases for Files
 """
 
 __RCSID__ = "$Id$"
 
 ##
-# @file SubReqFileTest.py
+# @file FileTest.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/08/06 13:49:05
-# @brief Definition of SubReqFileTest class.
+# @brief Definition of FileTest class.
 
 ## imports 
 import unittest
@@ -30,20 +30,20 @@ try:
 except ImportError:
   import xml.etree.ElementTree
 ## from DIRAC
-from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 ## SUT
-from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
+from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
-class SubReqFileTests( unittest.TestCase ):
+class FileTests( unittest.TestCase ):
   """
-  .. class:: SubReqFileTest
+  .. class:: FileTest
   
   """
 
   def setUp( self ):
     """ test setup """
-    self.fromDict = { "Size" : 1, "LFN" : "/test/lfn", "Addler" : "123456", "Status" : "Waiting" } 
+    self.fromDict = { "Size" : 1, "LFN" : "/test/lfn", "ChecksumType" : "ADLER", "Checksum" : "123456", "Status" : "Waiting" } 
     self.fileElement = ElementTree.Element( "file", self.fromDict )
 
   def tearDown( self ):
@@ -52,144 +52,147 @@ class SubReqFileTests( unittest.TestCase ):
     del self.fromDict
 
   def test_ctors( self ):
-    """ SubReqFile construction and (de)serialisation """
+    """ File construction and (de)serialisation """
     ## empty defautl ctor
-    subReqFile = SubReqFile()
-    self.assertEqual( isinstance( subReqFile, SubReqFile ), True )
+    theFile = File()
+    self.assertEqual( isinstance( theFile, File ), True )
 
     ## fromDict
     try:
-      subReqFile = SubReqFile( self.fromDict )
+      theFile = File( self.fromDict )
     except AttributeError, error:
       print "AttributeError: %s" % str(error)
-    self.assertEqual( isinstance( subReqFile, SubReqFile), True )
+    self.assertEqual( isinstance( theFile, File), True )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( subReqFile, key ), value  )
+      self.assertEqual( getattr( theFile, key ), value  )
 
     ## fromXML using ElementTree
-    subReqFile = SubReqFile.fromXML( self.fileElement )  
-    self.assertEqual( isinstance( subReqFile, SubReqFile ), True )
+    theFile = File.fromXML( self.fileElement )  
+    self.assertEqual( isinstance( theFile, File ), True )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( subReqFile, key ), value  )
+      self.assertEqual( getattr( theFile, key ), value  )
       
   def test_props( self ):
     """ test props and attributes  """
-    subReqFile = SubReqFile()
+    theFile = File()
+
+    theFile.a = 10
+
     # valid props
-    subReqFile.FileID = 1
-    self.assertEqual( subReqFile.FileID, 1 )
-    subReqFile.SubRequestID = 1
-    self.assertEqual( subReqFile.SubRequestID, 1 )
-    subReqFile.Status = "Done"
-    self.assertEqual( subReqFile.Status, "Done" )
-    subReqFile.LFN = "/some/path/somewhere"
-    self.assertEqual( subReqFile.LFN, "/some/path/somewhere" )
-    subReqFile.PFN = "file:///some/path/somewhere"
-    self.assertEqual( subReqFile.PFN, "file:///some/path/somewhere" )
-    subReqFile.Attempt = 1
-    self.assertEqual( subReqFile.Attempt, 1 )
-    subReqFile.Size = 1
-    self.assertEqual( subReqFile.Size, 1 )
-    subReqFile.GUID = "2bbabe80-e2f1-11e1-9b23-0800200c9a66"
-    self.assertEqual( subReqFile.GUID, "2bbabe80-e2f1-11e1-9b23-0800200c9a66" )
-    subReqFile.Addler = "1234567"
-    self.assertEqual( subReqFile.Addler, "1234567" )
-    subReqFile.Md5 = "123456"
-    self.assertEqual( subReqFile.Md5, "123456" )
+    theFile.FileID = 1
+    self.assertEqual( theFile.FileID, 1 )
+    theFile.OperationID = 1
+    self.assertEqual( theFile.OperationID, 1 )
+    theFile.Status = "Done"
+    self.assertEqual( theFile.Status, "Done" )
+    theFile.LFN = "/some/path/somewhere"
+    self.assertEqual( theFile.LFN, "/some/path/somewhere" )
+    theFile.PFN = "file:///some/path/somewhere"
+    self.assertEqual( theFile.PFN, "file:///some/path/somewhere" )
+    theFile.Attempt = 1
+    self.assertEqual( theFile.Attempt, 1 )
+    theFile.Size = 1
+    self.assertEqual( theFile.Size, 1 )
+    theFile.GUID = "2bbabe80-e2f1-11e1-9b23-0800200c9a66"
+    self.assertEqual( theFile.GUID, "2bbabe80-e2f1-11e1-9b23-0800200c9a66" )
+    theFile.ChecksumType = "adler"
+    self.assertEqual( theFile.ChecksumType, "ADLER" )
+    theFile.Checksum = "123456"
+    self.assertEqual( theFile.Checksum, "123456" )
 
     ## invalid props
     
     # FileID
     try:
-      subReqFile.FileID = "foo"
+      theFile.FileID = "foo"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
     
     # SubRequestID
     try:
-      subReqFile.SubRequestID = "a"
+      theFile.OperationID = "a"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
 
     # parent
-    parent = SubRequest( { "SubRequestID" : 99999 } )
-    parent += subReqFile
+    parent = Operation( { "OperationID" : 99999 } )
+    parent += theFile
 
-    self.assertEqual( parent.SubRequestID, subReqFile.SubRequestID )
+    self.assertEqual( parent.OperationID, theFile.OperationID )
     try:
-      subReqFile.SubRequestID = 111111
+      theFile.OperationID = 111111
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "Parent SubRequestID mismatch (99999 != 111111)")
+      self.assertEqual( str(error), "parent OperationID mismatch (99999 != 111111)")
 
     # LFN
     try:
-      subReqFile.LFN = 1
+      theFile.LFN = 1
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
       self.assertEqual( str(error), "LFN has to be a string!")
     try:
-      subReqFile.LFN = "../some/path"
+      theFile.LFN = "../some/path"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
       self.assertEqual( str(error), "LFN should be an absolute path!")
     
     # PFN
     try:
-      subReqFile.PFN = 1
+      theFile.PFN = 1
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
       self.assertEqual( str(error), "PFN has to be a string!")
     try:
-      subReqFile.PFN = "snafu"
+      theFile.PFN = "snafu"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
       self.assertEqual( str(error), "Wrongly formatted URI!")
   
     # Size
     try:
-      subReqFile.Size = "snafu"
+      theFile.Size = "snafu"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
     try:
-      subReqFile.Size = -1
+      theFile.Size = -1
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
       self.assertEqual( str(error), "Size should be a positive integer!")
   
     # GUID
     try:
-      subReqFile.GUID = "snafuu-uuu-uuu-uuu-uuu-u"
+      theFile.GUID = "snafuu-uuu-uuu-uuu-uuu-u"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
       self.assertEqual( str(error), "'snafuu-uuu-uuu-uuu-uuu-u' is not a valid GUID!")
     try:
-      subReqFile.GUID = 2233345
+      theFile.GUID = 2233345
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
       self.assertEqual( str(error), "GUID should be a string!")
       
     # Attempt
     try:
-      subReqFile.Attempt = "snafu"
+      theFile.Attempt = "snafu"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
     try:
-      subReqFile.Attempt = -1
+      theFile.Attempt = -1
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
       self.assertEqual( str(error), "Attempt should be a positive integer!")
 
     # Status
     try:
-      subReqFile.Status = None
+      theFile.Status = None
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
       self.assertEqual( str(error), "Unknown Status: None!")
 
     # Error
     try:
-      subReqFile.Error = Exception("test")
+      theFile.Error = Exception("test")
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
       self.assertEqual( str(error), "Error has to be a string!")
@@ -197,7 +200,7 @@ class SubReqFileTests( unittest.TestCase ):
 ## test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
-  subReqFileTests = testLoader.loadTestsFromTestCase( SubReqFileTests )
-  suite = unittest.TestSuite( [ subReqFileTests ] )
+  fileTests = testLoader.loadTestsFromTestCase( FileTests )
+  suite = unittest.TestSuite( [ fileTests ] )
   unittest.TextTestRunner(verbosity=3).run(suite)
 

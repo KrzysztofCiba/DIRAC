@@ -36,7 +36,7 @@ from xml.parsers.expat import ExpatError
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList 
-from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
   
 ########################################################################
 class Request(object):
@@ -54,7 +54,7 @@ class Request(object):
   :param datetime.datetime submissionTime: UTC datetime 
   :param datetime.datetime lastUpdate: UTC datetime 
   :param str status: request's status
-  :param TypedList subRequests: list of subrequests 
+  :param TypedList operations: list of operations 
   """
 
   def __init__( self, fromDict=None ):
@@ -63,15 +63,15 @@ class Request(object):
     :param self: self reference
     """
     self.__waiting = None 
-    self.__data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status", 
-                                     "SourceComponent", "JobID", "CreationTime", "SubmissionTime", "LastUpdate"), None )
+    self.__data__ = dict.fromkeys( ( "RequestID", "Name", "OwnerDN", "OwnerGroup", "DiracSetup", "Status", 
+                                     "SourceComponent", "JobID", "CreationTime", "SubmitTime", "LastUpdate"), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now 
-    self.__data__["SubmissionTime"] = now
+    self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
-    self.__data__["Status"] = "Queued"
+    self.__data__["Status"] = "Waiting"
     self.__data__["JobID"] = 0
-    self.__subReqs__ = TypedList( allowedTypes=SubRequest )
+    self.__operations__ = TypedList( allowedTypes=Operation )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       setattr( self, key, value )
@@ -83,7 +83,7 @@ class Request(object):
     ## update sub-requets statuses
     for subReq in self:
       
-      subReq.ExecutionOrder = self.indexOf( subReq )
+      subReq.Order = self.indexOf( subReq )
       status = subReq.Status
   
       if status in ( "Done", "Failed" ):
@@ -110,64 +110,64 @@ class Request(object):
     self._notify()
     return S_OK(self.__waiting) 
 
-  ## SubRequest aritmetics
-  def __contains__( self, subRequest ):
+  ## Operation aritmetics
+  def __contains__( self, operation ):
     """ in operator 
     
     :param self: self reference
-    :param SubRequest subRequest: a subRequest 
+    :param Operation subRequest: a subRequest 
     """
-    return bool( subRequest in self.__subReqs__ ) 
+    return bool( operation in self.__operations__ ) 
 
-  def __add__( self, subRequest ):
+  def __add__( self, operation ):
     """ + operator for subRequest
 
     :param self: self reference
-    :param SubRequest subRequest: sub-request to add
+    :param Operation operation: sub-request to add
     """
-    if subRequest not in self:
-      self.__subReqs__.append( subRequest )
-      subRequest._parent = self
-      subRequest.ExecutionOrder = self.indexOf( subRequest )
+    if operation not in self:
+      self.__operations__.append( operation )
+      operation._parent = self
+      operation.Order = self.indexOf( operation )
     return S_OK()
    
-  def insertBefore( self, newSubRequest, existingSubRequest ):
-    """ insert :newSubRequest: just before :existingSubRequest:
+  def insertBefore( self, newOperation, existingOperation ):
+    """ insert :newOperation: just before :existingOperation:
 
     :param self: self reference
-    :param SubRequest newSubRequest: SubRequest to be inserted 
-    :param SubRequest existingSubRequest: previous SubRequest sibling  
+    :param Operation newOperation: Operation to be inserted 
+    :param Operation existingOperation: previous Operation sibling  
     """
-    if existingSubRequest not in self:
-      return S_ERROR( "%s is not in" % existingSubRequest )
-    if newSubRequest in self:
-      return S_ERROR( "%s is already in" % newSubRequest )
-    self.__subReqs__.insert( self.__subReqs__.index( existingSubRequest ), newSubRequest )
-    newSubRequest._parent = self
-    newSubRequest.ExecutionOrder = self.indexOf( newSubRequest )
+    if existingOperation not in self:
+      return S_ERROR( "%s is not in" % existingOperation )
+    if newOperation in self:
+      return S_ERROR( "%s is already in" % newOperation )
+    self.__operations__.insert( self.__operations__.index( existingOperation ), newOperation )
+    newOperation._parent = self
+    newOperation.ExecutionOrder = self.indexOf( newOperation )
     return S_OK()
     
-  def insertAfter( self, newSubRequest, existingSubRequest ):
-    """ insert :newSubRequest: just after :existingSubRequest: 
+  def insertAfter( self, newOperation, existingOperation ):
+    """ insert :newOperation: just after :existingOperation: 
     
     :param self: self reference
-    :param SubRequest newSubRequest: SubRequest to be insterted
-    :param SubRequest existingSubRequest: next SubRequest sibling
+    :param Operation newOperation: Operation to be insterted
+    :param Operation existingOperation: next Operation sibling
     """
-    if existingSubRequest not in self:
-      return S_ERROR( "%s is not in" % existingSubRequest )
-    if newSubRequest in self:
-      return S_ERROR( "%s is already in" % newSubRequest )
-    self.__subReqs__.insert( self.__subReqs__.index( existingSubRequest )+1, newSubRequest )
-    newSubRequest._parent = self 
-    newSubRequest.ExecutionOrder = self.indexOf( newSubRequest )
+    if existingOperation not in self:
+      return S_ERROR( "%s is not in" % existingOperation )
+    if newOperation in self:
+      return S_ERROR( "%s is already in" % newOperation )
+    self.__operations__.insert( self.__operations__.index( existingOperation )+1, newOperation )
+    newOperation._parent = self 
+    newOperation.ExecutionOrder = self.indexOf( newOperation )
     return S_OK()
 
-  def addSubRequest( self, subRequest ):
-    """ add :subRequest: to list of SubRequests
+  def addOperation( self, subRequest ):
+    """ add :subRequest: to list of Operations
 
     :param self: self reference
-    :param SubRequest subRequest: SubRequest to be insterted
+    :param Operation subRequest: Operation to be insterted
     """
     if subRequest not in self:
       added = self + subRequest
@@ -175,19 +175,19 @@ class Request(object):
 
   def __iter__( self ):
     """ iterator for sub-request """
-    return self.__subReqs__.__iter__()
+    return self.__operations__.__iter__()
 
   def __getitem__( self, i ):
     """ [] op for sub requests """
-    return self.__subReqs__.__getitem__( i )
+    return self.__operations__.__getitem__( i )
 
   def indexOf( self, subReq ):
     """ return index of subReq (execution order) """
-    return self.__subReqs__.index( subReq ) if subReq in self else -1
+    return self.__operations__.index( subReq ) if subReq in self else -1
 
   def __len__( self ):
     """ nb of subRequests """
-    return len( self.__subReqs__ )
+    return len( self.__operations__ )
 
   def subStatusList( self ):
     """ list of statuses for all subRequest """
@@ -347,7 +347,7 @@ class Request(object):
       self.__status = value      
     def fget( self ):
       """ status getter """
-      subStatuses = list( set( [ subRequest.Status for subRequest in self.__subReqs__ ] ) ) 
+      subStatuses = list( set( [ subRequest.Status for subRequest in self.__operations__ ] ) ) 
       status = "Waiting"
       if "Done" in subStatuses:
         status = "Done"
@@ -363,7 +363,7 @@ class Request(object):
   def currentExecutionOrder( self ):
     """ get execution order """
     self._notify()
-    subStatuses = [ subRequest.Status for subRequest in self.__subReqs__ ]
+    subStatuses = [ subRequest.Status for subRequest in self.__operations__ ]
     return S_OK( subStatuses.index("Waiting") if "Waiting" in subStatuses else len(subStatuses) )
     
   @classmethod
@@ -376,8 +376,8 @@ class Request(object):
     if root.tag != "request":
       return S_ERROR( "unable to deserialise request, xml root element is not a 'request' " )
     request = Request( root.attrib )
-    for subReqElement in root.findall( "subrequest" ):
-      request += SubRequest.fromXML( element=subReqElement )
+    for subReqElement in root.findall( "operation" ):
+      request += Operation.fromXML( element=subReqElement )
     return S_OK( request )
 
   def toXML( self ):
@@ -401,8 +401,8 @@ class Request(object):
     root.attrib["SubmissionTime"] = self.SubmissionTime.isoformat(" ").split(".")[0] if self.SubmissionTime else ""
     root.attrib["LastUpdate"] = self.LastUpdate.isoformat(" ").split(".")[0] if self.LastUpdate else "" 
     ## trigger xml dump of a whole subrequests and their files tree
-    for subRequest in self.__subReqs__:
-      root.append( subRequest.toXML() )
+    for operation in self.__operations__:
+      root.append( operation.toXML() )
     xmlStr = ElementTree.tostring( root )
     return S_OK( xmlStr )
 
@@ -429,16 +429,16 @@ class Request(object):
   def getDigest( self ):
     """ get digest for a web """
     digestString = []
-    for subReq in self:
-      digestList = [ str(subReq.RequestType), 
-                     str(subReq.Operation), 
-                     str(subReq.Status), 
-                     str(subReq.ExecutionOrder), 
-                     str(subReq.TargetSE) if subReq.TargetSE else "", 
-                     str(subReq.Catalogue) if subReq.Catalogue else "" ]
-      if len(subReq):
+    for op in self:
+      digestList = [ str(op.RequestType), 
+                     str(op.Operation), 
+                     str(op.Status), 
+                     str(op.Order), 
+                     str(op.TargetSE) if op.TargetSE else "", 
+                     str(op.Catalogue) if op.Catalogue else "" ]
+      if len(op):
         subFile = subReq[0]
-        digestList.append( "%s,...<%d files>" % ( os.path.basename( subFile.LFN ), len(subReq) ) )
-      digestString.append( ":".join(digestList ) )
+        digestList.append( "%s,...<%d files>" % ( os.path.basename( subFile.LFN ), len(op) ) )
+      digestString.append( ":".join( digestList ) )
     return S_OK( "\n".join( digestString ) ) 
 
