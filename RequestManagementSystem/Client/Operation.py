@@ -135,106 +135,82 @@ class Operation(object):
     return len( self.__files__ )
 
   ## properties  
-  def __requestID():
-    """ RequestID prop """
-    doc = "RequestID"
-    def fset( self, value ):
-      """ RequestID setter """
-      value = long(value) if value else None
-      if self._parent and self._parent.RequestID and self._parent.RequestID != value:
-        raise ValueError("parent RequestID mismatch (%s != %s)" % ( self._parent.RequestID, value ) )
-      self.__data__["RequestID"] = value
-    def fget( self ):
-      """ RequestID getter """
-      if self._parent:
-        self.__data__["RequestID"] = self._parent.RequestID
-      return self.__data__["RequestID"]
-    return locals()
-  RequestID = property( **__requestID() )
+  @property.getter
+  def requestID( self ):
+    """ RequestID getter  """
+    if not self._parent: 
+      raise AttributeError( "parent Request not defined!")
+    return self._parent.requestID
 
-  def __operationID():
-    """ OperationID prop"""
-    doc = "OperationID"
-    def fset( self, value ):
-      """ OperationID setter """
-      self.__data__["OperationID"] = long(value) if value else 0
-    def fget( self ):
-      """ OperationID getter """
-      return self.__data__["OperationID"]
-    return locals()
-  OperationID = property( **__operationID() )
+  @property.getter 
+  def operationID( self ):
+    """ OperationID getter """
+    return self.__data__["OperationID"]
+  
+  @property.setter
+  def operationID( self, value ):
+    """ OperationID setter """
+    self.__data__["OperationID"] = long(value) if value else 0
 
-  def __type():
+  @property.getter
+  def type( self ):
     """ operation type prop """
-    doc = "operation type"
-    def fset( self, value ):
-      """ operation type setter """
-      self.__data__["Type"] = str(value)
-    def fget( self ):
-      """ operation type getter """
-      return self.__data__["Type"]
-    return locals()
-  Type = property( **__type() )
-          
-  def __arguments():
-    """ arguments prop """
-    doc = "operation arguments"
-    def fset( self, value ):
-      """ arguments setter """
-      self.__data__["Arguments"] = value if value else ""
-    def fget( self ):
-      """ arguments getter """
-      return self.__data__["Arguments"]
-    return locals()
-  Arguments = property( **__arguments() )
-  
-  def __sourceSE():
-    """ source SE prop """
-    doc = "source SE"
-    def fset( self, value ):
-      """ source SE setter """
-      self.__data__["SourceSE"] = str(value)[:32] if value else ""
-    def fget( self ):
-      """ source SE getter """
-      return self.__data__["SourceSE"] 
-    return locals()
-  SourceSE = property( **__sourceSE() )
-  
-  def __targetSE():
-    """ target SE prop """
-    doc = "source SE"
-    def fset( self, value ):
-      """ target SE setter """
-      self.__data__["TargetSE"] = value[:255] if value else ""
-    def fget( self ):
-      """ target SE getter """
-      return self.__data__["TargetSE"]
-    return locals()
-  TargetSE = property( **__targetSE() )
-  
-  def __catalogue():
-    """ catalogue prop """
-    doc = "catalogue"
-    def fset( self, value ):
-      """ catalogue setter """
-      self.__data__["Catalogue"] = value if value else ""
-    def fget( self ):
-      """ catalogue getter """
-      return self.__data__["Catalogue"]
-    return locals()
-  Catalogue = property( **__catalogue() )
+    return self.__data__["Type"]
 
-  def __error():
+  @property.setter
+  def type( self, value ):
+    """ operation type setter """
+    self.__data__["Type"] = str(value)
+          
+  @property.getter
+  def arguments( self):
+    """ arguments getter """
+    return self.__data__["Arguments"]
+
+  @property.setter
+  def arguments( self, value ):
+    """ arguments setter """
+    self.__data__["Arguments"] = value if value else ""
+  
+  @property.getter
+  def sourceSE( self ):
+    """ source SE prop """
+    return self.__data__["SourceSE"] 
+
+  @property.setter
+  def sourceSE( self, value ):
+    """ source SE setter """
+    self.__data__["SourceSE"] = str(value)[:32] if value else ""
+    
+  @property.getter
+  def targetSE( self ):
+    """ target SE prop """
+    return self.__data__["TargetSE"]
+
+  @property.setter
+  def targetSE( self, value ):
+    """ target SE setter """
+    self.__data__["TargetSE"] = value[:255] if value else ""
+  
+  @property.getter
+  def catalogue( self ):
+    """ catalogue prop """
+    return self.__data__["Catalogue"]
+  
+  @property.setter
+  def catalogue( self, value ):
+    """ catalogue setter """
+    self.__data__["Catalogue"] = value if value else ""
+
+  @property.getter
+  def error( self ):
     """ error prop """
-    doc = "error"
-    def fset( self, value ):
-      """ error setter """
-      self.__data__["Error"] = str(value)[:255] if value else ""
-    def fget( self ):
-      """ error getter """
-      return self.__data__["Error"]
-    return locals()
-  Error = property( **__error() )
+    return self.__data__["Error"]
+
+  @property.setter
+  def error( self, value ):
+    """ error setter """
+    self.__data__["Error"] = str(value)[:255] if value else ""
 
   def __status():
     """ Status prop """
@@ -257,54 +233,40 @@ class Operation(object):
     return locals()
   Status = property( **__status() )
 
-  def __order():
+  @property.getter
+  def order( self ):
     """ order prop """
-    doc = "execution order"
-    def fset( self, value ):
-      """ order setter """
-      value = int(value)
-      if self._parent and self._parent.indexOf( self ) != value:
-        raise ValueError("parent order value mismatch!")
-      self.__data__["Order"] = value 
-    def fget( self ):
-      """ order getter """
-      if self._parent:
-        self.__data__["Order"] = self._parent.indexOf( self )
-      return self.__data__["Order"]
-    return locals()
-  Order = property( **__order() )
-  
-  def __submitTime():
-    """ subrequest's submission time prop """
-    doc = "subrequest's submisssion time"
-    def fset( self, value = None ):
-      """ submission time setter """
-      if type(value) not in ( datetime.datetime, str ):
-        raise TypeError("SubmissionTime should be a datetime.datetime!")
-      if type(value) == str:
-        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-      self.__data__["SubmitTime"] = value
-    def fget( self ):
-      """ submission time getter """
-      return self.__data__["SubmitTime"]
-    return locals()
-  SubmitTime = property( **__submitTime() )
+    if not self._parent:
+      raise AttributeError("parent not set!")
+    return self._parent.indexOf( self )
 
-  def __lastUpdate():
-    """ last update prop """ 
-    doc = "subrequest's last update"
-    def fset( self, value = None ):
-      """ last update setter """
-      if type( value ) not in ( datetime.datetime, str ):
-        raise TypeError("LastUpdate should be a datetime.datetime!")
-      if type(value) == str:
-        value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-      self.__data__["LastUpdate"] = value
-    def fget( self ):
-      """ submission time getter """
-      return self.__data__["LastUpdate"]
-    return locals()
-  LastUpdate = property( **__lastUpdate() )
+  @property.getter
+  def submitTime( self ):
+    """ subrequest's submission time prop """
+    return self.__data__["SubmitTime"]
+
+  @property.setter
+  def submitTime( self, value = None ):
+    """ submission time setter """
+    if type(value) not in ( datetime.datetime, str ):
+      raise TypeError("SubmissionTime should be a datetime.datetime!")
+    if type(value) == str:
+      value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+    self.__data__["SubmitTime"] = value
+ 
+  @property.getter
+  def lastUpdate( self ):
+    """ last update prop """
+    return self.__data__["SubmitTime"]
+  
+  @property.setter
+  def lastUpdate( self, value = None ):
+    """ last update setter """
+    if type( value ) not in ( datetime.datetime, str ):
+      raise TypeError("LastUpdate should be a datetime.datetime!")
+    if type(value) == str:
+      value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+    self.__data__["LastUpdate"] = value
 
   def toXML( self ):
     """ dump subrequest to XML """
