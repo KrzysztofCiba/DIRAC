@@ -27,8 +27,8 @@ __RCSID__ = "$Id$"
 import unittest
 import datetime
 ## from DIRAC
-from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
-from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
 ## SUT
 from DIRAC.RequestManagementSystem.Client.Request import Request
 
@@ -52,14 +52,14 @@ class RequestTests(unittest.TestCase):
     ## empty c'tor
     req = Request()
     self.assertEqual( isinstance( req, Request ), True )
-    self.assertEqual( req.JobID, 0 )
-    self.assertEqual( req.Status, "Waiting" )
+    self.assertEqual( req.jobID, 0 )
+    self.assertEqual( req.status, "Waiting" )
 
     req = Request( self.fromDict )
     self.assertEqual( isinstance( req, Request ), True )
-    self.assertEqual( req.RequestName, "test" )
-    self.assertEqual( req.JobID, 12345 )
-    self.assertEqual( req.Status, "Waiting" )
+    self.assertEqual( req.requestName, "test" )
+    self.assertEqual( req.jobID, 12345 )
+    self.assertEqual( req.status, "Waiting" )
     
     toXML = req.toXML()
     self.assertEqual( toXML["OK"], True )
@@ -68,9 +68,9 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( req["OK"], True )
     self.assertEqual( isinstance( req["Value"], Request ), True )
     req = req["Value"]
-    self.assertEqual( req.RequestName, "test" )
-    self.assertEqual( req.JobID, 12345 )
-    self.assertEqual( req.Status, "Waiting" )
+    self.assertEqual( req.requestName, "test" )
+    self.assertEqual( req.jobID, 12345 )
+    self.assertEqual( req.status, "Waiting" )
 
     toSQL = req.toSQL()
     self.assertEqual( toSQL.startswith("INSERT"), True )
@@ -84,30 +84,30 @@ class RequestTests(unittest.TestCase):
     req = Request()
 
     req.RequestID = 1
-    self.assertEqual( req.RequestID, 1 )
+    self.assertEqual( req.requestID, 1 )
 
     req.RequestName = "test"
-    self.assertEqual( req.RequestName, "test" )
+    self.assertEqual( req.requestName, "test" )
 
     req.JobID = 1
-    self.assertEqual( req.JobID, 1 )
+    self.assertEqual( req.jobID, 1 )
     req.JobID = "1"
-    self.assertEqual( req.JobID, 1 )
+    self.assertEqual( req.jobID, 1 )
 
     req.CreationTime = "1970-01-01 00:00:00"
-    self.assertEqual( req.CreationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.creationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
     req.CreationTime = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.CreationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.creationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
 
     req.SubmissionTime = "1970-01-01 00:00:00"
-    self.assertEqual( req.SubmissionTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.submitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
     req.SubmissionTime = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.SubmissionTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.submitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
 
     req.LastUpdate = "1970-01-01 00:00:00"
-    self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.lastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
     req.LastUpdate = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.lastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
 
   def test_subreq( self ):
     """ test subrequest's arithemtic and state machine """
