@@ -53,7 +53,7 @@ class FileTests( unittest.TestCase ):
 
   def test_ctors( self ):
     """ File construction and (de)serialisation """
-    ## empty defautl ctor
+    ## empty default ctor
     theFile = File()
     self.assertEqual( isinstance( theFile, File ), True )
 
@@ -75,8 +75,6 @@ class FileTests( unittest.TestCase ):
   def test_props( self ):
     """ test props and attributes  """
     theFile = File()
-
-    theFile.a = 10
 
     # valid props
     theFile.FileID = 1
