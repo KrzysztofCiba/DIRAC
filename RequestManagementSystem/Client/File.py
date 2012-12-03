@@ -15,7 +15,7 @@
     sub-request file
 """
 # for properties 
-# pylint: disable=E0211,W0612,W0142 
+# pylint: disable=E0211,W0612,W0142,E1101,E0102 
 
 __RCSID__ = "$Id $"
 
@@ -35,7 +35,6 @@ except ImportError:
 from xml.parsers.expat import ExpatError
 ## from DIRAC
 from DIRAC.Core.Utilities.File import checkGuid
-from DIRAC.Core.Utilities.Traced import Traced
 
 ########################################################################
 class File( object ):
@@ -52,9 +51,10 @@ class File( object ):
     """c'tor
 
     :param self: self reference
+    :param dict fromDict: property dict 
     """
     self._parent = None
-    self.__data__ = dict.fromkeys( ( "FileID", "OperationID", "Status", "Error", "LFN", 
+    self.__data__ = dict.fromkeys( ( "FileID", "OperationID", "Status", "Error", "LFN", "Attempt"
                                      "PFN", "Size", "ChecksumType", "Checksum", "GUID" ) ) 
     self.__data__["Status"] = "Waiting"
     self.__data__["OperationID"] = 0
@@ -75,44 +75,55 @@ class File( object ):
     return str(self) == str(other)
 
   ## props  
-  @property.getter
-  def fileID( self ):
+  @property
+  def FileID( self ):
     """ FileID getter """
     return self.__data__["FileID"]
   
-  @property.setter
-  def fileID( self, value ):
+  @FileID.setter
+  def FileID( self, value ):
     """ FileID setter """
     value = long(value) if value else None
     self.__data__["FileID"] = value
 
-  @property.getter
-  def operationID( self ):
-    """ operation ID, this one is ro """
-    if not self._parent:
-      raise AttributeError( "parent operation not set!")
-    return self._parent.operationID
+  @property
+  def OperationID( self ):
+    """ operation ID (RO) """
+    return self._parent.OperationID if self._parent else 0
 
-  @property.getter
-  def size( self ):
+  @property
+  def Attempt( self ):
+    """ attempt getter """
+    return self.__data__["Attempt"]
+  
+  @Attempt.setter
+  def Attempt( self, value ):
+    """ attempt setter """
+    value = int(value)
+    if value < 0:
+      raise ValueError("Attempt should be a positive integer!")
+    self.__data__["Attempt"] = int(value)
+    
+  @property
+  def Size( self ):
     """ file size getter """
     return self.__data__["Size"]
 
-  @property.setter
-  def size( self, value ):
+  @Size.setter
+  def Size( self, value ):
     """ file size setter """
     value = long(value)
     if value < 0:
       raise ValueError("Size should be a positive integer!")
     self.__data__["Size"] = value
    
-  @property.getter
-  def lfn( self ):
+  @property
+  def LFN( self ):
     """ LFN prop """
     return self.__data__["LFN"]
     
-  @property.setter
-  def lfn( self, value ):
+  @LFN.setter
+  def LFN( self, value ):
     """ lfn setter """
     if type(value) != str:
       raise TypeError("LFN has to be a string!")
@@ -120,13 +131,13 @@ class File( object ):
       raise ValueError("LFN should be an absolute path!")
     self.__data__["LFN"] = value
 
-  @property.getter
-  def pfn( self ):
+  @property
+  def PFN( self ):
     """ PFN prop """
     return self.__data__["PFN"]
   
-  @property.setter
-  def pfn( self, value ):
+  @PFN.setter
+  def PFN( self, value ):
     """ PFN setter """
     if type(value) != str:
       raise TypeError("PFN has to be a string!")
@@ -134,13 +145,13 @@ class File( object ):
       raise ValueError("Wrongly formatted URI!")
     self.__data__["PFN"] = value
 
-  @property.getter
-  def guid( self ):
+  @property
+  def GUID( self ):
     """ GUID prop """
     return self.__data__["GUID"]
 
-  @property.setter
-  def guid( self, value ):
+  @GUID.setter
+  def GUID( self, value ):
     """ GUID setter """
     if value:
       if type(value) not in ( str, unicode ):
@@ -149,50 +160,50 @@ class File( object ):
         raise ValueError("'%s' is not a valid GUID!" % str(value) )
     self.__data__["GUID"] = value
     
-  @property.getter
-  def checksumType( self ):
+  @property
+  def ChecksumType( self ):
     """ checksum type prop """
     return self.__data__["ChecksumType"]
 
-  @property.setter
-  def checksumType( self, value = "NONE" ):
+  @ChecksumType.setter
+  def ChecksumType( self, value = "NONE" ):
     """ checksum type setter """
     value = str(value).upper()
     if value not in ( "ADLER", "MD5", "SHA1", "NONE" ):
       raise ValueError("unknown checksum type: %s" % value )
     self.__data__["ChecksumType"] = value
 
-  @property.getter
-  def checksum( self ):
+  @property
+  def Checksum( self ):
     """ checksum prop """
     return self.__data__["Checksum"]
   
-  @property.setter
-  def checksum( self, value ):
+  @Checksum.setter
+  def Checksum( self, value ):
     """ checksum setter """
     self.__data__["Checksum"] = str(value)
   
-  @property.getter
-  def error( self ):
+  @property
+  def Error( self ):
     """ error prop """
     return self.__data__["Error"]
   
-  @property.setter
-  def error( self, value ):
+  @Error.setter
+  def Error( self, value ):
     """ error setter """
     if type(value) != str:
       raise TypeError("Error has to be a string!")
     self.__data__["Error"] = value[255:]
 
-  @property.getter
-  def status( self ):
+  @property
+  def Status( self ):
     """ status prop """
     if not self.__data__["Status"]:
       self.__data__["Status"] = "Waiting"
     return self.__data__["Status"] 
 
-  @property.setter
-  def status( self, value ):
+  @Status.setter
+  def Status( self, value ):
     """ status setter """
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str(value) )

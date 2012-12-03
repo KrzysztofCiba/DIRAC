@@ -62,7 +62,7 @@ class FileTests( unittest.TestCase ):
       theFile = File( self.fromDict )
     except AttributeError, error:
       print "AttributeError: %s" % str(error)
-    self.assertEqual( isinstance( theFile, File), True )
+    self.assertEqual( isinstance( theFile, File ), True )
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( theFile, key ), value  )
 
@@ -79,8 +79,6 @@ class FileTests( unittest.TestCase ):
     # valid props
     theFile.FileID = 1
     self.assertEqual( theFile.FileID, 1 )
-    theFile.OperationID = 1
-    self.assertEqual( theFile.OperationID, 1 )
     theFile.Status = "Done"
     self.assertEqual( theFile.Status, "Done" )
     theFile.LFN = "/some/path/somewhere"
@@ -106,12 +104,6 @@ class FileTests( unittest.TestCase ):
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
     
-    # SubRequestID
-    try:
-      theFile.OperationID = "a"
-    except Exception, error:
-      self.assertEqual( isinstance( error, ValueError ), True )
-
     # parent
     parent = Operation( { "OperationID" : 99999 } )
     parent += theFile
@@ -120,8 +112,8 @@ class FileTests( unittest.TestCase ):
     try:
       theFile.OperationID = 111111
     except Exception, error:
-      self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "parent OperationID mismatch (99999 != 111111)")
+      self.assertEqual( isinstance( error, AttributeError ), True )
+      self.assertEqual( str(error), "can't set attribute")
 
     # LFN
     try:

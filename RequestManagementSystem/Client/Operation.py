@@ -135,118 +135,112 @@ class Operation(object):
     return len( self.__files__ )
 
   ## properties  
-  @property.getter
-  def requestID( self ):
-    """ RequestID getter  """
-    if not self._parent: 
-      raise AttributeError( "parent Request not defined!")
-    return self._parent.requestID
+  @property
+  def RequestID( self ):
+    """ RequestID getter """
+    return self._parent.requestID if self._parent else 0
 
-  @property.getter 
-  def operationID( self ):
+  @property 
+  def OperationID( self ):
     """ OperationID getter """
     return self.__data__["OperationID"]
   
-  @property.setter
-  def operationID( self, value ):
+  @OperationID.setter
+  def OperationID( self, value ):
     """ OperationID setter """
     self.__data__["OperationID"] = long(value) if value else 0
 
-  @property.getter
+  @property
   def type( self ):
     """ operation type prop """
     return self.__data__["Type"]
 
-  @property.setter
+  @type.setter
   def type( self, value ):
     """ operation type setter """
     self.__data__["Type"] = str(value)
           
-  @property.getter
-  def arguments( self):
+  @property
+  def Arguments( self):
     """ arguments getter """
     return self.__data__["Arguments"]
 
-  @property.setter
-  def arguments( self, value ):
+  @Arguments.setter
+  def Arguments( self, value ):
     """ arguments setter """
     self.__data__["Arguments"] = value if value else ""
   
-  @property.getter
-  def sourceSE( self ):
+  @property
+  def SourceSE( self ):
     """ source SE prop """
     return self.__data__["SourceSE"] 
 
-  @property.setter
-  def sourceSE( self, value ):
+  @SourceSE.setter
+  def SourceSE( self, value ):
     """ source SE setter """
     self.__data__["SourceSE"] = str(value)[:32] if value else ""
     
-  @property.getter
-  def targetSE( self ):
+  @property
+  def TargetSE( self ):
     """ target SE prop """
     return self.__data__["TargetSE"]
 
-  @property.setter
-  def targetSE( self, value ):
+  @TargetSE.setter
+  def TargetSE( self, value ):
     """ target SE setter """
     self.__data__["TargetSE"] = value[:255] if value else ""
   
-  @property.getter
-  def catalogue( self ):
+  @property
+  def Catalogue( self ):
     """ catalogue prop """
     return self.__data__["Catalogue"]
   
-  @property.setter
-  def catalogue( self, value ):
+  @Catalogue.setter
+  def Catalogue( self, value ):
     """ catalogue setter """
     self.__data__["Catalogue"] = value if value else ""
 
-  @property.getter
-  def error( self ):
+  @property
+  def Error( self ):
     """ error prop """
     return self.__data__["Error"]
 
-  @property.setter
-  def error( self, value ):
+  @Error.setter
+  def Error( self, value ):
     """ error setter """
     self.__data__["Error"] = str(value)[:255] if value else ""
 
-  def __status():
+  @property
+  def Status( self ):
     """ Status prop """
-    doc = "Status"
-    def fset( self, value ):
-      """ Status setter """
-      if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done" ):
-        raise ValueError("unknown Status '%s'" % str(value) )
-      if value in ( "Failed", "Done" ) and self.__files__:
-        if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():
-          return 
-      ## update? notify parent
-      old = self.Status
-      self.__data__["Status"] = value
-      if value != old and self._parent:       
-        self._parent._notify()
-    def fget( self ):
-      """ Status getter """
-      return self.__data__["Status"]
-    return locals()
-  Status = property( **__status() )
+    return self.__data__["Status"]
 
-  @property.getter
-  def order( self ):
+  @Status.setter
+  def Status( self, value ):
+    """ Status setter """
+    if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done" ):
+      raise ValueError("unknown Status '%s'" % str(value) )
+    if value in ( "Failed", "Done" ) and self.__files__:
+      if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():
+        return 
+    ## update? notify parent
+    old = self.Status
+    self.__data__["Status"] = value
+    if value != old and self._parent:       
+      self._parent._notify()
+    
+  @property
+  def Order( self ):
     """ order prop """
-    if not self._parent:
-      raise AttributeError("parent not set!")
-    return self._parent.indexOf( self )
+    return self._parent.indexOf( self ) if self._parent else -1
 
-  @property.getter
-  def submitTime( self ):
+  @property
+  def SubmitTime( self ):
     """ subrequest's submission time prop """
     return self.__data__["SubmitTime"]
 
-  @property.setter
-  def submitTime( self, value = None ):
+  @SubmitTime.setter
+  def SubmitTime( self, value = None ):
     """ submission time setter """
     if type(value) not in ( datetime.datetime, str ):
       raise TypeError("SubmissionTime should be a datetime.datetime!")
@@ -254,13 +248,13 @@ class Operation(object):
       value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["SubmitTime"] = value
  
-  @property.getter
-  def lastUpdate( self ):
+  @property
+  def LastUpdate( self ):
     """ last update prop """
     return self.__data__["SubmitTime"]
   
-  @property.setter
-  def lastUpdate( self, value = None ):
+  @LastUpdate.setter
+  def LastUpdate( self, value = None ):
     """ last update setter """
     if type( value ) not in ( datetime.datetime, str ):
       raise TypeError("LastUpdate should be a datetime.datetime!")
