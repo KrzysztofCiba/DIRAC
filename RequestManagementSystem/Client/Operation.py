@@ -15,7 +15,7 @@
     Operation implementation
 """
 # for properties 
-# pylint: disable=E0211,W0612,W0142 
+# pylint: disable=E0211,W0612,W0142,E1101,E0102 
 __RCSID__ = "$Id$"
 ##
 # @file Operation.py
@@ -60,23 +60,30 @@ class Operation(object):
     """
     self._parent = None
     ## sub-request attributes
-    self.__data__ = dict.fromkeys( ( "RequestID",  "OperationID", "Status", "Error", "Type", 
-                                     "Arguments", "Order", "SourceSE", "TargetSE", "Catalogue", 
-                                     "SubmitTime", "LastUpdate" ) )
+    self.__data__ = dict.fromkeys( ( "RequestID",  "OperationID", "Status", "Error", 
+                                     "Type",  "Arguments", "Order", "SourceSE", "TargetSE", 
+                                     "Catalogue", "SubmitTime", "LastUpdate" ) )
     now = datetime.datetime.utcnow().replace( microsecond=0 )
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
     self.__data__["OperationID"] = 0
     self.__data__["RequestID"] = 0
-    self.__data__["Order"] = -1
     self.__data__["Status"] = "Queued"
     ## sub-request files
     self.__files__ = TypedList( allowedTypes = File )
     ## init from dict
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
-      if value != None:
-        setattr( self, key, value )
+      if key not in self.__data__:
+        raise AttributeError("Unknown Operation attribute '%s'" % key )
+      setattr( self, key, value )
+
+  def __setattr__( self, name, value ):
+    """ beawre of tpyos """
+    if not name.startswith("_") and name not in dir(self):
+      raise AttributeError("'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
+    object.__setattr__( self, name, value )
+
 
   ## protected methods for parent only
   def _notify( self ):
@@ -96,7 +103,7 @@ class Operation(object):
     if caller == self._parent:
       self.__data__["Status"] = "Waiting"
 
-  ## SubReqFiles aritmetics 
+  ## Files aritmetics 
   def __contains__( self, subFile ):
     """ in operator """
     return subFile in self.__files__
@@ -137,7 +144,7 @@ class Operation(object):
   ## properties  
   @property
   def RequestID( self ):
-    """ RequestID getter """
+    """ RequestID getter (RO) """
     return self._parent.requestID if self._parent else 0
 
   @property 
@@ -151,12 +158,12 @@ class Operation(object):
     self.__data__["OperationID"] = long(value) if value else 0
 
   @property
-  def type( self ):
+  def Type( self ):
     """ operation type prop """
     return self.__data__["Type"]
 
-  @type.setter
-  def type( self, value ):
+  @Type.setter
+  def Type( self, value ):
     """ operation type setter """
     self.__data__["Type"] = str(value)
           
@@ -173,7 +180,7 @@ class Operation(object):
   @property
   def SourceSE( self ):
     """ source SE prop """
-    return self.__data__["SourceSE"] 
+    return self.__data__["SourceSE"] if self.__data__["SourceSE"] else "" 
 
   @SourceSE.setter
   def SourceSE( self, value ):
@@ -266,8 +273,8 @@ class Operation(object):
     """ dump subrequest to XML """
     data = dict( [ ( key, str(val) if val else "" ) for key, val in self.__data__.items() ] )
     element = ElementTree.Element( "operation", data ) 
-    for subFile in self.__files__:
-      element.append( subFile.toXML() )
+    for opFile in self.__files__:
+      element.append( opFile.toXML() )
     return element
   
   @classmethod
@@ -280,7 +287,8 @@ class Operation(object):
       raise TypeError("wrong argument type %s, excpected ElementTree.Element" % type(element) )
     if element.tag != "operation":
       raise ValueError("wrong tag <%s>, expected <operation>!" % element.tag )
-    operation = Operation( element.attrib )
+    fromDict = dict( [ (key, value) for key, value in element.attrib.items() if value ] ) 
+    operation = Operation( fromDict )
     for fileElement in element.findall( "file" ):
       operation += File.fromXML( fileElement )
     return operation

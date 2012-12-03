@@ -54,7 +54,7 @@ class File( object ):
     :param dict fromDict: property dict 
     """
     self._parent = None
-    self.__data__ = dict.fromkeys( ( "FileID", "OperationID", "Status", "Error", "LFN", "Attempt"
+    self.__data__ = dict.fromkeys( ( "FileID", "OperationID", "Status", "Error", "LFN", "Attempt",
                                      "PFN", "Size", "ChecksumType", "Checksum", "GUID" ) ) 
     self.__data__["Status"] = "Waiting"
     self.__data__["OperationID"] = 0
@@ -66,8 +66,10 @@ class File( object ):
       setattr( self, attrName, attrValue )
 
   def __setattr__( self, name, value ):
+    """ beawre of tpyos """
     if not name.startswith("_") and name not in dir(self):
       raise AttributeError("'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
+    #print name, value
     object.__setattr__( self, name, value )
 
   def __eq__( self, other ):
@@ -220,7 +222,8 @@ class File( object ):
     """ build File form ElementTree.Element :element: """
     if element.tag != "file":
       raise ValueError("wrong tag, excpected 'file', got %s" % element.tag )
-    return File( element.attrib )
+    fromDict = dict( [ (key, value) for key, value in element.attrib.items() if value ] ) 
+    return File( fromDict )
   
   def __str__( self ):
     """ str operator """

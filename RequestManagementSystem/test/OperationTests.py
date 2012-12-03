@@ -65,6 +65,7 @@ class OperationTests(unittest.TestCase):
     operation = Operation( self.fromDict )
     self.assertEqual( isinstance( operation, Operation), True )
     for key, value in self.fromDict.items():
+      print key, value
       self.assertEqual( getattr( operation, key), value )
     ## from XML
     operation = Operation.fromXML( operation.toXML() )
@@ -94,10 +95,6 @@ class OperationTests(unittest.TestCase):
     self.assertEqual( operation.OperationID, 1 )
     operation.OperationID = "1"
     self.assertEqual( operation.OperationID, 1 )
-    operation.RequestID = 1
-    self.assertEqual( operation.RequestID, 1 )
-    operation.RequestID = "1"
-    self.assertEqual( operation.RequestID, 1 )
 
     operation.Arguments = "foobar"
     self.assertEqual( operation.Arguments, "foobar" )
@@ -117,15 +114,12 @@ class OperationTests(unittest.TestCase):
     operation.Error = "error"
     self.assertEqual( operation.Error, "error" )
 
-    operation.ExecutionOrder = 1
-    self.assertEqual( operation.ExecutionOrder, 1 )
-
-
     ## wrong props
     try:
       operation.RequestID = "foo"
     except Exception, error:
-      self.assertEqual( type(error), ValueError )
+      self.assertEqual( type(error), AttributeError )
+      self.assertEqual( str(error), "can't set attribute" )
 
     try:
       operation.OperationID = "foo"
@@ -141,15 +135,8 @@ class OperationTests(unittest.TestCase):
     
     
     ## timestamps
-    operation = Operation()
     try:
-      operation.CreationTime = "foo"
-    except Exception, error:
-      self.assertEqual( type(error), ValueError )
-      self.assertEqual( str(error), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
-
-    try:
-      operation.SubmissionTime = "foo"
+      operation.SubmitTime = "foo"
     except Exception, error:
       self.assertEqual( type(error), ValueError )
       self.assertEqual( str(error), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
