@@ -63,7 +63,7 @@ class Request(object):
     :param self: self reference
     """
     self.__waiting = None 
-    self.__data__ = dict.fromkeys( ( "RequestID", "Name", "OwnerDN", "OwnerGroup", "DiracSetup", "Status", 
+    self.__data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status", 
                                      "SourceComponent", "JobID", "CreationTime", "SubmitTime", "LastUpdate"), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now 
@@ -74,7 +74,10 @@ class Request(object):
     self.__operations__ = TypedList( allowedTypes=Operation )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
-      setattr( self, key, value )
+      if key not in self.__data__:
+        raise AttributeError("Unknown Request attribute '%s'" % key )
+      if value:
+        setattr( self, key, value )
 
   def _notify( self ):
     """ simple state machine for sub request statuses """
@@ -83,7 +86,6 @@ class Request(object):
     ## update sub-requets statuses
     for subReq in self:
       
-      subReq.Order = self.indexOf( subReq )
       status = subReq.Status
   
       if status in ( "Done", "Failed" ):
@@ -128,7 +130,6 @@ class Request(object):
     if operation not in self:
       self.__operations__.append( operation )
       operation._parent = self
-      operation.Order = self.indexOf( operation )
     return S_OK()
    
   def insertBefore( self, newOperation, existingOperation ):
@@ -144,7 +145,6 @@ class Request(object):
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation ), newOperation )
     newOperation._parent = self
-    newOperation.ExecutionOrder = self.indexOf( newOperation )
     return S_OK()
     
   def insertAfter( self, newOperation, existingOperation ):
@@ -160,17 +160,16 @@ class Request(object):
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation )+1, newOperation )
     newOperation._parent = self 
-    newOperation.ExecutionOrder = self.indexOf( newOperation )
     return S_OK()
 
-  def addOperation( self, subRequest ):
-    """ add :subRequest: to list of Operations
+  def addOperation( self, operation ):
+    """ add :operation: to list of Operations
 
     :param self: self reference
-    :param Operation subRequest: Operation to be insterted
+    :param Operation operation: Operation to be insterted
     """
-    if subRequest not in self:
-      added = self + subRequest
+    if operation not in self:
+      added = self + operation
     return S_OK()
 
   def __iter__( self ):
@@ -195,93 +194,93 @@ class Request(object):
 
   ## properties
 
-  @property.getter
-  def requestID( self ):
+  @property
+  def RequestID( self ):
     """ request ID getter """
     return self.__data__["RequestID"]
 
-  @property.setter
-  def requestID( self, value ):
-    """ requestID setter """
+  @RequestID.setter
+  def RequestID( self, value ):
+    """ requestID setter (shouldn't be RO???) """
     self.__data__["RequestID"] = long(value) if value else 0
 
-  @property.getter
-  def requestName( self ):
+  @property
+  def RequestName( self ):
     """ request's name getter """
     return self.__data__["RequestName"]
     
-  @property.setter
-  def requestName( self, value ):
+  @RequestName.setter
+  def RequestName( self, value ):
     """ request name setter """
     if type(value) != str:
       raise TypeError("RequestName should be a string")
     self.__data__["RequestName"] = value[:128]
 
-  @property.getter
-  def ownerDN( self ):
+  @property
+  def OwnerDN( self ):
     """ request owner DN getter """
     return self.__data__["OwnerDN"]
   
-  @property.setter
-  def ownerDN( self, value ):
+  @OwnerDN.setter
+  def OwnerDN( self, value ):
     """ request owner DN setter """
     if type(value) != str:
       raise TypeError("ownerDN should be a string!")
     self.__data__["OwnerDN"] = value
     
-  @property.getter
-  def ownerGroup( self ):
+  @property
+  def OwnerGroup( self ):
     """ request owner group getter  """
     return self.__data__["OwnerGroup"]
 
-  @property.setter 
-  def ownerGroup( self, value ):
+  @OwnerGroup.setter 
+  def OwnerGroup( self, value ):
     """ request owner group setter """
     if type(value) != str:
       raise TypeError("ownerGroup should be a string!")
     self.__data__["OwnerGroup"] = value
 
-  @property.getter
-  def diracSetup( self ):
+  @property
+  def DIRACSetup( self ):
     """ DIRAC setup getter  """
     return self.__data__["DIRACSetup"]
 
-  @property.setter
-  def diracSetup( self, value ):
+  @DIRACSetup.setter
+  def DIRACSetup( self, value ):
     """ DIRAC setup setter """
     if type(value) != str:
       raise TypeError("setup should be a string!")
     self.__data__["DIRACSetup"] = value
 
-  @property.getter 
-  def sourceComponent( self ):
+  @property 
+  def SourceComponent( self ):
     """ source component getter  """
     return self.__data__["SourceComponent"]
 
-  @property.setter
-  def sourceComponent( self, value ):
+  @SourceComponent.setter
+  def SourceComponent( self, value ):
     """ source component setter """
     if type(value) != str:
       raise TypeError("Setup should be a string!")
     self.__data__["SourceComponent"] = value
 
-  @property.getter
-  def jobID( self ):
+  @property
+  def JobID( self ):
     """ jobID getter """
     return self.__data__["JobID"]
 
-  @property.setter
-  def jobID( self, value=0 ):
+  @JobID.setter
+  def JobID( self, value=0 ):
     """ jobID setter """
     self.__data__["JobID"] = long(value)
     
-  @property.getter
-  def creationTime( self ):
+  @property
+  def CreationTime( self ):
     """ creattion time getter """
     return self.__data__["CreationTime"]
 
-  @property.setter 
-  def creationTime( self, value = None ):
+  @CreationTime.setter 
+  def CreationTime( self, value = None ):
     """ creation time setter """
     if type(value) not in ( datetime.datetime, str ) :
       raise TypeError("CreationTime should be a datetime.datetime!")
@@ -289,27 +288,27 @@ class Request(object):
       value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["CreationTime"] = value
 
-  @property.getter
-  def submitTime( self ):
+  @property
+  def SubmitTime( self ):
     """ request's submission time getter """
-    return self.__data__["SubmissionTime"]
+    return self.__data__["SubmitTime"]
 
-  @property.setter 
-  def submitTime( self, value = None ):
+  @SubmitTime.setter 
+  def SubmitTime( self, value = None ):
     """ submission time setter """
     if type(value) not in ( datetime.datetime, str ):
-      raise TypeError("SubmissionTime should be a datetime.datetime!")
+      raise TypeError("SubmitTime should be a datetime.datetime!")
     if type(value) == str:
       value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
-    self.__data__["SubmissionTime"] = value
+    self.__data__["SubmitTime"] = value
     
-  @property.getter 
-  def lastUpdate( self ):
+  @property 
+  def LastUpdate( self ):
     """ last update getter """ 
     return self.__data__["LastUpdate"]
 
-  @property.setter
-  def lastUpdate( self, value = None ):
+  @LastUpdate.setter
+  def LastUpdate( self, value = None ):
     """ last update setter """
     if type( value ) not in  ( datetime.datetime, str ):
       raise TypeError("LastUpdate should be a datetime.datetime!")
@@ -317,10 +316,10 @@ class Request(object):
       value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["LastUpdate"] = value
     
-  @property.getter 
-  def status( self ):
+  @property 
+  def Status( self ):
     """ status getter """
-    opStatuses = list( set( [ op.status for op in self.__operations__ ] ) ) 
+    opStatuses = list( set( [ op.Status for op in self.__operations__ ] ) ) 
     status = "Waiting"
     if "Done" in opStatuses:
       status = "Done"
@@ -331,18 +330,18 @@ class Request(object):
     self.__data__["Status"] = status
     return self.__data__["Status"]
   
-  @property.setter
-  def status( self, value ):
+  @Status.setter
+  def Status( self, value ):
     """ status setter """
     if value not in ( "Done", "Waiting", "Failed" ):
       raise ValueError( "Unknown status: %s" % str(value) )
     self.__data__["Status"] = value      
   
-  @property.getter
-  def order( self ):
+  @property
+  def Order( self ):
     """ ro execution order getter """
     self._notify()
-    opStatuses = [ op.status for op in self.__operations__ ]
+    opStatuses = [ op.Status for op in self.__operations__ ]
     return opStatuses.index("Waiting") if "Waiting" in opStatuses else len(opStatuses) 
     
   @classmethod
@@ -366,20 +365,20 @@ class Request(object):
     :return: S_OK( xmlString ) 
     """
     root = ElementTree.Element( "request" )
-    root.attrib["RequestName"] = str(self.requestName) if self.requestName else ""
-    root.attrib["RequestID"] = str(self.requestID) if self.requestID else ""
-    root.attrib["OwnerDN"] = str(self.ownerDN) if self.ownerDN else "" 
-    root.attrib["OwnerGroup"] = str(self.ownerGroup) if self.ownerGroup else "" 
-    root.attrib["DIRACSetup"] = str(self.diracSetup) if self.diracSetup else ""
-    root.attrib["JobID"] = str(self.jobID) if self.jobID else "0"
-    root.attrib["SourceComponent"] = str(self.sourceComponent) if self.sourceComponent else "" 
+    root.attrib["RequestName"] = str(self.RequestName) if self.RequestName else ""
+    root.attrib["RequestID"] = str(self.RequestID) if self.RequestID else ""
+    root.attrib["OwnerDN"] = str(self.OwnerDN) if self.OwnerDN else "" 
+    root.attrib["OwnerGroup"] = str(self.OwnerGroup) if self.OwnerGroup else "" 
+    root.attrib["DIRACSetup"] = str(self.DIRACSetup) if self.DIRACSetup else ""
+    root.attrib["JobID"] = str(self.JobID) if self.JobID else "0"
+    root.attrib["SourceComponent"] = str(self.SourceComponent) if self.SourceComponent else "" 
     ## always calculate status, never set
-    root.attrib["Status"] = str(self.status)
+    root.attrib["Status"] = str(self.Status)
     ## datetime up to seconds
-    root.attrib["CreationTime"] = self.creationTime.isoformat(" ").split(".")[0] if self.creationTime else ""
-    root.attrib["SubmissionTime"] = self.submitTime.isoformat(" ").split(".")[0] if self.submitTime else ""
-    root.attrib["LastUpdate"] = self.lastUpdate.isoformat(" ").split(".")[0] if self.lastUpdate else "" 
-    ## trigger xml dump of a whole subrequests and their files tree
+    root.attrib["CreationTime"] = self.CreationTime.isoformat(" ").split(".")[0] if self.CreationTime else ""
+    root.attrib["SubmitTime"] = self.SubmitTime.isoformat(" ").split(".")[0] if self.SubmitTime else ""
+    root.attrib["LastUpdate"] = self.LastUpdate.isoformat(" ").split(".")[0] if self.LastUpdate else "" 
+    ## trigger xml dump of a whole operations and their files tree
     for operation in self.__operations__:
       root.append( operation.toXML() )
     xmlStr = ElementTree.tostring( root )
@@ -409,14 +408,13 @@ class Request(object):
     """ get digest for a web """
     digestString = []
     for op in self:
-      digestList = [ str(op.RequestType), 
-                     str(op.Operation), 
+      digestList = [ str(op.Type),  
                      str(op.Status), 
                      str(op.Order), 
                      str(op.TargetSE) if op.TargetSE else "", 
                      str(op.Catalogue) if op.Catalogue else "" ]
       if len(op):
-        subFile = subReq[0]
+        subFile = op[0]
         digestList.append( "%s,...<%d files>" % ( os.path.basename( subFile.LFN ), len(op) ) )
       digestString.append( ":".join( digestList ) )
     return S_OK( "\n".join( digestString ) ) 

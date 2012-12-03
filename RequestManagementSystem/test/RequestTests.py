@@ -52,14 +52,14 @@ class RequestTests(unittest.TestCase):
     ## empty c'tor
     req = Request()
     self.assertEqual( isinstance( req, Request ), True )
-    self.assertEqual( req.jobID, 0 )
-    self.assertEqual( req.status, "Waiting" )
+    self.assertEqual( req.JobID, 0 )
+    self.assertEqual( req.Status, "Waiting" )
 
     req = Request( self.fromDict )
     self.assertEqual( isinstance( req, Request ), True )
-    self.assertEqual( req.requestName, "test" )
-    self.assertEqual( req.jobID, 12345 )
-    self.assertEqual( req.status, "Waiting" )
+    self.assertEqual( req.RequestName, "test" )
+    self.assertEqual( req.JobID, 12345 )
+    self.assertEqual( req.Status, "Waiting" )
     
     toXML = req.toXML()
     self.assertEqual( toXML["OK"], True )
@@ -68,9 +68,9 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( req["OK"], True )
     self.assertEqual( isinstance( req["Value"], Request ), True )
     req = req["Value"]
-    self.assertEqual( req.requestName, "test" )
-    self.assertEqual( req.jobID, 12345 )
-    self.assertEqual( req.status, "Waiting" )
+    self.assertEqual( req.RequestName, "test" )
+    self.assertEqual( req.JobID, 12345 )
+    self.assertEqual( req.Status, "Waiting" )
 
     toSQL = req.toSQL()
     self.assertEqual( toSQL.startswith("INSERT"), True )
@@ -84,56 +84,55 @@ class RequestTests(unittest.TestCase):
     req = Request()
 
     req.RequestID = 1
-    self.assertEqual( req.requestID, 1 )
+    self.assertEqual( req.RequestID, 1 )
 
     req.RequestName = "test"
-    self.assertEqual( req.requestName, "test" )
+    self.assertEqual( req.RequestName, "test" )
 
     req.JobID = 1
-    self.assertEqual( req.jobID, 1 )
+    self.assertEqual( req.JobID, 1 )
     req.JobID = "1"
-    self.assertEqual( req.jobID, 1 )
+    self.assertEqual( req.JobID, 1 )
 
     req.CreationTime = "1970-01-01 00:00:00"
-    self.assertEqual( req.creationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.CreationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
     req.CreationTime = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.creationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.CreationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
 
-    req.SubmissionTime = "1970-01-01 00:00:00"
-    self.assertEqual( req.submitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
-    req.SubmissionTime = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.submitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    req.SubmitTime = "1970-01-01 00:00:00"
+    self.assertEqual( req.SubmitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    req.SubmitTime = datetime.datetime( 1970, 1, 1, 0, 0, 0)
+    self.assertEqual( req.SubmitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
 
     req.LastUpdate = "1970-01-01 00:00:00"
-    self.assertEqual( req.lastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
     req.LastUpdate = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.lastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
 
-  def test_subreq( self ):
-    """ test subrequest's arithemtic and state machine """
+  def test_operations( self ):
+    """ test operations arithemtic and state machine """
     req = Request()
     self.assertEqual( len(req), 0 )
     
-    transfer = SubRequest()
-    transfer.RequestType = "transfer"
-    transfer.Operation = "replicateAndRegister"
-    transfer.addFile( SubReqFile( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
+    transfer = Operation()
+    transfer.Type = "replicateAndRegister"
+    transfer.addFile( File( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
 
     getWaiting = req.getWaiting()
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], None )
 
-    req.addSubRequest( transfer )
+    req.addOperation( transfer )
     self.assertEqual( len(req), 1 )
-    self.assertEqual( transfer.ExecutionOrder, req.currentExecutionOrder()["Value"] )
+    self.assertEqual( transfer.Order, req.Order )
     self.assertEqual( transfer.Status, "Waiting" )
 
     getWaiting = req.getWaiting()
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], transfer )
 
-    removal = SubRequest( { "RequestType": "removal", "Operation" : "removeFile" } )
-    removal.addFile( SubReqFile( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
+    removal = Operation( { "Type" : "removeFile" } )
+    removal.addFile( File( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
 
     req.insertBefore( removal, transfer )
 
@@ -142,14 +141,14 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( getWaiting["Value"], removal )
 
     self.assertEqual( len(req), 2 )
-    self.assertEqual( [ subReq.Status for subReq in req ], ["Waiting", "Queued"] )
+    self.assertEqual( [ op.Status for op in req ], ["Waiting", "Queued"] )
     self.assertEqual( req.subStatusList() , ["Waiting", "Queued"] )
 
 
-    self.assertEqual( removal.ExecutionOrder, 0 )
-    self.assertEqual( removal.ExecutionOrder, req.currentExecutionOrder()["Value"] )
+    self.assertEqual( removal.Order, 0 )
+    self.assertEqual( removal.Order, req.Order )
 
-    self.assertEqual( transfer.ExecutionOrder, 1 )
+    self.assertEqual( transfer.Order, 1 )
 
     self.assertEqual( removal.Status, "Waiting" )
     self.assertEqual( transfer.Status, "Queued" )
@@ -161,17 +160,17 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( removal.Status, "Done" )
 
     self.assertEqual( transfer.Status, "Waiting" )
-    self.assertEqual( transfer.ExecutionOrder, req.currentExecutionOrder()["Value"] )
+    self.assertEqual( transfer.Order, req.Order )
 
     ## len, looping
     self.assertEqual( len(req), 2 )
-    self.assertEqual( [ subReq.Status for subReq in req ], ["Done", "Waiting"] )
+    self.assertEqual( [ op.Status for op in req ], ["Done", "Waiting"] )
     self.assertEqual( req.subStatusList() , ["Done", "Waiting"] )
 
     digest = req.getDigest()
     self.assertEqual( digest["OK"], True )
     self.assertEqual( digest["Value"], 
-                      "removal:removeFile:Done:0:::c,...<1 files>\ntransfer:replicateAndRegister:Waiting:1:::c,...<1 files>")
+                      "removeFile:Done:0:::c,...<1 files>\nreplicateAndRegister:Waiting:1:::c,...<1 files>" )
 
     getWaiting = req.getWaiting()
     self.assertEqual( getWaiting["OK"], True )
