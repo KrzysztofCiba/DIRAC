@@ -70,6 +70,7 @@ class RequestDBMySQL( DB ):
 
   def setRequestStatus( self, requestName, requestStatus, subRequest_flag = True ):
     """ Set request status and optionally subrequest status
+    """
 
     :param str requestName: Requests.RequestName
     :param str requestStatus: new value for Requests.Status
@@ -182,6 +183,7 @@ class RequestDBMySQL( DB ):
     
     TODO: needs refactoring, all information can be read in one go
     """
+
     summaryDict = {}
     req = "SELECT DISTINCT(`RequestType`) FROM `SubRequests`;"
     result = self._query( req )
@@ -238,6 +240,28 @@ class RequestDBMySQL( DB ):
     for lfn, status in res['Value']:
       files[lfn] = status
     return S_OK( files )
+
+  def yieldRequests( self, requestType = "", limit = 1 ):
+    """ quick and dirty request generator
+
+    :param self: self reference
+    :param str requestType: request type
+    :param int limit: number of requests to be served
+    """
+    servedRequests = []
+    while True:
+      if len( servedRequests ) > limit:
+        raise StopIteration()
+      requestDict = self.getRequest( requestType )
+      ## error getting request or not requests of that type at all at all
+      if not requestDict["OK"] or not requestDict["Value"]:
+        yield requestDict
+        raise StopIteration()
+      ## not served yet?  
+      if requestDict["Value"]["RequestName"] not in servedRequests:
+        servedRequests.append( requestDict["Value"]["RequestName"] )
+        yield requestDict
+
 
   def getRequest( self, requestType ):
     """ Get a request of a given type eligible for execution
@@ -915,10 +939,12 @@ class RequestDBMySQL( DB ):
 
     :param mixed jobIDs: list with jobIDs or long JobIDs
     """
+
     if type(jobIDs) != list:
       return S_ERROR("RequestDB: wrong format for jobIDs argument, got %s, expecting a list" )
     # make sure list is uniqe and has only longs
     jobIDs = list( set( [ int(jobID) for jobID in jobIDs if int(jobID) != 0 ] ) )
+
     reqCols = [ "RequestID", "RequestName", "JobID", "Status", 
                 "OwnerDN", "OwnerGroup", "DIRACSetup", "SourceComponent", 
                 "CreationTime", "SubmissionTime", "LastUpdate" ] 
@@ -1096,6 +1122,7 @@ class RequestDBMySQL( DB ):
   def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ Get summary of the requests in the database
     """
+
     resultDict = {}
     rparameterList = ['RequestID', 'RequestName', 'JobID', 'OwnerDN', 'OwnerGroup']
     sparameterList = ['RequestType', 'Status', 'Operation']
