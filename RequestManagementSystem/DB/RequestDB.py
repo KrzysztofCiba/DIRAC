@@ -102,7 +102,6 @@ class RequestDB(DB):
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
     return S_OK( { "cursor" : cursor, "conn" : conn  } )
 
-
   def transaction( self, cmdList, conn=None, cursorType=MySQLdb.cursors.DictCursor, dropConnection=False ):
     """ transaction using dict cursor """
 
@@ -139,19 +138,27 @@ class RequestDB(DB):
 
 
     def putRequest( self, request ):
-      """ update or insert request into db """
-      pass
-    
+      """ update or insert request into db """      
+      cursor = self.dictCursor()
+      if not cursor["OK"]:
+        self.log.error("putRequest: %s" % cursor["Message"] )
+      cursor = cursor["Value"]["cursor"]
+
+      transaction = [ request.toSQL() ]
+      
+
     def getRequest( self ):
       pass
 
     def deleteRequest( self, request ):
       pass
 
+    
+
     def getDBSummary( self ):
       pass
 
-    def readRequests( self, selDict=None ):
+    def readRequests( self ):
       pass
 
     
