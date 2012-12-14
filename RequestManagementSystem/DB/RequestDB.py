@@ -136,17 +136,28 @@ class RequestDB(DB):
       self.__putConnection( conn )
       return S_ERROR( error )
 
-
     def putRequest( self, request ):
       """ update or insert request into db """      
+
       cursor = self.dictCursor()
       if not cursor["OK"]:
         self.log.error("putRequest: %s" % cursor["Message"] )
       cursor = cursor["Value"]["cursor"]
 
-      transaction = [ request.toSQL() ]
-      
+      cursor.execute( request.toSQL() )
+      if not request.requestID:
+        request.requestID = cursor.lastrowid
+      for operation in request:
+        cursor.execute( operation.toSQL() )
+        if not operation.operationID:
+          operation.operationID = cursow.lastrowid
+          for opFile in operation:
+            cursor.execute( opFile.toSQL() )
 
+      return S_OK()
+
+
+      
     def getRequest( self ):
       pass
 
