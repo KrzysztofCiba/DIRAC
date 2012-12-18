@@ -215,8 +215,7 @@ def _quotedList( fieldList = None ):
   if not quotedFields:
     return None
 
-  return ', '.join( quotedFields )
-
+  return ', '.join( quotedFields )  
 
 
 class MySQL:

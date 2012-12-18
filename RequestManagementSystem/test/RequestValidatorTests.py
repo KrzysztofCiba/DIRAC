@@ -27,8 +27,8 @@ __RCSID__ = "$Id $"
 import unittest
 ## from DIRAC
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.SubRequest import SubRequest
-from DIRAC.RequestManagementSystem.Client.SubReqFile import SubReqFile
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
 ## SUT
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
@@ -41,66 +41,70 @@ class RequestValidatorTests(unittest.TestCase):
   """
 
   def setUp( self ):
-    """c'tor
-
-    :param self: self reference
-    """
+    """ test setup """
     self.request = Request()
-    self.subReq = SubRequest()
-    self.file = SubReqFile()
+    self.operation = Operation()
+    self.file = File()
+
+  def tearDown( self ):
+    """ test tear down """
+    del self.request
+    del self.operation
+    del self.file
 
   def testValidator( self ):
     """ validator test """
-    validator = RequestValidator()
     
+    ## create validator
+    validator = RequestValidator()
+    self.assertEqual( isinstance( validator, RequestValidator ), True )
+
     ## RequestName not set 
     ret = validator.validate( self.request )
-    self.assertEqual( ret, {'Message': 'RequestName not set', 
-                            'OK': False} )
+    self.assertEqual( ret, { 'Message' : 'RequestName not set', 
+                             'OK' : False } )
     self.request.RequestName = "test_request"
 
-    ## no subRequests 
+    ## no operations 
     ret = validator.validate( self.request )
-    self.assertEqual( ret, {'Message': "SubRequests are not present in request 'test_request'", 
-                            'OK': False} )        
-    self.request.addSubRequest( self.subReq )
+    self.assertEqual( ret, { 'Message' : "Operations not present in request 'test_request'", 
+                             'OK': False} )        
+    self.request.addOperation( self.operation )
 
-    ## no RequestType
+    ## type not set
     ret = validator.validate( self.request )
-    self.assertEqual( ret, {'Message': "SubRequest #0 hasn't got a proper RequestType set", 
-                            'OK': False} )
-    self.subReq.RequestType = "transfer"
-
-    ## no Operation
-    ret = validator.validate( self.request )
-    self.assertEqual( ret, {'Message': "SubRequest #0 hasn't got a proper Operation set", 
-                            'OK': False} )
-    self.subReq.Operation = "replicateAndRegister"
+    self.assertEqual( ret, { 'Message' : "Operation #0 in request 'test_request' hasn't got Type set", 
+                             'OK' : False } )
+    self.operation.Type = "replicateAndRegister"
 
     ## files not present 
     ret = validator.validate( self.request )
-    self.assertEqual( ret, {'Message': "SubRequest #0 of type 'transfer' hasn't got files to process", 
-                            'OK': False} )
-    self.subReq += self.file 
+    self.assertEqual( ret, { 'Message' : "Operation #0 of type 'replicateAndRegister' hasn't got files to process.", 
+                             'OK' : False } )
+    self.operation.addFile( self.file ) 
 
+    ## targetSE not set
     ret = validator.validate( self.request )
-    self.assertEqual( ret,  {'Message': 'SubRequest #0 of type transfer and operation replicateAndRegister is missing TargetSE attribute.', 
-                             'OK': False} )
+    self.assertEqual( ret,  { 'Message' : "Operation #0 of type 'replicateAndRegister' is missing TargetSE attribute.", 
+                              'OK': False } )
+    self.operation.TargetSE = "CERN-USER"
 
-    self.subReq.TargetSE = "CERN-USER"
+    ## missing LFN
     ret = validator.validate( self.request )
-    self.assertEqual( ret,  {'Message': 'SubRequest #0 of type transfer and operation replicateAndRegister is missing LFN attribute for file.', 
-                             'OK': False} )
-
+    self.assertEqual( ret,  
+                      { "Message" : "Operation #0 of type 'replicateAndRegister' is missing LFN attribute for file.", 
+                        "OK": False} )
     self.file.LFN = "/a/b/c"
+
+    ## all OK
     ret = validator.validate( self.request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
 
     
 ## test suite execution 
 if __name__ == "__main__":
-  testLoader = unittest.TestLoader()
-  suite = testLoader.loadTestsFromTestCase( RequestValidatorTests )
-  suite = unittest.TestSuite( [ suite ] )
-  unittest.TextTestRunner(verbosity=3).run(suite)
+  gTestLoader = unittest.TestLoader()
+  gSuite = gTestLoader.loadTestsFromTestCase( RequestValidatorTests )
+  gSuite = unittest.TestSuite( [ gSuite ] )
+  unittest.TextTestRunner(verbosity=3).run( gSuite )
 
