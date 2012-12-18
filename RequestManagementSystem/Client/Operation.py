@@ -43,7 +43,7 @@ class Operation(object):
   :param long OperationID: OperationID as read from DB backend
   :param long RequestID: parent RequestID 
   :param str Status: execution status
-  :param str Operation: operation to perform
+  :param str Type: operation to perform
   :param str Arguments: additional arguments
   :param str SourceSE: source SE name
   :param str TargetSE: target SE names as comma separated list
@@ -69,7 +69,7 @@ class Operation(object):
     self.__data__["OperationID"] = 0
     self.__data__["RequestID"] = 0
     self.__data__["Status"] = "Queued"
-    ## sub-request files
+    ## operation files
     self.__files__ = TypedList( allowedTypes = File )
     ## init from dict
     fromDict = fromDict if fromDict else {}
@@ -83,7 +83,6 @@ class Operation(object):
     if not name.startswith("_") and name not in dir(self):
       raise AttributeError("'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
     object.__setattr__( self, name, value )
-
 
   ## protected methods for parent only
   def _notify( self ):

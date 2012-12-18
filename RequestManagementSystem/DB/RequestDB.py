@@ -165,7 +165,6 @@ class RequestDB(DB):
       pass
 
     
-
     def getDBSummary( self ):
       pass
 
