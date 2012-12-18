@@ -35,8 +35,8 @@ def initializeRequestManagerHandler(serviceInfo):
     from DIRAC.RequestManagementSystem.DB.RequestDBFile import RequestDBFile
     gRequestDB = RequestDBFile()
   elif backend == 'mysql':
-    from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
-    gRequestDB = RequestDBMySQL()
+    from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
+    gRequestDB = RequestDB()
   else:
     fatStr = "RequestManager.initializeRequestManagerHandler: Supplied backend is not supported."
     gLogger.fatal(fatStr, backend)

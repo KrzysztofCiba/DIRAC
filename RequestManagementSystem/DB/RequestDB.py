@@ -21,7 +21,9 @@ __RCSID__ = "$Id $"
 # @brief Definition of RequestDB class.
 
 ## imports 
+import random
 import MySQLdb.cursors
+from MySQLdb import Error as MySQLdbError
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -47,9 +49,9 @@ class RequestDB(DB):
                                            "JobID" : "INTEGER DEFAULT 0",
                                            "CreationTime" : "DATETIME",
                                            "SubmitTime" : "DATETIME",
-                                           "LastUpdate" : "DATETIME" },
+                                           "LastUpdate" : "DATETIME"  },
                               "PrimaryKey" : "RequestID",
-                              "Indexes" : "RequestName" : [ "RequestName"]  },
+                              "Indexes" : { "RequestName" : [ "RequestName"] } },
                 "Operation" : { "Fields" : { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
                                              "RequestID" : "INTEGER NOT NULL",
                                              "Type" : "VARCHAR(64) NOT NULL",
@@ -73,7 +75,7 @@ class RequestDB(DB):
                                         "GUID" : "VARCHAR(26)",
                                         "Error" : "VARCHAR(255)" },
                            "PrimaryKey" : "FileID",
-                           "Indexes" : "LFN" : [ "LFN" ] } } 
+                           "Indexes" : { "LFN" : [ "LFN" ] } } } 
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
     """c'tor
@@ -81,7 +83,7 @@ class RequestDB(DB):
     :param self: self reference
 
     """
-    DB.__init__( self, 'RequestDB', 'RequestManagement/RequestDB', maxQueueSize )
+    DB.__init__( self, "RequestDB", "RequestManagement/RequestDB", maxQueueSize )
     self.getIdLock = threading.Lock()
     self._checkTables()
 
@@ -92,7 +94,7 @@ class RequestDB(DB):
   def dictCursor( self, conn=None ):
     """ get dict cursor for connection :conn:
 
-    :return: S_OK( { "cursor": MySQLdb.cursors.DictCursor, "conn" : connection  } ) or S_ERROR
+    :return: S_OK( { "cursor": MySQLdb.cursors.DictCursor, "connection" : connection  } ) or S_ERROR
     """
     if not conn:
       retDict = self._getConnection()
@@ -100,75 +102,70 @@ class RequestDB(DB):
         return retDict
       conn = retDict["Value"]
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
-    return S_OK( { "cursor" : cursor, "conn" : conn  } )
+    return S_OK( { "cursor" : cursor, "connection" : conn  } )
 
-  def transaction( self, cmdList, conn=None, cursorType=MySQLdb.cursors.DictCursor, dropConnection=False ):
-    """ transaction using dict cursor """
 
-    if type( cmdList ) != ListType:
-      return S_ERROR( "transaction: wrong type (%s) for cmdList" % type( cmdList ) )
-
-    ## get connection 
-    if not conn:
-      retDict = self._getConnection()
-      if not retDict["OK"]:
-        return retDict
-      conn = retDict["Value"]
-
-    ## list with cmds and their results   
-    cmdRet = []
+  def setRequest( self, request ):
+    """ update or insert request into db """      
+    cursor = self.dictCursor()
+    if not cursor["OK"]:
+      self.log.error("setRequest: %s" % cursor["Message"] )
+    cursor = cursor["Value"]["cursor"]
+    connection = cursor["Value"]["connection"]
+    connection.autocommit( False )
     try:
-      cursor = conn.cursor( cursorclass=cursorType )
-      for cmd in cmdList:
-        cmdRet.append( ( cmd, cursor.execute( cmd ) ) )
-      conn.commit()
+      cursor.execute( request.toSQL() )
+      if not request.requestID:
+        request.requestID = cursor.lastrowid
+        for operation in request:
+          cursor.execute( operation.toSQL() )
+          if not operation.operationID:
+            operation.operationID = cursor.lastrowid
+            for opFile in operation:
+              cursor.execute( opFile.toSQL() )
+      connection.commit()
       cursor.close()
-      ret = S_OK( cmdRet )
-      if dropConnection:
-        self.__putConnection( conn )
-      else:
-        ret["conn"] = conn
-      return ret
-    except Exception, error:
-      self.log.execption( error )
-      ## rollback, put back connection to the pool 
-      conn.rollback()
-      self.__putConnection( conn )
-      return S_ERROR( error )
-
-    def putRequest( self, request ):
-      """ update or insert request into db """      
-
+    except MySQLdbError, error:
+      connection.rollback()
+      connection.autocommit(True)
+      cursor.close()
+      self.log.error( "setRequest: unable to put request: %s" % str(error) )
+      return S_ERROR( "setRequest: %s" % str(error) )
+    
+    return S_OK()
+      
+    def getRequest( self ):
+      """ read request for execution """
       cursor = self.dictCursor()
       if not cursor["OK"]:
         self.log.error("putRequest: %s" % cursor["Message"] )
       cursor = cursor["Value"]["cursor"]
-
-      cursor.execute( request.toSQL() )
-      if not request.requestID:
-        request.requestID = cursor.lastrowid
-      for operation in request:
-        cursor.execute( operation.toSQL() )
-        if not operation.operationID:
-          operation.operationID = cursow.lastrowid
-          for opFile in operation:
-            cursor.execute( opFile.toSQL() )
-
+      connection = cursor["Value"]["connection"]
+      connection.autocommit( False )
+      try:
+        cursor.execute( "SELECT RequestID FROM Requests WHERE Status = 'Waiting' ORDER BY LastUpdate ASC LIMIT 100;" ) 
+        requestIDs = cursor.fetchall()
+        
+      except MySQLdbError, error:
+        connection.rollback()
+        connection.autocommit(True)
+        cursor.close()
+        self.log.error( "getRequest: unable to get request: %s" % str(error) )
+        return S_ERROR( "getRequest: %s" % str(error) )
       return S_OK()
 
-
-      
-    def getRequest( self ):
-      pass
-
+        
     def deleteRequest( self, request ):
+
       pass
 
-    
+
     def getDBSummary( self ):
+      
       pass
 
-    def readRequests( self ):
+    def readRequests( self, jobIDs=None ):
+
       pass
 
     
