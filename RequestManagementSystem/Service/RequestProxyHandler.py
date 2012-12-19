@@ -26,6 +26,7 @@ __RCSID__ = "$Id$"
 
 ## imports 
 import os
+import threading
 from types import StringType
 try:
   from hashlib import md5
@@ -33,16 +34,18 @@ except ImportError:
   from md5 import md5
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+from DIRAC.RequestManagementSystem.Client.Request import Request
+
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.File import makeGuid
 
 def initializeRequestProxyHandler( serviceInfo ):
   """ init RequestProxy handler 
 
-  :param serviceInfo: whatever
+  :param serviceInfo:
   """
   gLogger.info("Initalizing RequestProxyHandler")
   gThreadScheduler.addPeriodicTask( 120, RequestProxyHandler.sweeper )  
@@ -103,15 +106,18 @@ class RequestProxyHandler( RequestHandler ):
                                  key = os.path.getctime ) ][:30]
       ## set cached requests to the central RequestManager
       for cachedFile in cachedRequests:
+        ## break if something went wrong last time
+        if not managerOK:
+          break
         try:
           requestString = "".join( open( cachedFile, "r" ).readlines() )
-          cachedRequest = RequestContainer( requestString )
-          requestName = cachedRequest.getAttribute("RequestName")["Value"]
-          ## cibak: hack for DISET requests
-          if requestName == "Unknown":
-            cachedRequest.setAttribute( "RequestName", makeGuid() )
-            requestName = cachedRequest.getAttribute("RequestName")["Value"]
-          setRequest = cls.requestManager().setRequest( requestName, requestString )
+          cachedRequest = Request.fromXML( requestString )
+          if not cachedRequest["OK"]:
+            gLogger.error("sweeper: unable to deserialise request: %s" % cachedRequest["Message"] )
+            continue
+          cachedRequest = cachedRequest["Value"]
+          requestName = cachedRequest.RequestName
+          setRequest = cls.requestManager().setRequest( requestString )
           if not setRequest["OK"]:
             gLogger.error("sweeper: unable to set request '%s' @ RequestManager: %s" % ( requestName, 
                                                                                          setRequest["Message"] ) )
@@ -157,11 +163,18 @@ class RequestProxyHandler( RequestHandler ):
     """ forward request from local RequestDB to central RequestClient
 
     :param self: self reference
-    :param str requestName: request name
-    :param str requestString: request serilised to xml
+    :param str requestType: request type
     """
-    gLogger.info("setRequest: got '%s' request" %  requestName )
-    forwardable = self.__forwardable( requestString )
+
+    request = Request.fromXML( requestString )
+    if not request["OK"]:
+      gLogger.error("setRequest: error deserialising request: %s" % request["Message"] )
+      return request
+    request = request["Value"]
+    requestName = request.RequestName
+    gLogger.info("setRequest: got request '%s'" % request.RequestName )
+
+    forwardable = self.__forwardable( request )
     if not forwardable["OK"]:
       gLogger.error("setRequest: unable to forward %s: %s" % ( requestName, forwardable["Message"] ) )
       return forwardable
@@ -177,11 +190,12 @@ class RequestProxyHandler( RequestHandler ):
         return save
       gLogger.info("setRequest: %s is saved to %s file" % ( requestName, save["Value"] ) )
       return S_OK( { "set" : False, "saved" : True } )
-    gLogger.info("setRequest: request '%s' has been set to the RequestManager" % requestName )
+    
+    gLogger.info("setRequest: request '%s' has been set to %s" % ( requestName, self.centralURL() ) )
     return S_OK( { "set" : True, "saved" : False } )
 
   @staticmethod
-  def __forwardable( requestString ):
+  def __forwardable( request ):
     """ check if request if forwardable 
 
     The sub-request of type transfer:putAndRegister, removal:physicalRemoval and removal:reTransfer are
@@ -189,9 +203,7 @@ class RequestProxyHandler( RequestHandler ):
 
     :param str requestString: XML-serialised request
     """
-    request = RequestContainer( requestString )
-    subRequests = request.getSubRequests( "transfer" )["Value"] + request.getSubRequests( "removal" )["Value"]
-    for subRequest in subRequests:
-      if subRequest["Attributes"]["Operation"] in ( "putAndRegister", "physicalRemoval", "reTransfer" ):
-        return S_ERROR("found operation '%s' that cannot be forwarded" % subRequest["Attributes"]["Operation"] )
+    for operation in request:
+      if operation.Type in ( "putAndRegister", "physicalRemoval", "reTransfer" ):
+        return S_ERROR("found operation '%s' that cannot be forwarded" % operation.Type )
     return S_OK()
