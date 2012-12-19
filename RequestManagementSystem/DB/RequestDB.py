@@ -22,6 +22,7 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import random
+import threading
 import MySQLdb.cursors
 from MySQLdb import Error as MySQLdbError
 ## from DIRAC
@@ -54,7 +55,7 @@ class RequestDB(DB):
                 "Operation" : { "Fields" : { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
                                              "RequestID" : "INTEGER NOT NULL",
                                              "Type" : "VARCHAR(64) NOT NULL",
-                                             "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled') DEFAULT 'Waiting'",
+                                             "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled') DEFAULT 'Queued'",
                                              "Arguments" : "BLOB",
                                              "Order" : "INTEGER NOT NULL",
                                              "SourceSE" : "VARCHAR(255)",
@@ -133,39 +134,62 @@ class RequestDB(DB):
     
     return S_OK()
       
-    def getRequest( self ):
-      """ read request for execution """
-      cursor = self.dictCursor()
-      if not cursor["OK"]:
-        self.log.error("putRequest: %s" % cursor["Message"] )
-      cursor = cursor["Value"]["cursor"]
-      connection = cursor["Value"]["connection"]
-      connection.autocommit( False )
-      try:
-        cursor.execute( "SELECT RequestID FROM Requests WHERE Status = 'Waiting' ORDER BY LastUpdate ASC LIMIT 100;" ) 
-        requestIDs = cursor.fetchall()
+  def getRequest( self ):
+    """ read request for execution """
+    cursor = self.dictCursor()
+    if not cursor["OK"]:
+      self.log.error("putRequest: %s" % cursor["Message"] )
+    cursor = cursor["Value"]["cursor"]
+    connection = cursor["Value"]["connection"]
+    connection.autocommit( False )
+    try:
+      cursor.execute( "SELECT RequestID FROM Requests WHERE Status = 'Waiting' ORDER BY LastUpdate ASC LIMIT 100;" ) 
+      requestIDs = cursor.fetchall()
         
-      except MySQLdbError, error:
-        connection.rollback()
-        connection.autocommit(True)
-        cursor.close()
-        self.log.error( "getRequest: unable to get request: %s" % str(error) )
-        return S_ERROR( "getRequest: %s" % str(error) )
-      return S_OK()
+    except MySQLdbError, error:
+      connection.rollback()
+      connection.autocommit(True)
+      cursor.close()
+      self.log.error( "getRequest: unable to get request: %s" % str(error) )
+      return S_ERROR( "getRequest: %s" % str(error) )
+    return S_OK()
 
-        
-    def deleteRequest( self, request ):
+  def deleteRequest( self, requestName ):
+    """ delete request """
+    
 
-      pass
+    pass
 
+  def getRequestProperties( self, requestName, columnNames ):
+    """ select :columnNames: from Request table  """
+    columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
+    query = "SELECT %s FROM `Request` WHERE RequestName = `%s`;" % ( columNames, requestName )
+    
+  def getOperationProperties( self, operationID, columnNames ):
+    """ select :columnNames: from Operation table  """
+    columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
+    query = "SELECT %s FROM `Operation` WHERE OperationID = %s;" % ( columNames, int(operationID) )
 
-    def getDBSummary( self ):
-      
-      pass
+  def getFileProperties( self, fileID, columnNames ):
+    """ select :columnNames: from File table  """
+    columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
+    query = "SELECT %s FROM `File` WHERE FileID = %s;" % ( columNames, int(fileID) )
 
-    def readRequests( self, jobIDs=None ):
+  def getDBSummary( self ):
+    """ get db summary """
+    pass
 
-      pass
+  def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
+    """ get db summary for web """
+    pass
+
+  def getRequestForJobs( self, jobIDs ):
+    """ read request """
+    pass
+
+  def readRequestsForJobs( self, jobIDs=None ):
+    """ read request for jobs """
+    pass
 
     
 

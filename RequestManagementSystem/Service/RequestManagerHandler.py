@@ -44,6 +44,8 @@ class RequestManagerHandler(RequestHandler):
   ## request validator
   validator = None
 
+
+  ## helper functions 
   @classmethod
   def validate( cls, request ):
     """ request validation """
@@ -56,7 +58,7 @@ class RequestManagerHandler(RequestHandler):
     """ get requestID for given :requestName: """
     requestID = requestName
     if type(requestName) in StringTypes:
-      result = gRequestDB._getRequestAttribute( "RequestID", requestName=requestName )
+      result = gRequestDB.getRequestProperties( requestName, [ "RequestID" ] )
       if not result["OK"]:
         return result
       requestID = result["Value"]
@@ -66,18 +68,24 @@ class RequestManagerHandler(RequestHandler):
   @classmethod
   def export_setRequest( cls, requestString ):
     """ Set a new request """
-    gLogger.info("RequestManagerHandler.setRequest: Attempting to set %s." % requestName)
+    gLogger.info("RequestManager.setRequest: Setting request..." )
+    requestName = "***UNKNOWN***"
     try:
       request = Request.fromXML( requestString )
+      if not request["OK"]:
+        gLogger.error("RequestManager.setRequest: %s" % request["Message"] )
+        return request
+      request = request["Value"]
       valid =  cls.validate( request )
       if not valid["OK"]:
         gLogger.error( "RequestManagerHandler.setRequest: request not valid: %s" % valid["Message"] )
         return valid
-      gLogger.info("RequestManagerHandler.setRequest: Attempting to set request '%s'" % request.RequestName )   
+      requestName = request.RequestName
+      gLogger.info("RequestManagerHandler.setRequest: Attempting to set request '%s'" % requestName )   
       return gRequestDB.setRequest( request )
     except Exception, error:
       errStr = "RequestManagerHandler.setRequest: Exception while setting request."
-      gLogger.exception( errStr, request.requestName, lException=error )
+      gLogger.exception( errStr, requestName, lException=error )
       return S_ERROR(errStr)
     
 
@@ -117,28 +125,16 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception( errStr, lException=error )
       return S_ERROR(errStr)
 
-  types_getRequest = [StringTypes]
+  types_getRequest = []
   @staticmethod
-  def export_getRequest( requestType ):
+  def export_getRequest():
     """ Get a request of given type from the database """
-    gLogger.info("RequestHandler.getRequest: Attempting to get request type", requestType)
+    gLogger.info("RequestHandler.getRequest: Attempting to get request")
     try:
-      return gRequestDB.getRequest(requestType)
+      return gRequestDB.getRequest()
     except Exception, error:
       errStr = "RequestManagerHandler.getRequest: Exception while getting request."
-      gLogger.exception( errStr, requestType, lException=error )
-      return S_ERROR(errStr)
-
-  types_serveRequest = []
-  @staticmethod
-  def export_serveRequest( requestType ):
-    """ Serve a request of a given type from the database """
-    gLogger.info("RequestHandler.serveRequest: Attempting to serve request type", requestType)
-    try:
-      return gRequestDB.serveRequest(requestType)
-    except Exception, error:
-      errStr = "RequestManagerHandler.serveRequest: Exception while serving request."
-      gLogger.exception( errStr, requestType, lException=error )
+      gLogger.exception( errStr, lException=error )
       return S_ERROR(errStr)
 
   types_getRequestSummaryWeb = [ DictType, ListType, IntType, IntType ]
@@ -193,12 +189,12 @@ class RequestManagerHandler(RequestHandler):
   @staticmethod
   def export_deleteRequest( requestName ):
     """ Delete the request with the supplied name"""
-    gLogger.info("RequestManagerHandler.deleteRequest: Attempting to delete %s." % requestName)
+    gLogger.info("RequestManagerHandler.deleteRequest: Deleting request '%s'..." % requestName)
     try:
       return gRequestDB.deleteRequest( requestName )
     except Exception, error:
-      errStr = "RequestManagerHandler.deleteRequest: Exception which deleting request."
-      gLogger.exception( errStr, requestName, lException=error )
+      errStr = "RequestManagerHandler.deleteRequest: Exception which deleting request '%s'." % requestName 
+      gLogger.exception( errStr, lException=error )
       return S_ERROR(errStr)
 
   types_getRequestForJobs = [ ListType ]

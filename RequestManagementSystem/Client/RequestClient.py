@@ -16,7 +16,10 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidtor
 
 class RequestClient( Client ):
   """ 
@@ -26,9 +29,11 @@ class RequestClient( Client ):
   
   :param RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
+  :param RequestValidator requestValidator: RequestValidator instance
   """
   __requestManager = None
   __requestProxiesDict = {}
+  __requestValidator = None
 
   def __init__( self, **kwargs ):
     """c'tor
@@ -60,6 +65,12 @@ class RequestClient( Client ):
         self.log.debug( "creating RequestProxy for url = %s" % proxyURL )
         self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout=timeout )
     return self.__requestProxiesDict 
+
+  def requestValidator( self ):
+    """ get request validator """
+    if not self.__requestValidator:
+      self.__requestValidator = RequestValidator()
+    return self.__requestValidator
 
   ########################################################################
   #
@@ -121,23 +132,28 @@ class RequestClient( Client ):
                                                                                         requests["Message"] ) )
     return requests
 
-  def setRequest( self, requestName, requestString ):
+  def setRequest( self, request ):
     """ set request to RequestManager
  
     :param self: self reference
-    :param str requestName: request name
-    :param str requestString: xml string represenation of request
+    :param Request request: Request instance
     """
-    errorsDict = {}
-    setRequestMgr = self.requestManager().setRequest( requestName, requestString )
+
+    errorsDict = { "OK" : False }
+    valid = self.requestValidator().validate( request )
+    if not valid["OK"]:
+      self.log.error("setRequest: request not valid: %s" % valid["Message"] )
+      return valid
+    requestXML = request.toXML()
+    setRequestMgr = self.requestManager().setRequest( requestXML )
     if setRequestMgr["OK"]:
       return setRequestMgr
     errorsDict["RequestManager"] = setRequestMgr["Message"]
-    self.log.warn( "setRequest: unable to set request '%s' at RequestManager" % requestName )
+    self.log.warn( "setRequest: unable to set request '%s' at RequestManager" % request.RequestName )
     proxies = self.requestProxies()
     for proxyURL, proxyClient in proxies.items():
       self.log.debug( "setRequest: trying RequestProxy at %s" % proxyURL )
-      setRequestProxy = proxyClient.setRequest( requestName, requestString )
+      setRequestProxy = proxyClient.setRequest( requestXML )
       if setRequestProxy["OK"]:
         if setRequestProxy["Value"]["set"]:
           self.log.debug( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName, 
@@ -156,16 +172,16 @@ class RequestClient( Client ):
     errorsDict["Message"] = "RequestClient.setRequest: unable to set request '%s'"
     return errorsDict
       
-  def getRequest( self, requestType  ):
+  def getRequest( self ):
     """ get request from RequestDB 
     
     :param self: self reference
     :param str requestType: type of request
     """
-    self.log.debug( "getRequest: attempting to get '%s' request." % requestType )
-    getRequest = self.requestManager().getRequest( requestType )
+    self.log.info( "getRequest: attempting to get request." )
+    getRequest = self.requestManager().getRequest()
     if not getRequest["OK"]:
-      self.log.error("getRequest: unable to get '%s' request: %s" % ( requestType, getRequest["Message"] ) )
+      self.log.error("getRequest: unable to get '%s' request: %s" % getRequest["Message"] )
     return getRequest  
 
   def serveRequest( self, requestType = "" ):
