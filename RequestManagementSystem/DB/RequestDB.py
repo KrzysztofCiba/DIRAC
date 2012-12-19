@@ -11,7 +11,7 @@
     :synopsis: db holding Requests 
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    db holding Requests 
+    db holding Requests, Operations and their Files 
 """
 __RCSID__ = "$Id $"
 ##
@@ -39,43 +39,49 @@ class RequestDB(DB):
 
   persistency storage for requests
   """
-  tableDict = { "Request" : { "Fields" : { "RequestID" : "INTEGER NOT NULL AUTO_INCREMENT",
-                                           "RequestName" : "VARCHAR(255) NOT NULL",
-                                           "OwnerDN" : "VARCHAR(255)",
-                                           "OwnerGroup" : "VARCHAR(32)",
-                                           "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled') DEFAULT 'Waiting'",
-                                           "Error" : "VARCHAR(255)",
-                                           "DIRACSetup" : "VARCHAR(32)",
-                                           "JobID" : "INTEGER DEFAULT 0",
-                                           "CreationTime" : "DATETIME",
-                                           "SubmitTime" : "DATETIME",
-                                           "LastUpdate" : "DATETIME"  },
-                              "PrimaryKey" : "RequestID",
-                              "Indexes" : { "RequestName" : [ "RequestName"] } },
-                "Operation" : { "Fields" : { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
-                                             "RequestID" : "INTEGER NOT NULL",
-                                             "Type" : "VARCHAR(64) NOT NULL",
-                                             "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled') DEFAULT 'Queued'",
-                                             "Arguments" : "BLOB",
-                                             "Order" : "INTEGER NOT NULL",
-                                             "SourceSE" : "VARCHAR(255)",
-                                             "TargetSE" : "VARCHAR(255)",
-                                             "Catalogue" : "VARCHAR(255)",
-                                             "CreationTime" : "DATETIME",
-                                             "SubmitTime" : "DATETIME",
-                                             "LastUpdate" : "DATETIME" },
-                                "PrimaryKey" : "OperationID" },
-                "File" : { "Fields" : { "FileID" : "INTEGER NOT NULL AUTO_INCREMENT",
-                                        "OperationID" : "INTEGER NOT NULL",
-                                        "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled', 'Cancelled')",
-                                        "LFN" : "VARCHAR(255)",
-                                        "PFN" : "VARCHAR(255)",
-                                        "ChecksumType" : "ENUM('adler32', 'md5', 'sha1', 'none') DEFAULT 'adler32'",
-                                        "Checksum" : "VARCHAR(255)",
-                                        "GUID" : "VARCHAR(26)",
-                                        "Error" : "VARCHAR(255)" },
-                           "PrimaryKey" : "FileID",
-                           "Indexes" : { "LFN" : [ "LFN" ] } } } 
+  tableDict = { "Request" : 
+                { "Fields" : 
+                  { "RequestID" : "INTEGER NOT NULL AUTO_INCREMENT",
+                    "RequestName" : "VARCHAR(255) NOT NULL",
+                    "OwnerDN" : "VARCHAR(255)",
+                    "OwnerGroup" : "VARCHAR(32)",
+                    "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled') DEFAULT 'Waiting'",
+                    "Error" : "VARCHAR(255)",
+                    "DIRACSetup" : "VARCHAR(32)",
+                    "JobID" : "INTEGER DEFAULT 0",
+                    "CreationTime" : "DATETIME",
+                    "SubmitTime" : "DATETIME",
+                    "LastUpdate" : "DATETIME"  },
+                  "PrimaryKey" : "RequestID",
+                  "Indexes" : { "RequestName" : [ "RequestName"] } },
+                "Operation" : 
+                { "Fields" : 
+                  { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
+                    "RequestID" : "INTEGER NOT NULL",
+                    "Type" : "VARCHAR(64) NOT NULL",
+                    "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled') "\
+                      "DEFAULT 'Queued'",
+                    "Arguments" : "BLOB",
+                    "Order" : "INTEGER NOT NULL",
+                    "SourceSE" : "VARCHAR(255)",
+                    "TargetSE" : "VARCHAR(255)",
+                    "Catalogue" : "VARCHAR(255)",
+                    "CreationTime" : "DATETIME",
+                    "SubmitTime" : "DATETIME",
+                    "LastUpdate" : "DATETIME" },
+                  "PrimaryKey" : "OperationID" },
+                "File" : 
+                { "Fields" : { "FileID" : "INTEGER NOT NULL AUTO_INCREMENT",
+                               "OperationID" : "INTEGER NOT NULL",
+                               "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled', 'Cancelled')",
+                               "LFN" : "VARCHAR(255)",
+                               "PFN" : "VARCHAR(255)",
+                               "ChecksumType" : "ENUM('adler32', 'md5', 'sha1', 'none') DEFAULT 'adler32'",
+                               "Checksum" : "VARCHAR(255)",
+                               "GUID" : "VARCHAR(26)",
+                               "Error" : "VARCHAR(255)" },
+                  "PrimaryKey" : "FileID",
+                  "Indexes" : { "LFN" : [ "LFN" ] } } } 
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
     """c'tor
@@ -83,10 +89,10 @@ class RequestDB(DB):
     :param self: self reference
 
     """
-    DB.__init__( self, "RequestDB", "RequestManagement/RequestDB", maxQueueSize )
-    self.getIdLock = threading.Lock()
-    self._checkTables()
-
+    self.getIdLock = threading.Lock() 
+    DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
+    self._checkTables( False )
+    
   def _checkTables( self, force = False ):
     """ create tables if not exisiting """
     return self._createTables( self.tableDict, force = force )
@@ -150,7 +156,10 @@ class RequestDB(DB):
       random.shuffle( requestIDs )
       requestID = requestIDs[0]
       
-      sel = "SELECT * "
+      select = cursor.execute( "SELECT * FROM `Request` WHERE `RequestID` = %s;" % requestID )
+      
+      update = cursor.execute( "UPDATE `Request` SET `Status` = 'Assigned' WHERE `RequestID` = %s;" % reuqestID )
+
 
       
       
@@ -171,17 +180,18 @@ class RequestDB(DB):
   def getRequestProperties( self, requestName, columnNames ):
     """ select :columnNames: from Request table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
-    query = "SELECT %s FROM `Request` WHERE RequestName = `%s`;" % ( columNames, requestName )
+    query = "SELECT %s FROM `Request` WHERE RequestName = `%s`;" % ( columnNames, requestName )
     
+
   def getOperationProperties( self, operationID, columnNames ):
     """ select :columnNames: from Operation table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
-    query = "SELECT %s FROM `Operation` WHERE OperationID = %s;" % ( columNames, int(operationID) )
+    query = "SELECT %s FROM `Operation` WHERE OperationID = %s;" % ( columnNames, int(operationID) )
 
   def getFileProperties( self, fileID, columnNames ):
     """ select :columnNames: from File table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
-    query = "SELECT %s FROM `File` WHERE FileID = %s;" % ( columNames, int(fileID) )
+    query = "SELECT %s FROM `File` WHERE FileID = %s;" % ( columnNames, int(fileID) )
 
   def getDBSummary( self ):
     """ get db summary """
