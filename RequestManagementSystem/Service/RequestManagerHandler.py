@@ -19,33 +19,21 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 ## global RequestDB instance
-gRequestDB = False
+gRequestDB = None
 
 def initializeRequestManagerHandler(serviceInfo):
   """ initialise handler """
   global gRequestDB
   csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
-  backend = gConfig.getValue('%s/Backend' % csSection)
-  if not backend:
-    fatStr = "RequestManager.initializeRequestManagerHandler: Failed to get backed for RequestDB from CS."
-    gLogger.fatal(fatStr)
-    return S_ERROR(fatStr)
-  gLogger.info("RequestManager.initializeRequestManagerHandler: Initialising with backend", backend)
-  if backend == 'file':
-    from DIRAC.RequestManagementSystem.DB.RequestDBFile import RequestDBFile
-    gRequestDB = RequestDBFile()
-  elif backend == 'mysql':
-    from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
-    gRequestDB = RequestDB()
-  else:
-    fatStr = "RequestManager.initializeRequestManagerHandler: Supplied backend is not supported."
-    gLogger.fatal(fatStr, backend)
-    return S_ERROR(fatStr)
+  from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
+  gRequestDB = RequestDB()
   return S_OK()
 
 class RequestManagerHandler(RequestHandler):
   """
   .. class:: RequestManagerHandler
+  
+  RequestDB interface in the DISET framework.
   """
 
   @staticmethod

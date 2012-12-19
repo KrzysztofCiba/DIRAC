@@ -37,7 +37,6 @@ class RequestDB(DB):
   .. class:: RequestDB
 
   persistency storage for requests
-  
   """
   tableDict = { "Request" : { "Fields" : { "RequestID" : "INTEGER NOT NULL AUTO_INCREMENT",
                                            "RequestName" : "VARCHAR(255) NOT NULL",
