@@ -13,10 +13,15 @@ __RCSID__ = "$Id$"
 
 ## imports 
 from types import DictType, IntType, ListType, LongType, StringTypes
-## from DIARC
+## from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client import PathFinder
+## from RMS
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 ## global RequestDB instance
 gRequestDB = None
@@ -36,6 +41,16 @@ class RequestManagerHandler(RequestHandler):
   RequestDB interface in the DISET framework.
   """
 
+  ## request validator
+  validator = None
+
+  @classmethod
+  def validate( cls, request ):
+    """ request validation """
+    if not cls.validator:
+      cls.validator = RequestValidator()
+    return cls.validator.validate( request )
+
   @staticmethod
   def __getRequestID( requestName ):
     """ get requestID for given :requestName: """
@@ -47,17 +62,24 @@ class RequestManagerHandler(RequestHandler):
       requestID = result["Value"]
     return S_OK( requestID )
 
-  types_setRequest = [ StringTypes, StringTypes ]
-  @staticmethod
-  def export_setRequest( requestName, requestString ):
+  types_setRequest = [ StringTypes ]
+  @classmethod
+  def export_setRequest( cls, requestString ):
     """ Set a new request """
     gLogger.info("RequestManagerHandler.setRequest: Attempting to set %s." % requestName)
     try:
-      return gRequestDB.setRequest( requestName, requestString )
+      request = Request.fromXML( requestString )
+      valid =  cls.validate( request )
+      if not valid["OK"]:
+        gLogger.error( "RequestManagerHandler.setRequest: request not valid: %s" % valid["Message"] )
+        return valid
+      gLogger.info("RequestManagerHandler.setRequest: Attempting to set request '%s'" % request.RequestName )   
+      return gRequestDB.setRequest( request )
     except Exception, error:
       errStr = "RequestManagerHandler.setRequest: Exception while setting request."
-      gLogger.exception( errStr, requestName, lException=error )
+      gLogger.exception( errStr, request.requestName, lException=error )
       return S_ERROR(errStr)
+    
 
   types_setRequestStatus = [ StringTypes, StringTypes ]
   @staticmethod

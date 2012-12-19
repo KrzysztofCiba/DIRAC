@@ -70,7 +70,7 @@ class RequestDB(DB):
                                         "LFN" : "VARCHAR(255)",
                                         "PFN" : "VARCHAR(255)",
                                         "ChecksumType" : "ENUM('adler32', 'md5', 'sha1', 'none') DEFAULT 'adler32'",
-                                        "Checksum" : "VARCGAR(255)",
+                                        "Checksum" : "VARCHAR(255)",
                                         "GUID" : "VARCHAR(26)",
                                         "Error" : "VARCHAR(255)" },
                            "PrimaryKey" : "FileID",
