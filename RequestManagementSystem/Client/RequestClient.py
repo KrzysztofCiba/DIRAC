@@ -72,68 +72,8 @@ class RequestClient( Client ):
       self.__requestValidator = RequestValidator()
     return self.__requestValidator
 
-  ########################################################################
-  #
-  # These are the methods operating on existing requests and have fixed URLs
-  #
-
-  def updateRequest( self, requestName, requestString ):
-    """ update the request
-
-    :param self: self reference
-    :param str requestName: request name
-    :param str requestString: xml string 
-    """
-    self.log.debug("updateRequest: attempt to update '%s' request" % requestName )
-    updateRequest = self.requestManager().updateRequest( requestName, requestString )
-    if not updateRequest["OK"]:
-      self.log.error( "updateRequest: unable to update '%s' request: %s" % ( requestName, 
-                                                                             updateRequest["Message"] ) )
-    return updateRequest
-
-  def deleteRequest( self, requestName ):
-    """ delete the request 
-
-    :param self: self reference
-    :param str requestName: request name
-    """
-    self.log.debug("deleteRequest: attempt to delete '%s' request" % requestName )
-    deleteRequest = self.requestManager().deleteRequest( requestName )
-    if not deleteRequest["OK"]:
-      self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName, 
-                                                                             deleteRequest["Message"] ) )
-    return deleteRequest
-
-  def setRequestStatus( self, requestName, requestStatus  ):
-    """ Set the status of a request. If url parameter is not present, the central 
-    request RPC client would be used.
-    
-    :param self: self reference
-    :param str requestName: request name
-    :param str requestStatus: new status
-    """
-    self.log.debug( "setRequestStatus: attempt to set '%s' status for '%s' request" % ( requestStatus, requestName ) )
-    requestStatus = self.requestManager().setRequestStatus( requestName, requestStatus )
-    if not requestStatus["OK"]:
-      self.log.error( "setRequestStatus: unable to set status for '%s' request: %s" % ( requestName, 
-                                                                                        requestStatus["Message"] ) )
-    return requestStatus
-
-  def getRequestForJobs( self, jobID ):
-    """ Get the request names for the supplied jobIDs.
-
-    :param self: self reference
-    :param list jobID: list of job IDs (integers)
-    """
-    self.log.debug( "getRequestForJobs: attempt to get request(s) for job %s" % jobID )
-    requests = self.requestManager().getRequestForJobs( jobID )
-    if not requests["OK"]:
-      self.log.error( "getRequestForJobs: unable to get request(s) for jobs %s: %s" % ( jobID, 
-                                                                                        requests["Message"] ) )
-    return requests
-
-  def setRequest( self, request ):
-    """ set request to RequestManager
+  def putRequest( self, request ):
+    """ put request to RequestManager
  
     :param self: self reference
     :param Request request: Request instance
@@ -177,24 +117,34 @@ class RequestClient( Client ):
     
     :param self: self reference
     :param str requestType: type of request
+
+    :return: S_OK( Request instance ) or S_OK() or S_ERROR
     """
     self.log.info( "getRequest: attempting to get request." )
     getRequest = self.requestManager().getRequest()
     if not getRequest["OK"]:
       self.log.error("getRequest: unable to get '%s' request: %s" % getRequest["Message"] )
-    return getRequest  
+      return getRequest
+    if not getRequest["Value"]:
+      return getRequest
+    return Request.fromXML( getRequest["Value"] )
 
-  def serveRequest( self, requestType = "" ):
-    """ Get the request of type :requestType: from RequestDB.   
+  def deleteRequest( self, requestName ):
+    """ delete request given it's name 
 
     :param self: self reference
-    :param str requestType: request type
+    :param str requestName: request name
     """
-    return self.getRequest( requestType  )
+    self.log.info("deleteRequest: attempt to delete '%s' request" % requestName )
+    deleteRequest = self.requestManager().deleteRequest( requestName )
+    if not deleteRequest["OK"]:
+      self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName, 
+                                                                             deleteRequest["Message"] ) )
+    return deleteRequest
 
   def getDBSummary( self ):
     """ Get the summary of requests in the RequestDBs. """
-    self.log.debug( "getDBSummary: attempting to get RequestDB summary." )
+    self.log.info( "getDBSummary: attempting to get RequestDB summary." )
     dbSummary = self.requestManager().getDBSummary()
     if not dbSummary["OK"]:
       self.log.error( "getDBSummary: unable to get RequestDB summary: %s" % dbSummary["Message"] )
@@ -218,7 +168,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: name of the request
     """
-    self.log.debug( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
+    self.log.info( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
     executionOrder = self.requestManager().getCurrentExecutionOrder( requestName )
     if not executionOrder["OK"]:
       self.log.error( "getCurrentExecutionOrder: unable to get execution order for '%s' request: %s" %\
@@ -231,7 +181,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: name of teh request
     """
-    self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestName )
+    self.log.info( "getRequestStatus: attempting to get status for '%s' request." % requestName )
     requestStatus = self.requestManager().getRequestStatus( requestName )
     if not requestStatus["OK"]:
       self.log.error( "getRequestStatus: unable to get status for '%s' request: %s" % ( requestName, 
@@ -244,7 +194,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
+    self.log.info( "getRequestInfo: attempting to get info for '%s' request." % requestName )
     requestInfo = self.requestManager().getRequestInfo( requestName )
     if not requestInfo["OK"]:
       self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName, 
@@ -258,7 +208,7 @@ class RequestClient( Client ):
     :param str requestName: request name
     :param list lfns: list of LFNs
     """
-    self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
+    self.log.info( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
     fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
     if not fileStatus["OK"]:
       self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" %\
@@ -318,6 +268,22 @@ class RequestClient( Client ):
                                                                                      digest["Message"] ) )
 
     return S_OK()
+
+  def getRequestForJobs( self, jobIDs ):
+    """ Get the request names for the supplied jobIDs.
+
+    :param self: self reference
+    :param list jobID: list of job IDs (integers)
+
+
+    """
+    self.log.info( "getRequestForJobs: attempt to get request(s) for job %s" % jobIDs )
+    requests = self.requestManager().getRequestForJobs( jobIDs )
+    if not requests["OK"]:
+      self.log.error( "getRequestForJobs: unable to get request(s) for jobs %s: %s" % ( jobIDs, 
+                                                                                        requests["Message"] ) )
+    return requests
+
   
   def readRequestsForJobs( self, jobIDs ):
     """ read requests for jobs 
@@ -336,7 +302,10 @@ class RequestClient( Client ):
     ## create RequestContainers out of xml strings for successful reads
     if "Successful" in ret:    
       for jobID, xmlStr in ret["Successful"].items():
-        req = RequestContainer( init = False )
-        req.parseRequest( request=xmlStr )
+        req = Request.fromXML( xmlStr )
+        if not req["OK"]:
+          ret["Failed"][jobID] = req["Message"]
+          continue
+        req = req["Value"]
         ret["Successful"][jobID] = req
     return S_OK( ret )
