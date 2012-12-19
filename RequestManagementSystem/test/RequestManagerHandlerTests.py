@@ -25,6 +25,11 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import unittest
+## from DIRAC
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 
 ########################################################################
 class RequestManagerHandlerTests(unittest.TestCase):
@@ -38,10 +43,20 @@ class RequestManagerHandlerTests(unittest.TestCase):
 
     :param self: self reference
     """
-    pass
+    self.request = Request()
+    self.operation = Operation()
+    self.file = File()
+
+    
 
   def tearDown( self ):
     """ test case tear down """
+    del self.request
+    del self.operation
+    del self.file
+
+  def testSetRequest( self ):
+    """ test set request """
     pass
 
 

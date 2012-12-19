@@ -1,0 +1,9 @@
+DROP DATABASE IF EXISTS ReqDB;
+CREATE DATABASE ReqDB;
+
+--
+-- Must set passwords for database user by replacing "must_be_set".
+--
+use mysql;
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'lhcbMySQL';
+GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON RequestDB.* TO 'Dirac'@'%' IDENTIFIED BY 'lhcbMySQL';
