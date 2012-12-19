@@ -344,6 +344,16 @@ class Request(object):
     opStatuses = [ op.Status for op in self.__operations__ ]
     return opStatuses.index("Waiting") if "Waiting" in opStatuses else len(opStatuses) 
     
+  @property
+  def Error( self ):
+    """ error getter """
+    return self.__data__["Error"]
+
+  @Error.setter
+  def Error( self, error ):
+    """ error setter """
+    self.__data__["Error"] = str(error)[255:]
+
   @classmethod
   def fromXML( cls, xmlString ):
     """ create Request object from xmlString or xml.ElementTree.Element """
@@ -372,6 +382,7 @@ class Request(object):
     root.attrib["DIRACSetup"] = str(self.DIRACSetup) if self.DIRACSetup else ""
     root.attrib["JobID"] = str(self.JobID) if self.JobID else "0"
     root.attrib["SourceComponent"] = str(self.SourceComponent) if self.SourceComponent else "" 
+    root.attrib["Error"] = str(self.Error) if self.Error else ""
     ## always calculate status, never set
     root.attrib["Status"] = str(self.Status)
     ## datetime up to seconds
