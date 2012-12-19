@@ -240,7 +240,7 @@ class File( object ):
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
       query.append( " WHERE `FileID`=%d;\n" % self.FileID )
     else:
-      query.append( "INSERT INTO File " )
+      query.append( "INSERT INTO `File` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )

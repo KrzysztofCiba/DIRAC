@@ -64,7 +64,7 @@ class Request(object):
     """
     self.__waiting = None 
     self.__data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status", 
-                                     "SourceComponent", "JobID", "CreationTime", "SubmitTime", "LastUpdate"), None )
+                                     "SourceComponent", "JobID", "CreationTime", "SubmitTime", "LastUpdate", "Error" ), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now 
     self.__data__["SubmitTime"] = now
@@ -392,11 +392,11 @@ class Request(object):
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.RequestID:
-      query.append( "UPDATE `Requests` SET " )
+      query.append( "UPDATE `Request` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
       query.append( " WHERE `RequestID`=%d;\n" % self.RequestID )
     else:
-      query.append( "INSERT INTO `Requests` " )
+      query.append( "INSERT INTO `Request` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )

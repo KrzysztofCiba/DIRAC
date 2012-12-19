@@ -66,25 +66,29 @@ class RequestManagerHandler(RequestHandler):
 
   types_setRequest = [ StringTypes ]
   @classmethod
-  def export_setRequest( cls, requestString ):
-    """ Set a new request """
+  def export_putRequest( cls, requestString ):
+    """ put a new request into RequestDB 
+
+    :param cls: class ref
+    :param str requestString: xml string
+    """
     gLogger.info("RequestManager.setRequest: Setting request..." )
     requestName = "***UNKNOWN***"
     try:
       request = Request.fromXML( requestString )
       if not request["OK"]:
-        gLogger.error("RequestManager.setRequest: %s" % request["Message"] )
+        gLogger.error("RequestManager.putRequest: %s" % request["Message"] )
         return request
       request = request["Value"]
       valid =  cls.validate( request )
       if not valid["OK"]:
-        gLogger.error( "RequestManagerHandler.setRequest: request not valid: %s" % valid["Message"] )
+        gLogger.error( "RequestManagerHandler.putRequest: request not valid: %s" % valid["Message"] )
         return valid
       requestName = request.RequestName
-      gLogger.info("RequestManagerHandler.setRequest: Attempting to set request '%s'" % requestName )   
+      gLogger.info("RequestManagerHandler.putRequest: Attempting to set request '%s'" % requestName )   
       return gRequestDB.setRequest( request )
     except Exception, error:
-      errStr = "RequestManagerHandler.setRequest: Exception while setting request."
+      errStr = "RequestManagerHandler.putRequest: Exception while setting request."
       gLogger.exception( errStr, requestName, lException=error )
       return S_ERROR(errStr)
     

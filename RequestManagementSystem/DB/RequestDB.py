@@ -104,8 +104,7 @@ class RequestDB(DB):
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
     return S_OK( { "cursor" : cursor, "connection" : conn  } )
 
-
-  def setRequest( self, request ):
+  def putRequest( self, request ):
     """ update or insert request into db """      
     cursor = self.dictCursor()
     if not cursor["OK"]:
@@ -143,9 +142,18 @@ class RequestDB(DB):
     connection = cursor["Value"]["connection"]
     connection.autocommit( False )
     try:
-      cursor.execute( "SELECT RequestID FROM Requests WHERE Status = 'Waiting' ORDER BY LastUpdate ASC LIMIT 100;" ) 
-      requestIDs = cursor.fetchall()
-        
+      cursor.execute( "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` ASC LIMIT 100;" ) 
+      requestIDs = [ record["RequestID"] for record in cursor.fetchall() ] 
+      ## no waiting requests found
+      if not requestIDs:
+        return S_OK()
+      random.shuffle( requestIDs )
+      requestID = requestIDs[0]
+      
+      sel = "SELECT * "
+
+      
+      
     except MySQLdbError, error:
       connection.rollback()
       connection.autocommit(True)
