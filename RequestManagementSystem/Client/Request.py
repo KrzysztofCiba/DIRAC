@@ -81,24 +81,21 @@ class Request(object):
 
   def _notify( self ):
     """ simple state machine for sub request statuses """
-
     self.__waiting = None 
     ## update sub-requets statuses
-    for subReq in self:
-      
-      status = subReq.Status
-  
+    for operation in self:
+      status = operation.Status
       if status in ( "Done", "Failed" ):
         continue
       elif status == "Queued" and not self.__waiting:
-        subReq._setWaiting( self ) # Status = "Waiting" ## this is 1st queued, flip to waiting
-        self.__waiting = subReq 
+        operation._setWaiting( self ) # Status = "Waiting" ## this is 1st queued, flip to waiting
+        self.__waiting = operation 
       elif status == "Waiting":
-        if self.__waiting:
-          subReq._setQueued( self ) #  Status = "Queued" ## flip to queued, another one is waiting
+        if self.__waiting != None:
+          operation._setQueued( self ) #  Status = "Queued" ## flip to queued, another one is waiting
         else:
-          self.__waiting = subReq
-          
+          self.__waiting = operation
+
     # now update self status
     if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
       if self.Status != "Waiting":
@@ -130,6 +127,7 @@ class Request(object):
     if operation not in self:
       self.__operations__.append( operation )
       operation._parent = self
+      self._notify()
     return S_OK()
    
   def insertBefore( self, newOperation, existingOperation ):
@@ -145,6 +143,7 @@ class Request(object):
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation ), newOperation )
     newOperation._parent = self
+    self._notify()
     return S_OK()
     
   def insertAfter( self, newOperation, existingOperation ):
@@ -159,7 +158,8 @@ class Request(object):
     if newOperation in self:
       return S_ERROR( "%s is already in" % newOperation )
     self.__operations__.insert( self.__operations__.index( existingOperation )+1, newOperation )
-    newOperation._parent = self 
+    newOperation._parent = self
+    self._notify()
     return S_OK()
 
   def addOperation( self, operation ):
