@@ -69,33 +69,84 @@ class RequestDB(DB):
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
     return S_OK( { "cursor" : cursor, "connection" : conn  } )
 
-  def putRequest( self, request ):
-    """ update or insert request into db """      
-    cursor = self.dictCursor()
-    if not cursor["OK"]:
-      self.log.error("setRequest: %s" % cursor["Message"] )
-    cursor = cursor["Value"]["cursor"]
-    connection = cursor["Value"]["connection"]
+
+  def _transaction( self, queries, connection=None ):
+    """ execute transaction """
+    queries = [ queries ] if type(queries) = str else queries
+    ## get cursor and connection
+    cursor = None
+    if not connection:
+      getCursorAndConnection = self.dictCursor( connection )
+      if not getCursorAndConnection["OK"]:
+        return getCursorAndConnection
+      cursor = getCursorAndConnection["Value"]["cursor"]
+      connection = getCursorAndConnection["Value"]["connection"]
+
+    ## this we will return back
+    ret = { "OK" : True,
+            "Value" : { "connection" : connection, 
+                        "lastrowid" : None } }
+    ## switch off autocommit
     connection.autocommit( False )
     try:
-      cursor.execute( request.toSQL() )
-      if not request.requestID:
-        request.requestID = cursor.lastrowid
-        for operation in request:
-          cursor.execute( operation.toSQL() )
-          if not operation.operationID:
-            operation.operationID = cursor.lastrowid
-            for opFile in operation:
-              cursor.execute( opFile.toSQL() )
+      ## execute queries
+      for query in queries:
+        cursor.execute( query )
+      ## commit 
       connection.commit()
+      ## save last row ID
+      lastrowid = cursor.lastrowid
+      ## close cursor
       cursor.close()
+      return S_OK( { "connection" : connection, 
+                     "lastrowid" : lastrowid } )
     except MySQLdbError, error:
+      ## rollback
       connection.rollback()
-      connection.autocommit(True)
+      ## rever autocommit
+      connection.autocommit( True )
+      ## close cursor
       cursor.close()
-      self.log.error( "setRequest: unable to put request: %s" % str(error) )
-      return S_ERROR( "setRequest: %s" % str(error) )
-    
+      return S_ERROR( str(error) )
+
+
+  def putRequest( self, request, connection=None ):
+    """ update or insert request into db 
+
+    :param Request request: Request instance
+    """      
+    putRequest = self._transaction( request.toSQL(), connection=connection )
+    if not putRequest["OK"]:
+      self.log.error("putRequest: %s" % putRequest["Message"] )
+      return putRequest
+    putRequest = putRequest["Value"]
+    connection = putRequest["connection"]  
+    ## set RequestID when necessary
+    if not request.requestID:
+      request.requestID = putRequest["lastrowid"]
+
+    for operation in request:
+      putOperation = self._transaction( operation.toSQL(), connection=connection )
+      if not putOperation["OK"]:
+        self.log.error("putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ), 
+                                                                        putOperation["Message"] ) )
+        deleteRequest = self.deleteRequest( requestID = request.RequestID, connection=connection )
+        self.__putConnection( connection )
+        return putOperation
+
+      putOperation = putOperation["Value"]
+      if not operation.operationID:
+        operation.operationID = putOperation["lastrowid"]
+      filesToSQL = [ opFile.toSQL() for opFile in operation ]
+      if filesToSQL:
+        putFiles = self._transaction( filesToSQL, connection=connection )
+        if not putFiles["OK"]:
+          self.log.error("putRequest: unable to put files for operation %d: %s" % ( request.indexOf( operation ),
+                                                                                    putFiles["Message"] ) )
+          deleteRequest = self.deleteRequest( requestID=request.RequestID, connection=connection )
+          self.__putConnection( connection )
+          return putFiles
+
     return S_OK()
       
   def getRequest( self ):
@@ -130,9 +181,10 @@ class RequestDB(DB):
       return S_ERROR( "getRequest: %s" % str(error) )
     return S_OK()
 
-  def deleteRequest( self, requestName ):
+  def deleteRequest( self, requestName=None, requestID=None, connection=None ):
     """ delete request """
-    
+    if requestName:
+      
 
     pass
 

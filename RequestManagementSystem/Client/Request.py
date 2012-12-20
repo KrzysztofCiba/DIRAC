@@ -94,7 +94,7 @@ class Request(object):
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME"  },
-             "PrimaryKey" : "RequestID",
+             "PrimaryKey" : [ "RequestID", "RequestName" ],
              "Indexes" : { "RequestName" : [ "RequestName"] } }
 
   def _notify( self ):
@@ -427,9 +427,10 @@ class Request(object):
     else:
       query.append( "INSERT INTO `Request` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
-      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+      values = "%s" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
-      query.append(" VALUES %s;\n" % values )
+      query.append(" SELECT %s FROM DUAL " % values )
+      query.append( "WHERE NOT EXIST (SELECT `RequestID` FROM `Request` WHERE `RequestName` = '%s';\n" % self.RequestName )
     return "".join( query )
     
   ## digest
