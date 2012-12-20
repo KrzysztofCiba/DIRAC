@@ -430,7 +430,7 @@ class Request(object):
       values = "%s" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append(" SELECT %s FROM DUAL " % values )
-      query.append( "WHERE NOT EXISTS (SELECT `RequestID` FROM `Request` WHERE `RequestName` = '%s';\n" % self.RequestName )
+      query.append( "WHERE NOT EXISTS (SELECT `RequestName` FROM `Request` WHERE `RequestName` = '%s');\n" % self.RequestName )
     return "".join( query )
     
   ## digest
