@@ -144,7 +144,7 @@ class Operation(object):
   @property
   def RequestID( self ):
     """ RequestID getter (RO) """
-    return self._parent.requestID if self._parent else 0
+    return self._parent.RequestID if self._parent else 0
 
   @property 
   def OperationID( self ):
