@@ -110,6 +110,7 @@ class RequestDB(DB):
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
     return S_OK( { "cursor" : cursor, "connection" : conn  } )
 
+
   def putRequest( self, request ):
     """ update or insert request into db """      
     cursor = self.dictCursor()

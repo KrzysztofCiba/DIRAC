@@ -298,9 +298,13 @@ class Operation(object):
 
   def toSQL( self ):
     """ get SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) in ( str, datetime.datetime ) else str(value) ) 
-                for column, value in self.__data__.items()
-                if value and column not in ( "OperationID", "LastUpdate" ) ] 
+    if not getattr( self, "RequestID" ):
+      raise AttributeError( "RequestID not set" )
+
+    colVals = [ ( "`%s`" % column, "'%s'" % getattr(self, column) 
+                  if getattr(self, column) in ( str, datetime.datetime ) else str(getattr(self, column) ) ) 
+                for column in self.__data__
+                if getattr(self, column) and column not in ( "OperationID", "LastUpdate" ) ] 
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
     if self.OperationID:
