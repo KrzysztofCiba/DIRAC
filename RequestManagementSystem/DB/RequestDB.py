@@ -149,7 +149,7 @@ class RequestDB(DB):
       if not putOperation["OK"]:
         self.log.error("putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ), 
                                                                         putOperation["Message"] ) )
-        deleteRequest = self.deleteRequest( requestID = request.RequestID, connection=connection )
+        deleteRequest = self.deleteRequest( request.requestName, connection=connection )
         self.__putConnection( connection )
         return putOperation
 
@@ -162,13 +162,13 @@ class RequestDB(DB):
         if not putFiles["OK"]:
           self.log.error("putRequest: unable to put files for operation %d: %s" % ( request.indexOf( operation ),
                                                                                     putFiles["Message"] ) )
-          deleteRequest = self.deleteRequest( requestID=request.RequestID, connection=connection )
+          deleteRequest = self.deleteRequest( request.requestName, connection=connection )
           self.__putConnection( connection )
           return putFiles
 
     return S_OK()
       
-  def getRequest( self ):
+  def getRequest( self, requestName = None ):
     """ read request for execution """
     cursor = self.dictCursor()
     if not cursor["OK"]:
@@ -188,9 +188,6 @@ class RequestDB(DB):
       select = cursor.execute( "SELECT * FROM `Request` WHERE `RequestID` = %s;" % requestID )
       
       update = cursor.execute( "UPDATE `Request` SET `Status` = 'Assigned' WHERE `RequestID` = %s;" % reuqestID )
-
-
-      
       
     except MySQLdbError, error:
       connection.rollback()
@@ -200,25 +197,58 @@ class RequestDB(DB):
       return S_ERROR( "getRequest: %s" % str(error) )
     return S_OK()
 
-  def deleteRequest( self, requestName=None, requestID=None, connection=None ):
-    """ delete request """
-    if requestName:
-      
+  def deleteRequest( self, requestName, connection=None ):
+    """ delete request 
+    
+    :param str requestName: request.RequestName
+    :param mixed connection: connection to use if any
+    """
+    if not connection:
+      connection = self.__getConnection()
+      if not conection["OK"]:
+        self.log.error("putRequest: %s" % connection["Message"] )
+      connection = connection["Value"]
 
-    pass
+    requestIDs = self._transaction( 
+      "SELECT r.RequestID, o.OperationID FROM `Request` r LEFT JOIN `Operation` "\
+        "ON r.RequestID = o.RequestID WHERE `RequestName` = '%s'" % requestName, connection )
 
-  def getRequestProperties( self, requestName, columnNames ):
+    if not requestIDs["OK"]:
+      self.log.error("deleteRequest: unable to read RequestID and OperationIDs: %s" % requestIDs["Message"] )
+      self.__putConnection( connection )
+      return requestIDs
+    requestIDs = requestIDs["Value"]
+    
+    trans = []
+    requestID = None
+    for record in requestIDs:
+      requestID = record["RequestID"] if record["RequestID"] else None
+      operationID = record["OperationID"] if record["OperationID"] else None
+      if operationID and requestID:
+        trans.append( "DELETE FROM `Files` WHERE `OperationID` = %s;" % operationID )
+        trans.append( "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` = %s;" % ( requestID, operationID ) )
+
+    ## last bit: request itself
+    if requestID:
+      trans.append( "DELETE FROM `Request` WHERE `RequestID` = %s;" % requestID )
+
+    delete = self._transaction( trans, connection )  
+    if not delete["OK"]:
+      self.log.error("deleteRequest: unable to delete request '%s': %s" % ( requestName, delete["Message"] ) )
+    self.__putConnection( connection )
+    return delete
+
+  def _getRequestProperties( self, requestName, columnNames ):
     """ select :columnNames: from Request table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
     query = "SELECT %s FROM `Request` WHERE RequestName = `%s`;" % ( columnNames, requestName )
     
-
-  def getOperationProperties( self, operationID, columnNames ):
+  def _getOperationProperties( self, operationID, columnNames ):
     """ select :columnNames: from Operation table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
     query = "SELECT %s FROM `Operation` WHERE OperationID = %s;" % ( columnNames, int(operationID) )
 
-  def getFileProperties( self, fileID, columnNames ):
+  def _getFileProperties( self, fileID, columnNames ):
     """ select :columnNames: from File table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
     query = "SELECT %s FROM `File` WHERE FileID = %s;" % ( columnNames, int(fileID) )
