@@ -45,7 +45,7 @@ class OperationTests(unittest.TestCase):
                       "SourceSE" : "" }
     self.subFile = File( { "LFN" : "/lhcb/user/c/cibak/testFile",
                            "Checksum" : "1234567",
-                           "ChecksumType" : "ADLER",
+                           "ChecksumType" : "ADLER32",
                            "Size" : 1024,
                            "Status" : "Waiting" } )
     self.operation = None
@@ -200,8 +200,6 @@ class OperationTests(unittest.TestCase):
     ## OperationID set = UPDATE
     operation.OperationID = 1
     self.assertEqual( operation.toSQL().startswith("UPDATE"), True )
-
-
 
 
 ## test execution

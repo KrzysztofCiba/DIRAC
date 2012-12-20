@@ -96,6 +96,37 @@ class RequestValidatorTests(unittest.TestCase):
                         "OK": False} )
     self.file.LFN = "/a/b/c"
 
+
+    ## Checksum set, ChecksumType not set 
+    self.file.Checksum = "abcdef"
+    ret = validator.validate( self.request )
+    self.assertEqual( ret, 
+                      { 'Message' : 'File in operation #0 is missing Checksum (abcdef) or ChecksumType (None)', 
+                        'OK' : False } ) 
+
+
+    ## ChecksumType set, Checksum not set 
+    self.file.Checksum = ""
+    self.file.ChecksumType = "adler32"
+
+    ret = validator.validate( self.request )
+    self.assertEqual( ret, 
+                      { 'Message' : 'File in operation #0 is missing Checksum () or ChecksumType (ADLER32)', 
+                        'OK' : False } )
+    
+    ## both set
+    self.file.Checksum = "abcdef"
+    self.file.ChecksumType = "adler32"
+    ret = validator.validate( self.request )
+    self.assertEqual( ret, {'OK': True, 'Value': ''} )
+    
+    ## both unset
+    self.file.Checksum = ""
+    self.file.ChecksumType = None
+    ret = validator.validate( self.request )
+    self.assertEqual( ret, {'OK': True, 'Value': ''} )
+
+
     ## all OK
     ret = validator.validate( self.request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )

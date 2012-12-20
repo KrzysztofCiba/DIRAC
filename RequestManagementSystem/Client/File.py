@@ -54,8 +54,7 @@ class File( object ):
     :param dict fromDict: property dict 
     """
     self._parent = None
-    self.__data__ = dict.fromkeys( ( "FileID", "OperationID", "Status", "Error", "LFN", "Attempt",
-                                     "PFN", "Size", "ChecksumType", "Checksum", "GUID" ) ) 
+    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     self.__data__["Status"] = "Waiting"
     self.__data__["OperationID"] = 0
     self.__data__["FileID"] = 0
@@ -65,6 +64,23 @@ class File( object ):
         raise AttributeError( "unknown File attribute %s" % str(attrName) )
       setattr( self, attrName, attrValue )
 
+  @staticmethod
+  def tableDesc():
+    """ get table desc """
+    return { "Fields" : 
+             { "FileID" : "INTEGER NOT NULL AUTO_INCREMENT",
+               "OperationID" : "INTEGER NOT NULL",
+               "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled', 'Cancelled')",
+               "LFN" : "VARCHAR(255)",
+               "PFN" : "VARCHAR(255)",
+               "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'NONE'",
+               "Checksum" : "VARCHAR(255)",
+               "GUID" : "VARCHAR(26)",
+               "Size" : "INTEGER", 
+               "Error" : "VARCHAR(255)" },
+             "PrimaryKey" : "FileID",
+             "Indexes" : { "LFN" : [ "LFN" ] } }
+  
   def __setattr__( self, name, value ):
     """ beawre of tpyos """
     if not name.startswith("_") and name not in dir(self):
@@ -174,12 +190,11 @@ class File( object ):
     return self.__data__["ChecksumType"]
 
   @ChecksumType.setter
-  def ChecksumType( self, value = "NONE" ):
+  def ChecksumType( self, value ):
     """ checksum type setter """
-    value = str(value).upper()
-    if value not in ( "ADLER32", "MD5", "SHA1", "NONE" ):
+    if str(value).upper() not in ( "ADLER32", "MD5", "SHA1", "NONE" ):
       raise ValueError("unknown checksum type: %s" % value )
-    self.__data__["ChecksumType"] = value
+    self.__data__["ChecksumType"] = str(value).upper() if value else None
 
   @property
   def Checksum( self ):

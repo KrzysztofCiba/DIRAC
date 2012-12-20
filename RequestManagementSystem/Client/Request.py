@@ -63,8 +63,7 @@ class Request(object):
     :param self: self reference
     """
     self.__waiting = None 
-    self.__data__ = dict.fromkeys( ( "RequestID", "RequestName", "OwnerDN", "OwnerGroup", "DIRACSetup", "Status", 
-                                     "SourceComponent", "JobID", "CreationTime", "SubmitTime", "LastUpdate", "Error" ), None )
+    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now 
     self.__data__["SubmitTime"] = now
@@ -78,6 +77,25 @@ class Request(object):
         raise AttributeError("Unknown Request attribute '%s'" % key )
       if value:
         setattr( self, key, value )
+
+  @staticmethod
+  def tableDesc():
+    """ get table desc """
+    return { "Fields" : 
+             { "RequestID" : "INTEGER NOT NULL AUTO_INCREMENT",
+               "RequestName" : "VARCHAR(255) NOT NULL",
+               "OwnerDN" : "VARCHAR(255)",
+               "OwnerGroup" : "VARCHAR(32)",
+               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled') DEFAULT 'Waiting'",
+               "Error" : "VARCHAR(255)",
+               "DIRACSetup" : "VARCHAR(32)",
+               "SourceComponent" : "BLOB",
+               "JobID" : "INTEGER DEFAULT 0",
+               "CreationTime" : "DATETIME",
+               "SubmitTime" : "DATETIME",
+               "LastUpdate" : "DATETIME"  },
+             "PrimaryKey" : "RequestID",
+             "Indexes" : { "RequestName" : [ "RequestName"] } }
 
   def _notify( self ):
     """ simple state machine for sub request statuses """
