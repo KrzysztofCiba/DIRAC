@@ -74,9 +74,11 @@ class RequestTests(unittest.TestCase):
 
     toSQL = req.toSQL()
     self.assertEqual( toSQL.startswith("INSERT"), True )
+    print toSQL
     req.RequestID = 1 
     toSQL = req.toSQL()
     self.assertEqual( toSQL.startswith("UPDATE"), True )
+    print toSQL
 
   def test_props( self ):
     """ test props """
