@@ -39,49 +39,6 @@ class RequestDB(DB):
 
   persistency storage for requests
   """
-  tableDict = { "Request" : 
-                { "Fields" : 
-                  { "RequestID" : "INTEGER NOT NULL AUTO_INCREMENT",
-                    "RequestName" : "VARCHAR(255) NOT NULL",
-                    "OwnerDN" : "VARCHAR(255)",
-                    "OwnerGroup" : "VARCHAR(32)",
-                    "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled') DEFAULT 'Waiting'",
-                    "Error" : "VARCHAR(255)",
-                    "DIRACSetup" : "VARCHAR(32)",
-                    "JobID" : "INTEGER DEFAULT 0",
-                    "CreationTime" : "DATETIME",
-                    "SubmitTime" : "DATETIME",
-                    "LastUpdate" : "DATETIME"  },
-                  "PrimaryKey" : "RequestID",
-                  "Indexes" : { "RequestName" : [ "RequestName"] } },
-                "Operation" : 
-                { "Fields" : 
-                  { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
-                    "RequestID" : "INTEGER NOT NULL",
-                    "Type" : "VARCHAR(64) NOT NULL",
-                    "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled') "\
-                      "DEFAULT 'Queued'",
-                    "Arguments" : "BLOB",
-                    "Order" : "INTEGER NOT NULL",
-                    "SourceSE" : "VARCHAR(255)",
-                    "TargetSE" : "VARCHAR(255)",
-                    "Catalogue" : "VARCHAR(255)",
-                    "CreationTime" : "DATETIME",
-                    "SubmitTime" : "DATETIME",
-                    "LastUpdate" : "DATETIME" },
-                  "PrimaryKey" : "OperationID" },
-                "File" : 
-                { "Fields" : { "FileID" : "INTEGER NOT NULL AUTO_INCREMENT",
-                               "OperationID" : "INTEGER NOT NULL",
-                               "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled', 'Cancelled')",
-                               "LFN" : "VARCHAR(255)",
-                               "PFN" : "VARCHAR(255)",
-                               "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'NONE'",
-                               "Checksum" : "VARCHAR(255)",
-                               "GUID" : "VARCHAR(26)",
-                               "Error" : "VARCHAR(255)" },
-                  "PrimaryKey" : "FileID",
-                  "Indexes" : { "LFN" : [ "LFN" ] } } } 
 
   def __init__( self, systemInstance = 'Default', maxQueueSize = 10 ):
     """c'tor
@@ -95,6 +52,8 @@ class RequestDB(DB):
     
   def _checkTables( self, force = False ):
     """ create tables if not exisiting """
+    self.tableDict = dict.( [ ( classDef.__class__.__name__,  classDef.tableDesc() )
+                              for classDef in ( Request, Operation, File ) ] )
     return self._createTables( self.tableDict, force = force )
 
   def dictCursor( self, conn=None ):
@@ -109,7 +68,6 @@ class RequestDB(DB):
       conn = retDict["Value"]
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
     return S_OK( { "cursor" : cursor, "connection" : conn  } )
-
 
   def putRequest( self, request ):
     """ update or insert request into db """      

@@ -50,7 +50,8 @@ class RequestValidator(object):
                        self.hasOperations, 
                        self.hasType,
                        self.hasFiles,
-                       self.hasRequiredAttrs )
+                       self.hasRequiredAttrs,
+                       self.hasChecksumAndChecksumType )
     
   def validate( self, request ):
     """ simple validator """
@@ -111,4 +112,14 @@ class RequestValidator(object):
             if not getattr( opFile, fileAttr ):
               return S_ERROR("Operation #%d of type '%s' is missing %s attribute for file." %\
                                ( request.indexOf(operation), operation.Type, fileAttr ) )
+    return S_OK()
+
+  @classmethod
+  def hasChecksumAndChecksumType( cls, request ):
+    """ Checksum and ChecksumType should be specified """
+    for operation in request:
+      for opFile in operation:
+        if any( [ opFile.Checksum, opFile.ChecksumType ] ) and not all( [opFile.Checksum, opFile.ChecksumType ] ):
+          return S_ERROR( "File in operation #%d is missing Checksum (%s) or ChecksumType (%s)" % 
+                          ( request.indexOf(operation), opFile.Checksum, opFile.ChecksumType ) )
     return S_OK()

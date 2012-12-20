@@ -52,6 +52,8 @@ class Operation(object):
   :param Request parent: parent Request instance
   """
  
+  
+
   def __init__( self, fromDict=None ):
     """ c'tor
 
@@ -60,9 +62,7 @@ class Operation(object):
     """
     self._parent = None
     ## sub-request attributes
-    self.__data__ = dict.fromkeys( ( "RequestID",  "OperationID", "Status", "Error", 
-                                     "Type",  "Arguments", "Order", "SourceSE", "TargetSE", 
-                                     "Catalogue", "CreationTime", "SubmitTime", "LastUpdate" ) )
+    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     now = datetime.datetime.utcnow().replace( microsecond=0 )
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
@@ -79,6 +79,25 @@ class Operation(object):
         raise AttributeError("Unknown Operation attribute '%s'" % key )
       setattr( self, key, value )
 
+  @staticmethod
+  def tableDesc():
+    """ get table desc """
+    return { "Fields" : 
+             { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
+               "RequestID" : "INTEGER NOT NULL",
+               "Type" : "VARCHAR(64) NOT NULL",
+               "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled') "\
+                 "DEFAULT 'Queued'",
+               "Arguments" : "BLOB",
+               "Order" : "INTEGER NOT NULL",
+               "SourceSE" : "VARCHAR(255)",
+               "TargetSE" : "VARCHAR(255)",
+               "Catalogue" : "VARCHAR(255)",
+               "CreationTime" : "DATETIME",
+               "SubmitTime" : "DATETIME",
+               "LastUpdate" : "DATETIME" },
+             "PrimaryKey" : "OperationID" }
+  
   def __setattr__( self, name, value ):
     """ beawre of tpyos """
     if not name.startswith("_") and name not in dir(self):
