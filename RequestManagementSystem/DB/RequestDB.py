@@ -115,6 +115,25 @@ class RequestDB(DB):
 
     :param Request request: Request instance
     """      
+    if not connection:
+      connection = self.__getConnection()
+      if not conection["OK"]:
+        self.log.error("putRequest: %s" % connection["Message"] )
+      connection = connection["Value"]
+
+    exists = self._transaction( "SELECT `RequestID` from `Request` WHERE `RequestName` = '%s'" % request.RequestName, 
+                                connection=connection )
+    if not exists["OK"]:
+      self.log.error("putRequest: %s" % exists["Message"] )
+      self.__putConnection( connection )
+      return exists
+    exists = exists["Value"]
+    
+    if exists and exists["RequestID"] != request.RequestID:
+      self.__putConnection( connection )
+      return S_ERROR("putRequest: request if '%s' already exists in the db (RequestID=%s)" % ( request.RequestName, 
+                                                                                               exists["RequestID"] ) )
+
     putRequest = self._transaction( request.toSQL(), connection=connection )
     if not putRequest["OK"]:
       self.log.error("putRequest: %s" % putRequest["Message"] )
