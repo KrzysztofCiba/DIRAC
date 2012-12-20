@@ -82,7 +82,10 @@ class Operation(object):
     """ beawre of tpyos """
     if not name.startswith("_") and name not in dir(self):
       raise AttributeError("'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
-    object.__setattr__( self, name, value )
+    try:
+      object.__setattr__( self, name, value )
+    except AttributeError, error:
+      print name, value, error
 
   ## protected methods for parent only
   def _notify( self ):
@@ -144,8 +147,13 @@ class Operation(object):
   @property
   def RequestID( self ):
     """ RequestID getter (RO) """
-    return self._parent.RequestID if self._parent else 0
+    return self._parent.RequestID if self._parent else -1
 
+  @RequestID.setter
+  def RequestID( self, value ):
+    """ can't set RequestID by hand """
+    self.__data__["RequestID"] = self._parent.RequestID if self._parent else -1
+ 
   @property 
   def OperationID( self ):
     """ OperationID getter """
@@ -241,10 +249,6 @@ class Operation(object):
     if self._parent:
       self.__data__["Order"] = self._parent.indexOf( self ) if self._parent else -1
     return self.__data__["Order"]
-
-  #@Order.setter
-  #def Order( self, order ):
-    
   
   @property
   def SubmitTime( self ):
@@ -263,7 +267,7 @@ class Operation(object):
   @property
   def LastUpdate( self ):
     """ last update prop """
-    return self.__data__["SubmitTime"]
+    return self.__data__["LastUpdate"]
   
   @LastUpdate.setter
   def LastUpdate( self, value = None ):
@@ -276,7 +280,10 @@ class Operation(object):
 
   def toXML( self ):
     """ dump subrequest to XML """
-    data = dict( [ ( key, getattr(self, key) if getattr(self, key) != None else "" ) for key in self.__data__ ] )
+    data = dict( [ ( key, str(getattr(self, key)) if getattr(self, key) != None else "" ) for key in self.__data__ ] )
+    for key, value in data.items():
+      if isinstance( value, datetime.datetime ):
+        data[key] = str(value)
     element = ElementTree.Element( "operation", data ) 
     for opFile in self.__files__:
       element.append( opFile.toXML() )

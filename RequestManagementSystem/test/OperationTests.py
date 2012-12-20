@@ -188,22 +188,15 @@ class OperationTests(unittest.TestCase):
       self.assertEqual( isinstance(error, AttributeError), True )
       self.assertEqual( str(error), "RequestID not set" )
 
-    print "aaaa", operation.Order, operation.Status
-
     ## parent set, no OperationID, INSERT
     request.addOperation( operation )
     self.assertEqual( operation.toSQL().startswith("INSERT"), True )
-
-    print "aaaa", operation.Order, operation.Status
     
     op2 = Operation()
     op2.Type = "removal"
     
     request.insertBefore( op2, operation )
-
-    print "aaaaa", operation.Status, operation.Order
-    print "bbbb", op2.Status, op2.Order
-
+    
     ## OperationID set = UPDATE
     operation.OperationID = 1
     self.assertEqual( operation.toSQL().startswith("UPDATE"), True )
