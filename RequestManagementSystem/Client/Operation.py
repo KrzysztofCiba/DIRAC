@@ -238,8 +238,14 @@ class Operation(object):
   @property
   def Order( self ):
     """ order prop """
-    return self._parent.indexOf( self ) if self._parent else -1
+    if self._parent:
+      self.__data__["Order"] = self._parent.indexOf( self ) if self._parent else -1
+    return self.__data__["Order"]
 
+  #@Order.setter
+  #def Order( self, order ):
+    
+  
   @property
   def SubmitTime( self ):
     """ subrequest's submission time prop """
