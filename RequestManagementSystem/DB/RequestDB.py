@@ -76,7 +76,7 @@ class RequestDB(DB):
                                "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled', 'Cancelled')",
                                "LFN" : "VARCHAR(255)",
                                "PFN" : "VARCHAR(255)",
-                               "ChecksumType" : "ENUM('adler32', 'md5', 'sha1', 'none') DEFAULT 'adler32'",
+                               "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'NONE'",
                                "Checksum" : "VARCHAR(255)",
                                "GUID" : "VARCHAR(26)",
                                "Error" : "VARCHAR(255)" },

@@ -62,10 +62,11 @@ class Operation(object):
     ## sub-request attributes
     self.__data__ = dict.fromkeys( ( "RequestID",  "OperationID", "Status", "Error", 
                                      "Type",  "Arguments", "Order", "SourceSE", "TargetSE", 
-                                     "Catalogue", "SubmitTime", "LastUpdate" ) )
+                                     "Catalogue", "CreationTime", "SubmitTime", "LastUpdate" ) )
     now = datetime.datetime.utcnow().replace( microsecond=0 )
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
+    self.__data__["CreationTime"] = now
     self.__data__["OperationID"] = 0
     self.__data__["RequestID"] = 0
     self.__data__["Status"] = "Queued"
@@ -249,17 +250,33 @@ class Operation(object):
     if self._parent:
       self.__data__["Order"] = self._parent.indexOf( self ) if self._parent else -1
     return self.__data__["Order"]
-  
+
+
+  @property
+  def CreationTime( self ):
+    """ operation creation time prop """
+    return self.__data__["CreationTime"]
+
+  @CreationTime.setter
+  def CreationTime( self, value = None ):
+    """ creation time setter """
+    if type(value) not in ( datetime.datetime, str ):
+      raise TypeError("CreationTime should be a datetime.datetime!")
+    if type(value) == str:
+      value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+    self.__data__["CreationTime"] = value
+
+
   @property
   def SubmitTime( self ):
-    """ subrequest's submission time prop """
+    """ subrequest's submit time prop """
     return self.__data__["SubmitTime"]
 
   @SubmitTime.setter
   def SubmitTime( self, value = None ):
-    """ submission time setter """
+    """ submit time setter """
     if type(value) not in ( datetime.datetime, str ):
-      raise TypeError("SubmissionTime should be a datetime.datetime!")
+      raise TypeError("SubmitTime should be a datetime.datetime!")
     if type(value) == str:
       value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["SubmitTime"] = value
