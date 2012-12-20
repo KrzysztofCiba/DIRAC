@@ -230,7 +230,7 @@ class Operation(object):
       if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():
         return 
     ## update? notify parent
-    old = self.Status
+    old = self.__data__["Status"]
     self.__data__["Status"] = value
     if value != old and self._parent:       
       self._parent._notify()
@@ -276,7 +276,7 @@ class Operation(object):
 
   def toXML( self ):
     """ dump subrequest to XML """
-    data = dict( [ ( key, str(val) if val else "" ) for key, val in self.__data__.items() ] )
+    data = dict( [ ( key, getattr(self, key) if getattr(self, key) != None else "" ) for key in self.__data__ ] )
     element = ElementTree.Element( "operation", data ) 
     for opFile in self.__files__:
       element.append( opFile.toXML() )
@@ -309,8 +309,11 @@ class Operation(object):
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column ) 
                   if type(getattr(self, column)) in ( str, datetime.datetime ) else str( getattr(self, column) ) ) 
                 for column in self.__data__
-                if getattr(self, column) and column not in ( "OperationID", "LastUpdate" ) ] 
+                if getattr(self, column) and column not in ( "OperationID", "LastUpdate", "Order", "Status" ) ] 
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
+    colVals.append( ( "`Order`", str(self.Order) ) )
+    colVals.append( ( "`Status`", str(self.Status) ) )
+
     query = []
     if self.OperationID:
       query.append( "UPDATE `Operation` SET " )
