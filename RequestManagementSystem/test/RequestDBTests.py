@@ -26,11 +26,11 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 ## from DIRAC
-from DIRAC.RequestManegementSystem.Client.Request import Request
-from DIRAC.RequestManegementSystem.Client.Operation import Operation
-from DIRAC.RequestManegementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
 ## SUT
-from DIRAC.RequestManegementSystem.DB.RequestDB import RequestDB
+from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
 
 ########################################################################
@@ -42,13 +42,24 @@ class RequestDBTests(unittest.TestCase):
 
   def setUp( self ):
     """ test setup """
-    pass
+    self.request = Request( { "RequestName" : "testRequest" } )
+    self.operation = Operation( { "Type" : "replicateAndRegister" } )
+    self.file = File( { "LFN" : "/a/b/c" } )
+    
+    self.request.addOperation( self.operation )
+    self.operation.addFile( self.file  )
+
 
   def tearDown( self ):
     """ test tear down """
-    pass
+    del self.file
+    del self.operation
+    del self.request
 
   def testTableDesc( self ):
+    
+    tableDict = RequestDB.getTableMeta()
+    print tableDict
     pass
 
 ## test suite execution 

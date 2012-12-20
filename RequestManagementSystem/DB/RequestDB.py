@@ -44,17 +44,19 @@ class RequestDB(DB):
     """c'tor
 
     :param self: self reference
-
     """
     self.getIdLock = threading.Lock() 
     DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
     self._checkTables( False )
+
+  @staticmethod
+  def getTableMeta():
+    return dict( [ ( classDef.__name__,  classDef.tableDesc() )
+                   for classDef in ( Request, Operation, File ) ] ) 
     
   def _checkTables( self, force = False ):
     """ create tables if not exisiting """
-    self.tableDict = dict.( [ ( classDef.__class__.__name__,  classDef.tableDesc() )
-                              for classDef in ( Request, Operation, File ) ] )
-    return self._createTables( self.tableDict, force = force )
+    return self._createTables( self.getTableMeta(), force = force )
 
   def dictCursor( self, conn=None ):
     """ get dict cursor for connection :conn:
@@ -72,7 +74,7 @@ class RequestDB(DB):
 
   def _transaction( self, queries, connection=None ):
     """ execute transaction """
-    queries = [ queries ] if type(queries) = str else queries
+    queries = [ queries ] if type(queries) == str else queries
     ## get cursor and connection
     cursor = None
     if not connection:
