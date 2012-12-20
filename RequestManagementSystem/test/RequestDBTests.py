@@ -48,7 +48,6 @@ class RequestDBTests(unittest.TestCase):
     """ test tear down """
     pass
 
-
 ## test suite execution 
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()
