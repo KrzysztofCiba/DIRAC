@@ -316,10 +316,10 @@ class Operation(object):
     colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column ) 
                   if type(getattr(self, column)) in ( str, datetime.datetime ) else str( getattr(self, column) ) ) 
                 for column in self.__data__
-                if getattr(self, column) and column not in ( "OperationID", "LastUpdate", "Order", "Status" ) ] 
+                if getattr(self, column) and column not in ( "OperationID", "LastUpdate", "Order" ) ] 
     colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
     colVals.append( ( "`Order`", str(self.Order) ) )
-    colVals.append( ( "`Status`", str(self.Status) ) )
+    #colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
 
     query = []
     if self.OperationID:
