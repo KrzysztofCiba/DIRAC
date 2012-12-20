@@ -26,6 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 ## from DIRAC
+from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.File import File
 ## SUT
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -65,7 +66,6 @@ class OperationTests(unittest.TestCase):
     operation = Operation( self.fromDict )
     self.assertEqual( isinstance( operation, Operation), True )
     for key, value in self.fromDict.items():
-      print key, value
       self.assertEqual( getattr( operation, key), value )
     ## from XML
     operation = Operation.fromXML( operation.toXML() )
@@ -79,13 +79,6 @@ class OperationTests(unittest.TestCase):
     self.assertEqual( isinstance( operation, Operation), True )
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( operation, key ), value )
-
-    ## toSQL no OperationID
-    self.assertEqual( operation.toSQL().startswith("INSERT"), True )
-    ## toSQL OperationID set
-    operation.OperationID = 10
-    self.assertEqual( operation.toSQL().startswith("UPDATE"), True )
-
 
   def test_props( self ):
     """ test properties """
@@ -178,6 +171,33 @@ class OperationTests(unittest.TestCase):
     operation += File( { "Status" : "Waiting" } )
     self.assertEqual( operation.Status, "Queued" )
      
+
+  def test_sql( self ):
+    """ insert or update """
+    operation = Operation()
+    operation.Type = "replicateAndRegister"
+
+    request = Request()
+    request.RequestName = "testRequest"
+    request.RequestID = 1
+
+    ## no parent request set
+    try:
+      operation.toSQL()
+    except Exception, error:
+      self.assertEqual( isinstance(error, AttributeError), True )
+      self.assertEqual( str(error), "RequestID not set" )
+
+    ## parent set, no OperationID, INSERT
+    request.addOperation( operation )
+    self.assertEqual( operation.toSQL().startswith("INSERT"), True )
+
+    ## OperationID set = UPDATE
+    operation.OperationID = 1
+    self.assertEqual( operation.toSQL().startswith("UPDATE"), True )
+
+
+
 
 ## test execution
 if __name__ == "__main__":
