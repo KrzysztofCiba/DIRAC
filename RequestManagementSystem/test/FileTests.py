@@ -43,7 +43,7 @@ class FileTests( unittest.TestCase ):
 
   def setUp( self ):
     """ test setup """
-    self.fromDict = { "Size" : 1, "LFN" : "/test/lfn", "ChecksumType" : "ADLER", "Checksum" : "123456", "Status" : "Waiting" } 
+    self.fromDict = { "Size" : 1, "LFN" : "/test/lfn", "ChecksumType" : "ADLER32", "Checksum" : "123456", "Status" : "Waiting" } 
     self.fileElement = ElementTree.Element( "file", self.fromDict )
 
   def tearDown( self ):
@@ -71,6 +71,7 @@ class FileTests( unittest.TestCase ):
     self.assertEqual( isinstance( theFile, File ), True )
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( theFile, key ), value  )
+
       
   def test_props( self ):
     """ test props and attributes  """
@@ -91,11 +92,10 @@ class FileTests( unittest.TestCase ):
     self.assertEqual( theFile.Size, 1 )
     theFile.GUID = "2bbabe80-e2f1-11e1-9b23-0800200c9a66"
     self.assertEqual( theFile.GUID, "2bbabe80-e2f1-11e1-9b23-0800200c9a66" )
-    theFile.ChecksumType = "adler"
-    self.assertEqual( theFile.ChecksumType, "ADLER" )
+    theFile.ChecksumType = "adler32"
+    self.assertEqual( theFile.ChecksumType, "ADLER32" )
     theFile.Checksum = "123456"
     self.assertEqual( theFile.Checksum, "123456" )
-
     ## invalid props
     
     # FileID
@@ -107,6 +107,9 @@ class FileTests( unittest.TestCase ):
     # parent
     parent = Operation( { "OperationID" : 99999 } )
     parent += theFile
+
+    theFile.FileID = 0
+    
 
     self.assertEqual( parent.OperationID, theFile.OperationID )
     try:

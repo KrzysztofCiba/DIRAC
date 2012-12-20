@@ -91,7 +91,13 @@ class File( object ):
   @property
   def OperationID( self ):
     """ operation ID (RO) """
-    return self._parent.OperationID if self._parent else 0
+    self.__data__["OperationID"] = self._parent.OperationID if self._parent else 0
+    return self.__data__["OperationID"]
+
+  @OperationID.setter
+  def OperationID( self, value ):
+    """ operation ID (RO) """
+    self.__data__["OperationID"] = self._parent.OperationID if self._parent else 0
 
   @property
   def Attempt( self ):
@@ -171,7 +177,7 @@ class File( object ):
   def ChecksumType( self, value = "NONE" ):
     """ checksum type setter """
     value = str(value).upper()
-    if value not in ( "ADLER", "MD5", "SHA1", "NONE" ):
+    if value not in ( "ADLER32", "MD5", "SHA1", "NONE" ):
       raise ValueError("unknown checksum type: %s" % value )
     self.__data__["ChecksumType"] = value
 
@@ -231,9 +237,14 @@ class File( object ):
 
   def toSQL( self ):
     """ get SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) == str else str(value) ) 
-                for column, value in self.__data__.items()
-                if value and column != "FileID" ] 
+    if not self._parent:
+      raise AttributeError("File does not belong to any Operation")
+    
+    colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column ) 
+                  if type( getattr( self, column ) ) == str else str( getattr( self, column ) ) ) 
+                for column in self.__data__
+                if getattr( self, column ) and column != "FileID" ]
+    print colVals
     query = []
     if self.FileID:
       query.append( "UPDATE `File` SET " )
