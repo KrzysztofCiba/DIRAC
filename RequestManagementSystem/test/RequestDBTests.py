@@ -43,11 +43,15 @@ class RequestDBTests(unittest.TestCase):
 
   def setUp( self ):
     """ test case setup """
-    self.request = Request( { "RequestName" : "testRequest" } )
-    self.operation = Operation( { "Type" : "replicateAndRegister", "TargetSE" : "CERN-USER" } )
+    self.request = Request( { "RequestName" : "test1" } )
+    self.operation1 = Operation( { "Type" : "replicateAndRegister", "TargetSE" : "CERN-USER" } )
     self.file = File( { "LFN" : "/a/b/c" } )
-    self.request.addOperation( self.operation )
-    self.operation.addFile( self.file  )
+    self.request.addOperation( self.operation1 )
+    self.operation1.addFile( self.file  )
+    self.operation2 = Operation()
+    self.operation2.Type = "removeFile"
+    self.operation2.addFile( File( { "LFN" : "/c/d/e" } ) )
+    self.request.addOperation( self.operation2 )
 
     ### set some defaults
     gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
@@ -59,7 +63,8 @@ class RequestDBTests(unittest.TestCase):
   def tearDown( self ):
     """ test case tear down """
     del self.file
-    del self.operation
+    del self.operation1
+    del self.operation2 
     del self.request
 
   def testTableDesc( self ):
@@ -75,7 +80,13 @@ class RequestDBTests(unittest.TestCase):
   def testRequestRW( self ):
     """ db r/w requests """
     db = RequestDB()
-    gLogger.error( db.putRequest( self.request ) )
+    db._checkTables( True )
+    ret = db.putRequest( self.request )
+    self.assertEqual( ret, {'OK': True, 'Value': ''} )
+
+    ret = db.deleteRequest( self.request.RequestName )
+    self.assertEqual( ret, {'OK': True, 'Value': ''} )
+    
 
   def testDBSummary( self ):
     """ test getDBSummary """

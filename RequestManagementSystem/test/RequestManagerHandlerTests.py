@@ -44,8 +44,14 @@ class RequestManagerHandlerTests(unittest.TestCase):
     :param self: self reference
     """
     self.request = Request()
+    self.request.RequestName = "test"
     self.operation = Operation()
+    self.operation.Type = "replicateAndRegister"
+    self.operation.TargetSE = "CERN-USER"
     self.file = File()
+    self.file.LFN = "/lhcb/user/c/cibak/testFile"
+    self.request.addOperation( self.operation )
+    self.operation.addFile( self.file )
 
     
 
@@ -58,7 +64,6 @@ class RequestManagerHandlerTests(unittest.TestCase):
   def testSetRequest( self ):
     """ test set request """
     pass
-
 
 ## test execution
 if __name__ == "__main__":

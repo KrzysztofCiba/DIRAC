@@ -259,7 +259,6 @@ class File( object ):
                   if type( getattr( self, column ) ) == str else str( getattr( self, column ) ) ) 
                 for column in self.__data__
                 if getattr( self, column ) and column != "FileID" ]
-    print colVals
     query = []
     if self.FileID:
       query.append( "UPDATE `File` SET " )

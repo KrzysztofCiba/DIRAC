@@ -70,6 +70,7 @@ class Request(object):
     self.__data__["LastUpdate"] = now
     self.__data__["Status"] = "Waiting"
     self.__data__["JobID"] = 0
+    self.__data__["RequestID"] = 0
     self.__operations__ = TypedList( allowedTypes=Operation )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
