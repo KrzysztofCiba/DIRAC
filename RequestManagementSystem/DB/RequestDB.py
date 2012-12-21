@@ -117,17 +117,11 @@ class RequestDB(DB):
 
     :param Request request: Request instance
     """      
-    if not connection:
-      connection = self._getConnection()
-      if not connection["OK"]:
-        self.log.error("putRequest: %s" % connection["Message"] )
-      connection = connection["Value"]
-
+    
     exists = self._transaction( "SELECT `RequestID` from `Request` WHERE `RequestName` = '%s'" % request.RequestName, 
                                 connection=connection )
     if not exists["OK"]:
       self.log.error("putRequest: %s" % exists["Message"] )
-      self.__putConnection( connection )
       return exists
     exists = exists["Value"]
     
