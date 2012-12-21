@@ -119,7 +119,7 @@ class RequestDB(DB):
     """      
     if not connection:
       connection = self._getConnection()
-      if not conection["OK"]:
+      if not connection["OK"]:
         self.log.error("putRequest: %s" % connection["Message"] )
       connection = connection["Value"]
 
@@ -204,7 +204,7 @@ class RequestDB(DB):
     """
     if not connection:
       connection = self._getConnection()
-      if not conection["OK"]:
+      if not connection["OK"]:
         self.log.error("putRequest: %s" % connection["Message"] )
       connection = connection["Value"]
 
