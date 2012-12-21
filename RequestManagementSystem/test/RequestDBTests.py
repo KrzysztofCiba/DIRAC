@@ -26,6 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 ## from DIRAC
+from DIRAC import gConfig
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -47,6 +48,13 @@ class RequestDBTests(unittest.TestCase):
     self.file = File( { "LFN" : "/a/b/c" } )
     self.request.addOperation( self.operation )
     self.operation.addFile( self.file  )
+
+    ### set some defaults
+    gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
+    gConfig.setOptionValue( '/DIRAC/Setups/Test/RequestManagement', 'Test' )
+    gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/Host', 'localhost' )
+    gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/DBName', 'ReqDB' )
+    gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/User', 'Dirac' )
 
   def tearDown( self ):
     """ test case tear down """
@@ -72,7 +80,6 @@ class RequestDBTests(unittest.TestCase):
       db.putRequest( self.request )
     except Exception, error:
       print error
-
 
   def testDBSummary( self ):
     """ test getDBSummary """
