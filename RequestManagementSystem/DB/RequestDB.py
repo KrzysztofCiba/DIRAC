@@ -118,7 +118,7 @@ class RequestDB(DB):
     :param Request request: Request instance
     """      
     if not connection:
-      connection = self.__getConnection()
+      connection = self._getConnection()
       if not conection["OK"]:
         self.log.error("putRequest: %s" % connection["Message"] )
       connection = connection["Value"]
@@ -132,7 +132,6 @@ class RequestDB(DB):
     exists = exists["Value"]
     
     if exists and exists["RequestID"] != request.RequestID:
-      self.__putConnection( connection )
       return S_ERROR("putRequest: request if '%s' already exists in the db (RequestID=%s)" % ( request.RequestName, 
                                                                                                exists["RequestID"] ) )
 
@@ -152,7 +151,6 @@ class RequestDB(DB):
         self.log.error("putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ), 
                                                                         putOperation["Message"] ) )
         deleteRequest = self.deleteRequest( request.requestName, connection=connection )
-        self.__putConnection( connection )
         return putOperation
 
       putOperation = putOperation["Value"]
@@ -165,7 +163,6 @@ class RequestDB(DB):
           self.log.error("putRequest: unable to put files for operation %d: %s" % ( request.indexOf( operation ),
                                                                                     putFiles["Message"] ) )
           deleteRequest = self.deleteRequest( request.requestName, connection=connection )
-          self.__putConnection( connection )
           return putFiles
 
     return S_OK()
@@ -206,7 +203,7 @@ class RequestDB(DB):
     :param mixed connection: connection to use if any
     """
     if not connection:
-      connection = self.__getConnection()
+      connection = self._getConnection()
       if not conection["OK"]:
         self.log.error("putRequest: %s" % connection["Message"] )
       connection = connection["Value"]
@@ -217,7 +214,6 @@ class RequestDB(DB):
 
     if not requestIDs["OK"]:
       self.log.error("deleteRequest: unable to read RequestID and OperationIDs: %s" % requestIDs["Message"] )
-      self.__putConnection( connection )
       return requestIDs
     requestIDs = requestIDs["Value"]
     
@@ -237,7 +233,6 @@ class RequestDB(DB):
     delete = self._transaction( trans, connection )  
     if not delete["OK"]:
       self.log.error("deleteRequest: unable to delete request '%s': %s" % ( requestName, delete["Message"] ) )
-    self.__putConnection( connection )
     return delete
 
   def _getRequestProperties( self, requestName, columnNames ):
