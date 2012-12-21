@@ -33,7 +33,6 @@ from DIRAC.RequestManagementSystem.Client.File import File
 ## SUT
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
-
 ########################################################################
 class RequestDBTests(unittest.TestCase):
   """
@@ -81,13 +80,26 @@ class RequestDBTests(unittest.TestCase):
     """ db r/w requests """
     db = RequestDB()
     db._checkTables( True )
+
+    ## insert 
     ret = db.putRequest( self.request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
 
+    ## select
+    ret = db.getRequest()
+    self.assertEqual( ret["OK"], True )
+
+    request = ret["Value"]
+    self.assertEqual( isinstance( request, Request), True )
+
+    ## update 
+    ret = db.putRequest( request )
+    self.assertEqual( ret, {'OK': True, 'Value': ''} )
+
+    ## delete 
     ret = db.deleteRequest( self.request.RequestName )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
     
-
   def testDBSummary( self ):
     """ test getDBSummary """
     pass
