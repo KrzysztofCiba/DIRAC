@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 ## from DIRAC
-from DIRAC import gConfig
+from DIRAC import gConfig, gLogger
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -72,14 +72,10 @@ class RequestDBTests(unittest.TestCase):
     self.assertEqual( tableDict["Operation"], Operation.tableDesc() )
     self.assertEqual( tableDict["File"], File.tableDesc() )
 
-
   def testRequestRW( self ):
     """ db r/w requests """
     db = RequestDB()
-    try:
-      db.putRequest( self.request )
-    except Exception, error:
-      print error
+    gLogger.error( db.putRequest( self.request ) )
 
   def testDBSummary( self ):
     """ test getDBSummary """
