@@ -122,7 +122,8 @@ class RequestDB(DB):
                                 connection=connection )
     if not exists["OK"]:
       self.log.error("putRequest: %s" % exists["Message"] )
-      return exists
+      self.log.error( exists )
+    return exists
     exists = exists["Value"]
     
     if exists and exists["RequestID"] != request.RequestID:
