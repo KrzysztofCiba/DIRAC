@@ -164,47 +164,46 @@ class RequestDB(DB):
 
     return S_OK()
       
-  def getRequest( self, requestName = None ):
+  def getRequest( self, requestName=None ):
     """ read request for execution """
-    cursor = self.dictCursor()
-    if not cursor["OK"]:
-      self.log.error("putRequest: %s" % cursor["Message"] )
-    cursor = cursor["Value"]["cursor"]
-    connection = cursor["Value"]["connection"]
-    connection.autocommit( False )
-    try:
-      cursor.execute( "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` ASC LIMIT 100;" ) 
-      requestIDs = [ record["RequestID"] for record in cursor.fetchall() ] 
-      ## no waiting requests found
-      if not requestIDs:
-        return S_OK()
-      random.shuffle( requestIDs )
-      requestID = requestIDs[0]
+
+    requestID = None
+    if requestName:
+      self.log.info("getRequest: selecting request '%s'" % requestName )
+      reqIDQuery =  "SELECT `RequestID`, `Status` FROM `Request` WHERE `RequestName` = %s;" % str(requestName)
+      reqID = self._transaction( reqIDQuery )
+      if not reqID["OK"]:
+        self.log.error("getRequest: %s" % reqID["Message"] )
+        return reqID
+      self.log.error( reqID )
       
-      select = cursor.execute( "SELECT * FROM `Request` WHERE `RequestID` = %s;" % requestID )
-      
-      update = cursor.execute( "UPDATE `Request` SET `Status` = 'Assigned' WHERE `RequestID` = %s;" % reuqestID )
-      
-    except MySQLdbError, error:
-      connection.rollback()
-      connection.autocommit(True)
-      cursor.close()
-      self.log.error( "getRequest: unable to get request: %s" % str(error) )
-      return S_ERROR( "getRequest: %s" % str(error) )
+
+    #   cursor.execute( "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` ASC LIMIT 100;" ) 
+    #   requestIDs = [ record["RequestID"] for record in cursor.fetchall() ] 
+    #   ## no waiting requests found
+    #   if not requestIDs:
+    #     return S_OK()
+    #   random.shuffle( requestIDs )
+    #   requestID = requestIDs[0]
+    #   
+    #   select = cursor.execute( "SELECT * FROM `Request` WHERE `RequestID` = %s;" % requestID )
+    #   
+    #   update = cursor.execute( "UPDATE `Request` SET `Status` = 'Assigned' WHERE `RequestID` = %s;" % reuqestID )
+    #   
+    # except MySQLdbError, error:
+    #   connection.rollback()
+    #   connection.autocommit(True)
+    #   cursor.close()
+    #   self.log.error( "getRequest: unable to get request: %s" % str(error) )
+    #   return S_ERROR( "getRequest: %s" % str(error) )
     return S_OK()
 
   def deleteRequest( self, requestName, connection=None ):
-    """ delete request 
+    """ delete request of a given name
     
     :param str requestName: request.RequestName
     :param mixed connection: connection to use if any
     """
-    if not connection:
-      connection = self._getConnection()
-      if not connection["OK"]:
-        self.log.error("putRequest: %s" % connection["Message"] )
-      connection = connection["Value"]
-
     requestIDs = self._transaction( 
       "SELECT r.RequestID, o.OperationID FROM `Request` r LEFT JOIN `Operation` o "\
         "ON r.RequestID = o.RequestID WHERE `RequestName` = '%s'" % requestName, connection )
@@ -212,8 +211,9 @@ class RequestDB(DB):
     if not requestIDs["OK"]:
       self.log.error("deleteRequest: unable to read RequestID and OperationIDs: %s" % requestIDs["Message"] )
       return requestIDs
+    ## save connection for further use
+    connection = requestIDs["connection"]
     requestIDs = requestIDs["Value"]
-
     trans = []
     requestID = None
     for records in requestIDs.values():
@@ -223,7 +223,6 @@ class RequestDB(DB):
         if operationID and requestID:
           trans.append( "DELETE FROM `File` WHERE `OperationID` = %s;" % operationID )
           trans.append( "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` = %s;" % ( requestID, operationID ) )
-
     ## last bit: request itself
     if requestID:
       trans.append( "DELETE FROM `Request` WHERE `RequestID` = %s;" % requestID )
