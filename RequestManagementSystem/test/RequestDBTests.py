@@ -43,12 +43,10 @@ class RequestDBTests(unittest.TestCase):
   def setUp( self ):
     """ test setup """
     self.request = Request( { "RequestName" : "testRequest" } )
-    self.operation = Operation( { "Type" : "replicateAndRegister" } )
+    self.operation = Operation( { "Type" : "replicateAndRegister", "TargetSE" : "CERN-USER" } )
     self.file = File( { "LFN" : "/a/b/c" } )
-    
     self.request.addOperation( self.operation )
     self.operation.addFile( self.file  )
-
 
   def tearDown( self ):
     """ test tear down """
@@ -57,10 +55,18 @@ class RequestDBTests(unittest.TestCase):
     del self.request
 
   def testTableDesc( self ):
-    
+    """ table dict """
     tableDict = RequestDB.getTableMeta()
-    print tableDict
+    self.assertEqual( "Request" in tableDict )
+    self.assertEqual( "Operation" in tableDict )
+    self.assertEqual( "File" in tableDict )
+
+
+  def testPutRequest( self ):
+    """ putRequest """
     pass
+
+
 
 ## test suite execution 
 if __name__ == "__main__":
