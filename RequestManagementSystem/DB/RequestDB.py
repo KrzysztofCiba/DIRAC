@@ -76,32 +76,32 @@ class RequestDB(DB):
     """ execute transaction """
     queries = [ queries ] if type(queries) == str else queries
     ## get cursor and connection
-    cursor = None
-    if not connection:
-      getCursorAndConnection = self.dictCursor( connection )
-      if not getCursorAndConnection["OK"]:
-        return getCursorAndConnection
-      cursor = getCursorAndConnection["Value"]["cursor"]
-      connection = getCursorAndConnection["Value"]["connection"]
+    getCursorAndConnection = self.dictCursor( connection )
+    if not getCursorAndConnection["OK"]:
+      return getCursorAndConnection
+    cursor = getCursorAndConnection["Value"]["cursor"]
+    connection = getCursorAndConnection["Value"]["connection"]
 
-    ## this we will return back
+    ## this iwll be returned as query result
     ret = { "OK" : True,
-            "Value" : { "connection" : connection, 
-                        "lastrowid" : None } }
+            "connection" : connection }
+    queryRes = { }
     ## switch off autocommit
     connection.autocommit( False )
     try:
       ## execute queries
       for query in queries:
         cursor.execute( query )
+        queryRes[query] = list( cursor.fetchall() )
       ## commit 
       connection.commit()
       ## save last row ID
       lastrowid = cursor.lastrowid
       ## close cursor
       cursor.close()
-      return S_OK( { "connection" : connection, 
-                     "lastrowid" : lastrowid } )
+      ret["Value"] = queryRes
+      ret["lastrowid"] = lastrowid
+      return ret      
     except MySQLdbError, error:
       self.log.exception( error )
       ## rollback
@@ -117,29 +117,30 @@ class RequestDB(DB):
     """ update or insert request into db 
 
     :param Request request: Request instance
-    """      
-    
-    exists = self._transaction( "SELECT `RequestID` from `Request` WHERE `RequestName` = '%s'" % request.RequestName, 
-                                connection=connection )
+    """
+    query = "SELECT `RequestID` from `Request` WHERE `RequestName` = '%s'" % request.RequestName
+    exists = self._transaction( query, connection=connection )
     if not exists["OK"]:
       self.log.error("putRequest: %s" % exists["Message"] )
-      self.log.error( exists )
-    return exists
-    exists = exists["Value"]
-    
-    if exists and exists["RequestID"] != request.RequestID:
-      return S_ERROR("putRequest: request if '%s' already exists in the db (RequestID=%s)" % ( request.RequestName, 
-                                                                                               exists["RequestID"] ) )
+      return exists
 
+    ## save connection for furhter use
+    connection = exists["connection"]
+    exists = exists["Value"]
+
+    if exists[query] and exists[query][0]["RequestID"] != request.RequestID:
+      return S_ERROR("putRequest: request if '%s' already exists in the db (RequestID=%s)" % ( request.RequestName, 
+                                                                                               exists[query][0]["RequestID"] ) )
     putRequest = self._transaction( request.toSQL(), connection=connection )
     if not putRequest["OK"]:
       self.log.error("putRequest: %s" % putRequest["Message"] )
       return putRequest
+    lastrowid = putRequest["lastrowid"]
     putRequest = putRequest["Value"]
-    connection = putRequest["connection"]  
+
     ## set RequestID when necessary
-    if not request.requestID:
-      request.requestID = putRequest["lastrowid"]
+    if request.RequestID == 0:
+      request.RequestID = lastrowid
 
     for operation in request:
       putOperation = self._transaction( operation.toSQL(), connection=connection )
@@ -148,10 +149,10 @@ class RequestDB(DB):
                                                                         putOperation["Message"] ) )
         deleteRequest = self.deleteRequest( request.requestName, connection=connection )
         return putOperation
-
+      lastrowid = putOperation["lastrowid"]
       putOperation = putOperation["Value"]
-      if not operation.operationID:
-        operation.operationID = putOperation["lastrowid"]
+      if operation.OperationID == 0:
+        operation.OperationID = lastrowid
       filesToSQL = [ opFile.toSQL() for opFile in operation ]
       if filesToSQL:
         putFiles = self._transaction( filesToSQL, connection=connection )
@@ -205,22 +206,23 @@ class RequestDB(DB):
       connection = connection["Value"]
 
     requestIDs = self._transaction( 
-      "SELECT r.RequestID, o.OperationID FROM `Request` r LEFT JOIN `Operation` "\
+      "SELECT r.RequestID, o.OperationID FROM `Request` r LEFT JOIN `Operation` o "\
         "ON r.RequestID = o.RequestID WHERE `RequestName` = '%s'" % requestName, connection )
 
     if not requestIDs["OK"]:
       self.log.error("deleteRequest: unable to read RequestID and OperationIDs: %s" % requestIDs["Message"] )
       return requestIDs
     requestIDs = requestIDs["Value"]
-    
+
     trans = []
     requestID = None
-    for record in requestIDs:
-      requestID = record["RequestID"] if record["RequestID"] else None
-      operationID = record["OperationID"] if record["OperationID"] else None
-      if operationID and requestID:
-        trans.append( "DELETE FROM `Files` WHERE `OperationID` = %s;" % operationID )
-        trans.append( "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` = %s;" % ( requestID, operationID ) )
+    for records in requestIDs.values():
+      for record in records:
+        requestID = record["RequestID"] if record["RequestID"] else None
+        operationID = record["OperationID"] if record["OperationID"] else None
+        if operationID and requestID:
+          trans.append( "DELETE FROM `File` WHERE `OperationID` = %s;" % operationID )
+          trans.append( "DELETE FROM `Operation` WHERE `RequestID` = %s AND `OperationID` = %s;" % ( requestID, operationID ) )
 
     ## last bit: request itself
     if requestID:
@@ -229,7 +231,10 @@ class RequestDB(DB):
     delete = self._transaction( trans, connection )  
     if not delete["OK"]:
       self.log.error("deleteRequest: unable to delete request '%s': %s" % ( requestName, delete["Message"] ) )
-    return delete
+      return delete
+    return S_OK()
+
+
 
   def _getRequestProperties( self, requestName, columnNames ):
     """ select :columnNames: from Request table  """
