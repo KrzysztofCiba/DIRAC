@@ -103,6 +103,7 @@ class RequestDB(DB):
       return S_OK( { "connection" : connection, 
                      "lastrowid" : lastrowid } )
     except MySQLdbError, error:
+      self.log.exception( error )
       ## rollback
       connection.rollback()
       ## rever autocommit
