@@ -41,7 +41,7 @@ class RequestDBTests(unittest.TestCase):
   """
 
   def setUp( self ):
-    """ test setup """
+    """ test case setup """
     self.request = Request( { "RequestName" : "testRequest" } )
     self.operation = Operation( { "Type" : "replicateAndRegister", "TargetSE" : "CERN-USER" } )
     self.file = File( { "LFN" : "/a/b/c" } )
@@ -49,21 +49,33 @@ class RequestDBTests(unittest.TestCase):
     self.operation.addFile( self.file  )
 
   def tearDown( self ):
-    """ test tear down """
+    """ test case tear down """
     del self.file
     del self.operation
     del self.request
 
   def testTableDesc( self ):
-    """ table dict """
+    """ table description """
     tableDict = RequestDB.getTableMeta()
-    self.assertEqual( "Request" in tableDict )
-    self.assertEqual( "Operation" in tableDict )
-    self.assertEqual( "File" in tableDict )
+    self.assertEqual( "Request" in tableDict, True )
+    self.assertEqual( "Operation" in tableDict, True )
+    self.assertEqual( "File" in tableDict, True )
+    self.assertEqual( tableDict["Request"], Request.tableDesc() )
+    self.assertEqual( tableDict["Operation"], Operation.tableDesc() )
+    self.assertEqual( tableDict["File"], File.tableDesc() )
 
 
-  def testPutRequest( self ):
-    """ putRequest """
+  def testRequestRW( self ):
+    """ db r/w requests """
+    db = RequestDB()
+    try:
+      db.putRequest( self.request )
+    except Exception, error:
+      print error
+
+
+  def testDBSummary( self ):
+    """ test getDBSummary """
     pass
 
 
