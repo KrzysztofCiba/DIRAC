@@ -51,6 +51,7 @@ class RequestDB(DB):
 
   @staticmethod
   def getTableMeta():
+    """ get db schema in a dict format """
     return dict( [ ( classDef.__name__,  classDef.tableDesc() )
                    for classDef in ( Request, Operation, File ) ] ) 
     
@@ -70,7 +71,6 @@ class RequestDB(DB):
       conn = retDict["Value"]
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
     return S_OK( { "cursor" : cursor, "connection" : conn  } )
-
 
   def _transaction( self, queries, connection=None ):
     """ execute transaction """
@@ -166,7 +166,7 @@ class RequestDB(DB):
 
     return S_OK()
       
-  def getRequest( self, requestName=None ):
+  def getRequest( self, requestName=None, assigned=True ):
     """ read request for execution
 
     :param str requestName: request's name (default None)
@@ -222,10 +222,11 @@ class RequestDB(DB):
         operation.addFile( File( getFileDict ) )
       request.addOperation( operation )
 
-    setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID )
-    if not setAssigned["OK"]:
-      self.log.error("getRequest: %s" % setAssigned["Message"] )
-      return setAssigned
+    if assigned:
+      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID )
+      if not setAssigned["OK"]:
+        self.log.error("getRequest: %s" % setAssigned["Message"] )
+        return setAssigned
 
     return S_OK( request )  
 
@@ -292,9 +293,34 @@ class RequestDB(DB):
     pass
 
   def readRequestsForJobs( self, jobIDs=None ):
-    """ read request for jobs """
-    pass
+    """ read request for jobs
 
+    :param list jobIDs: list with job IDs
+    """
+    if not jobIDs:
+      return S_ERROR("Must provide jobID list as argument.")
+    if type( jobIDs ) in ( long, int ):
+      jobIDs = [ jobIDs ]
+    ## filter out 0, make it unique
+    jobIDs = list( set( [ int(jobID) for jobID in jobIDs ] ) )
+    reqDict = dict.fromkeys( jobIDs, "Request not found" )
+    jobIDsStr = str( tuple( set( [ jobID for jobID in jobIDs if jobID ] ) ) )
+    requestNames = "SELECT `RequestName`, `JobID` FROM Request WHERE `JobID` IN %s;" % jobIDsStr
+    requestNames = self._query( requestNames )
+    if not requestNames["OK"]:
+      self.log.error( "readRequestForJobs: %s" % requestNames["Message"] )
+      return requestNames
+    requestNames = requestNames["Value"]
+    self.log.debug("readRequestForJobs: got %d request names" % len(requetsNames) )
+    for requestName, jobID in requestNames:
+      request = self.getRequest( requestName, False )
+      if not request["OK"]:
+        reqDict[jobID] = request["Message"]
+        continue
+      reqDict[jobID] = request["Value"]
+
+    return S_OK( reqDict )
+    
     
 
 
