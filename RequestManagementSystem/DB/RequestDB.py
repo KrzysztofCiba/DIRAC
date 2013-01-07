@@ -148,6 +148,8 @@ class RequestDB(DB):
         self.log.error("putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ), 
                                                                         putOperation["Message"] ) )
         deleteRequest = self.deleteRequest( request.requestName, connection=connection )
+        if not deleteRequest["OK"]:
+          self.log.error("putRequest: unable to delete request '%s': %s" % ( request.requestName, deleteRequest["Message"] ) )
         return putOperation
       lastrowid = putOperation["lastrowid"]
       putOperation = putOperation["Value"]
@@ -165,8 +167,10 @@ class RequestDB(DB):
     return S_OK()
       
   def getRequest( self, requestName=None ):
-    """ read request for execution """
+    """ read request for execution
 
+    :param str requestName: request's name (default None)
+    """
     requestID = None
     if requestName:
       self.log.info("getRequest: selecting request '%s'" % requestName )
@@ -195,7 +199,6 @@ class RequestDB(DB):
       random.shuffle( reqIDs )
       requestID = reqIDs[0]
 
-    
     selectQuery = [ "SELECT * FROM `Request` WHERE `RequestID` = %s;" % requestID,
                     "SELECT * FROM `Operation` WHERE `RequestID` = %s;" % requestID ]
     selectReq = self._transaction( selectQuery )
@@ -219,7 +222,7 @@ class RequestDB(DB):
         operation.addFile( File( getFileDict ) )
       request.addOperation( operation )
 
-    setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s" % requestID );
+    setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID )
     if not setAssigned["OK"]:
       self.log.error("getRequest: %s" % setAssigned["Message"] )
       return setAssigned
@@ -227,7 +230,7 @@ class RequestDB(DB):
     return S_OK( request )  
 
   def deleteRequest( self, requestName, connection=None ):
-    """ delete request of a given name
+    """ delete request given its name
     
     :param str requestName: request.RequestName
     :param mixed connection: connection to use if any
@@ -260,8 +263,6 @@ class RequestDB(DB):
       self.log.error("deleteRequest: unable to delete request '%s': %s" % ( requestName, delete["Message"] ) )
       return delete
     return S_OK()
-
-
 
   def _getRequestProperties( self, requestName, columnNames ):
     """ select :columnNames: from Request table  """
