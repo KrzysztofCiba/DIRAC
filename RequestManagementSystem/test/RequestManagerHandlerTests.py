@@ -52,17 +52,21 @@ class RequestManagerHandlerTests(unittest.TestCase):
     self.file.LFN = "/lhcb/user/c/cibak/testFile"
     self.request.addOperation( self.operation )
     self.operation.addFile( self.file )
-
+    ## xml representation of a whole request
+    self.xmlStr = self.request.toXML()
     
-
   def tearDown( self ):
     """ test case tear down """
     del self.request
     del self.operation
     del self.file
+    del self.xmlStr
 
   def testSetRequest( self ):
     """ test set request """
+    
+    
+
     pass
 
 ## test execution
