@@ -96,13 +96,17 @@ class RequestDBTests(unittest.TestCase):
     ret = db.putRequest( request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
 
+    r = db.getDBSummary()
+    print r
     ## delete 
     ret = db.deleteRequest( self.request.RequestName )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
     
   def testDBSummary( self ):
     """ test getDBSummary """
-    pass
+    db = RequestDB()
+    r = db.getDBSummary()
+
 
 
 

@@ -282,7 +282,44 @@ class RequestDB(DB):
 
   def getDBSummary( self ):
     """ get db summary """
-    pass
+
+    ## this will be returned
+    retDict =  { "Request" : {}, "Operation" : {}, "File" : {} }
+    transQueries = { "SELECT `Status`, COUNT(`Status`) FROM `Request` GROUP BY `Status`;" : "Request",    
+                     "SELECT `Type`, `Status`, COUNT(`Status`) FROM `Operation` GROUP BY `Type`, `Status`;" : "Operation",
+                     "SELECT `Status`, COUNT(`Status`) FROM `File` GROUP BY `Status`;" : "File" }
+    ret = self._transaction( transQueries.keys() )
+    if not ret["OK"]:
+      self.log.error("getDBSummary: %s" % ret["Message"] )
+      return ret
+    ret = ret["Value"]
+    for k, v in ret.items():
+      if transQueries[k] == "Request":
+        for aDict in v:
+          status = aDict.get( "Status" )
+          count = aDict.get( "COUNT(`Status`)" )
+          if status not in retDict["Request"]:
+            retDict["Request"][status] = 0
+          retDict["Request"][status] += count
+      elif transQueries[k] == "File":
+        for aDict in v:
+          status = aDict.get( "Status" )
+          count = aDict.get( "COUNT(`Status`)" )
+          if status not in retDict["File"]:
+            retDict["File"][status] = 0
+          retDict["File"][status] += count     
+      else: ## operation
+        for aDict in v:
+          status = aDict.get("Status")
+          oType = aDict.get("Type")
+          count = aDict.get( "COUNT(`Status`)")
+          if status not in retDict["Operation"]:
+            retDict["Operation"][status] = {}
+          if oType not in retDict["Operation"][status]:
+            retDict["Operation"][status][oType] = 0
+          retDict["Operation"][status][oType] += count  
+    self.log.error( ret )
+    return S_OK( retDict )
 
   def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
     """ get db summary for web """
