@@ -42,7 +42,7 @@ class RequestDBTests(unittest.TestCase):
 
   def setUp( self ):
     """ test case setup """
-    self.request = Request( { "RequestName" : "test1" } )
+    self.request = Request( { "RequestName" : "test1", "JobID" : 1  } )
     self.operation1 = Operation( { "Type" : "replicateAndRegister", "TargetSE" : "CERN-USER" } )
     self.file = File( { "LFN" : "/a/b/c" } )
     self.request.addOperation( self.operation1 )
@@ -66,7 +66,7 @@ class RequestDBTests(unittest.TestCase):
     del self.operation2 
     del self.request
 
-  def testTableDesc( self ):
+  def test01TableDesc( self ):
     """ table description """
     tableDict = RequestDB.getTableMeta()
     self.assertEqual( "Request" in tableDict, True )
@@ -76,39 +76,78 @@ class RequestDBTests(unittest.TestCase):
     self.assertEqual( tableDict["Operation"], Operation.tableDesc() )
     self.assertEqual( tableDict["File"], File.tableDesc() )
 
-  def testRequestRW( self ):
+  def test03RequestRW( self ):
     """ db r/w requests """
     db = RequestDB()
     db._checkTables( True )
 
+    ## empty DB at that stage
+    ret = db.getDBSummary()
+    self.assertEqual( ret,
+                      { 'OK': True,
+                        'Value': { 'Operation': {}, 'Request': {}, 'File': {} } } )
+    
     ## insert 
     ret = db.putRequest( self.request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
 
+    ## db summary
+    ret = db.getDBSummary()
+    self.assertEqual( ret,
+                      { 'OK': True,
+                        'Value': { 'Operation': { 'removeFile': { 'Queued': 1L },
+                                                  'replicateAndRegister': { 'Waiting': 1L } },
+                                   'Request': { 'Waiting': 1L },
+                                   'File': {'Waiting': 2L } } } )
+
+    ## get request for jobs
+    ret = db.getRequestNamesForJobs( [ 1 ] )
+    self.assertEqual( ret["OK"], True )
+    self.assertEqual( ret["Value"], { 1 : 'test1'} )
+
+    ## read requests
+    ret = db.readRequestsForJobs( [1] )
+    self.assertEqual( ret["OK"], True )
+    self.assertEqual( ret["Value"][1]["OK"], True )
+
     ## select
     ret = db.getRequest()
     self.assertEqual( ret["OK"], True )
-
     request = ret["Value"]
     self.assertEqual( isinstance( request, Request), True )
 
+    ## summary
+    ret = db.getDBSummary()
+    self.assertEqual( ret,
+                      { 'OK': True,
+                        'Value': { 'Operation': { 'removeFile': { 'Queued': 1L },
+                                                  'replicateAndRegister': { 'Waiting': 1L } },
+                                   'Request': { 'Assigned': 1L },
+                                   'File': { 'Waiting': 2L} } } )
     ## update 
     ret = db.putRequest( request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
 
-    r = db.getDBSummary()
-    print r
+    ## get summary again
+    ret = db.getDBSummary()
+    self.assertEqual( ret,
+                      { 'OK': True,
+                        'Value': { 'Operation': { 'removeFile': { 'Queued': 1L },
+                                                  'replicateAndRegister': {'Waiting': 1L } },
+                                   'Request': { 'Waiting': 1L },
+                                   'File': { 'Waiting': 2L} } } )
+
+
     ## delete 
     ret = db.deleteRequest( self.request.RequestName )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
+
+    ## should be empty now 
+    ret = db.getDBSummary()
+    self.assertEqual( ret,
+                      { 'OK': True,
+                        'Value': { 'Operation': {}, 'Request': {}, 'File': {} } } )
     
-  def testDBSummary( self ):
-    """ test getDBSummary """
-    db = RequestDB()
-    r = db.getDBSummary()
-
-
-
 
 ## test suite execution 
 if __name__ == "__main__":

@@ -112,7 +112,6 @@ class RequestDB(DB):
       cursor.close()
       return S_ERROR( str(error) )
 
-
   def putRequest( self, request, connection=None ):
     """ update or insert request into db 
 
@@ -181,9 +180,9 @@ class RequestDB(DB):
         return reqID
       requestID = reqID["Value"][reqIDQuery][0]["RequestID"] if "RequestID" in reqID["Value"][reqIDQuery][0] else None
       status = reqID["Value"][reqIDQuery][0]["Status"] if "Status" in reqID["Value"][reqIDQuery][0] else None
-      if not all(requestID, status ):
+      if not all( ( requestID, status ) ):
         return S_ERROR("getRequest: request '%s' not exists" % requestName )
-      if requestID and status and status == "Assigned":
+      if requestID and status and status == "Assigned" and assigned:
         return S_ERROR("getRequest: status of request '%s' is 'Assigned', request cannot be selected" % requestName )
     else:
       reqIDsQuery = "SELECT `RequestID` FROM `Request` WHERE `Status` = 'Waiting' ORDER BY `LastUpdate` ASC LIMIT 100;"
@@ -313,53 +312,67 @@ class RequestDB(DB):
           status = aDict.get("Status")
           oType = aDict.get("Type")
           count = aDict.get( "COUNT(`Status`)")
-          if status not in retDict["Operation"]:
-            retDict["Operation"][status] = {}
-          if oType not in retDict["Operation"][status]:
-            retDict["Operation"][status][oType] = 0
-          retDict["Operation"][status][oType] += count  
-    self.log.error( ret )
+          if oType not in retDict["Operation"]:
+            retDict["Operation"][oType] = {}
+          if status not in retDict["Operation"][oType]:
+            retDict["Operation"][oType][status] = 0
+          retDict["Operation"][oType][status] += count  
     return S_OK( retDict )
 
   def getRequestSummaryWeb( self, selectDict, sortList, startItem, maxItems ):
-    """ get db summary for web """
+    """ get db summary for web
+
+    TODO: to be defined
+    """
     pass
 
-  def getRequestForJobs( self, jobIDs ):
-    """ read request """
-    pass
+  def getRequestNamesForJobs( self, jobIDs ):
+    """ read request names for jobs given jobIDs
 
+    :param list jobIDs: list of jobIDs
+    """
+    self.log.debug("getRequestForJobs: got %s jobIDs to check" % str(jobIDs) )
+    if not jobIDs:
+      return S_ERROR("Must provide jobID list as argument.")
+    if type( jobIDs) in ( long, int ):
+      jobIDs = [ jobIDs ]
+    jobIDs = list( set( [ int(jobID) for jobID in jobIDs ] ) )  
+    reqDict = dict.fromkeys( jobIDs )
+    ## filter out 0
+    jobIDsStr = ",".join( [ str(jobID) for jobID in jobIDs if jobID ] )
+    ## request names
+    requestNames = "SELECT `RequestName`, `JobID` FROM `Request` WHERE `JobID` IN (%s);" % jobIDsStr
+    requestNames = self._query( requestNames )
+    if not requestNames["OK"]:
+      self.log.error( "getRequestsForJobs: %s" % requestNames["Message"] )
+      return requestNames
+    requestNames = requestNames["Value"]
+    for requestName, jobID in requestNames:
+      reqDict[jobID] = requestName
+    return S_OK( reqDict )
+    
   def readRequestsForJobs( self, jobIDs=None ):
     """ read request for jobs
 
-    :param list jobIDs: list with job IDs
+    :param list jobIDs: list of IDs
+    :return: { jobID1 : S_OK( request.toXML() ), jobID2 : S_ERROR('Request not found'), ... }
     """
-    if not jobIDs:
-      return S_ERROR("Must provide jobID list as argument.")
-    if type( jobIDs ) in ( long, int ):
-      jobIDs = [ jobIDs ]
-    ## filter out 0, make it unique
-    jobIDs = list( set( [ int(jobID) for jobID in jobIDs ] ) )
-    reqDict = dict.fromkeys( jobIDs, "Request not found" )
-    jobIDsStr = str( tuple( set( [ jobID for jobID in jobIDs if jobID ] ) ) )
-    requestNames = "SELECT `RequestName`, `JobID` FROM Request WHERE `JobID` IN %s;" % jobIDsStr
-    requestNames = self._query( requestNames )
+    self.log.debug("readRequestForJobs: got %s jobIDs to check" % str(jobIDs) )
+    requestNames = self.getRequestNamesForJobs( jobIDs )
     if not requestNames["OK"]:
-      self.log.error( "readRequestForJobs: %s" % requestNames["Message"] )
+      self.log.error("readRequestForJobs: %s" % requestNames["Message"] )
       return requestNames
     requestNames = requestNames["Value"]
-    self.log.debug("readRequestForJobs: got %d request names" % len(requetsNames) )
-    for requestName, jobID in requestNames:
-      request = self.getRequest( requestName, False )
+    self.log.debug("readRequestForJobs: got %d request names" % len(requestNames) )
+    reqDict = dict.fromkeys( requestNames.keys() )
+    for jobID in reqDict:
+      reqDict[jobID] = S_ERROR("Request not found")
+    for jobID in requestNames:
+      request = self.getRequest( requestNames[jobID], False )
       if not request["OK"]:
-        reqDict[jobID] = request["Message"]
+        reqDict[jobID] = request
         continue
-      reqDict[jobID] = request["Value"]
-
+      reqDict[jobID] = request["Value"].toXML()
     return S_OK( reqDict )
     
     
-
-
-
-  
