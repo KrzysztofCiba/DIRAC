@@ -82,10 +82,10 @@ class RequestClient( Client ):
     errorsDict = { "OK" : False }
     valid = self.requestValidator().validate( request )
     if not valid["OK"]:
-      self.log.error("setRequest: request not valid: %s" % valid["Message"] )
+      self.log.error("putRequest: request not valid: %s" % valid["Message"] )
       return valid
     requestXML = request.toXML()
-    setRequestMgr = self.requestManager().setRequest( requestXML )
+    setRequestMgr = self.requestManager().putRequest( requestXML )
     if setRequestMgr["OK"]:
       return setRequestMgr
     errorsDict["RequestManager"] = setRequestMgr["Message"]
@@ -96,10 +96,10 @@ class RequestClient( Client ):
       setRequestProxy = proxyClient.setRequest( requestXML )
       if setRequestProxy["OK"]:
         if setRequestProxy["Value"]["set"]:
-          self.log.debug( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName, 
+          self.log.info( "setRequest: request '%s' successfully set using RequestProxy %s" % ( request.RequestName, 
                                                                                                proxyURL ) )
         elif setRequestProxy["Value"]["saved"]:
-          self.log.debug( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( requestName, 
+          self.log.info( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( request.RequestName, 
                                                                                                   proxyURL ) )
         return setRequestProxy
       else:
@@ -107,8 +107,7 @@ class RequestClient( Client ):
                                                                                          setRequestProxy["Message"] ) )
         errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
     ## if we're here neither requestManager nor requestProxy were successfull
-    self.log.error( "setRequest: unable to set request '%s'" % requestName )
-    errorsDict["OK"] = False
+    self.log.error( "setRequest: unable to set request '%s'" % request.RequestName )
     errorsDict["Message"] = "RequestClient.setRequest: unable to set request '%s'"
     return errorsDict
       
@@ -270,7 +269,7 @@ class RequestClient( Client ):
     return S_OK()
 
   def getRequestForJobs( self, jobIDs ):
-    """ Get the request names for the supplied jobIDs.
+    """ get the request names for the supplied jobIDs.
 
     :param self: self reference
     :param list jobID: list of job IDs (integers)

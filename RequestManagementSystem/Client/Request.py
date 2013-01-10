@@ -352,7 +352,7 @@ class Request(object):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    if value not in ( "Done", "Waiting", "Failed" ):
+    if value not in ( "Done", "Waiting", "Failed", "Assigned" ):
       raise ValueError( "Unknown status: %s" % str(value) )
     self.__data__["Status"] = value      
   

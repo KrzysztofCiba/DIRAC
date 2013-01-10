@@ -144,26 +144,14 @@ class RequestManagerHandler(RequestHandler):
   types_getRequestSummaryWeb = [ DictType, ListType, IntType, IntType ]
   @staticmethod
   def export_getRequestSummaryWeb( selectDict, sortList, startItem, maxItems):
-    """ Get summary of the request/subrequest info in the standard form for the web """
-    return gRequestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
-  
-  types_getDistinctValues = [ StringTypes ]
-  @staticmethod
-  def export_getDistinctValues( attribute ):
-    """ Get distinct values for a given (sub)request attribute """
-    snames = ['RequestType', 'Operation', 'Status']
-    rnames = ['OwnerDN', 'OwnerGroup']
-    if attribute in snames:
-      return gRequestDB.getDistinctAttributeValues('SubRequests', attribute)
-    elif attribute in rnames:
-      return gRequestDB.getDistinctAttributeValues('Requests', attribute)  
-    return S_ERROR('Invalid attribute %s' % attribute)
+    """ Get summary of the request/subrequest info in the standard form for the web
 
-  types_getDigest = [ list(StringTypes) + [ IntType, LongType ] ]
-  def export_getDigest( self, requestName ):
-    """ Get the digest of the request identified by its name """
-    requestID = self.__getRequestID( requestName )
-    return gRequestDB.getDigest( requestID["Value"] ) if requestID["OK"] else requestID
+    :param dict selectDict: selection dict
+    :param list sortList: ???
+    :param int startItem: start item
+    :param int maxItems: max items
+    """
+    return gRequestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
    
   types_getCurrentExecutionOrder = [ list(StringTypes) + [ IntType, LongType ] ]
   def export_getCurrentExecutionOrder( self, requestName ):
@@ -236,5 +224,6 @@ class RequestManagerHandler(RequestHandler):
     except Exception, error:
       errStr = "RequestManagerHandler.readRequestsForJobs: Exception while selecting requests."
       gLogger.exception( errStr, '', lException=error )
-      return S_ERROR( errStr )  
+      return S_ERROR( errStr )
 
+    
