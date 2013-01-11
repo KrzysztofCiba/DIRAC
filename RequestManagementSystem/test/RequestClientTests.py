@@ -4,15 +4,12 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/01/11 10:37:11
 ########################################################################
-
 """ :mod: RequestClientTests 
-    =======================
+    ========================
  
     .. module: RequestClientTests
     :synopsis: 
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
-    
 """
 
 __RCSID__ = "$Id $"
@@ -25,12 +22,12 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import unittest
+import time
 ## SUT
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-## 
+## from DIRAC 
 from DIRAC import gLogger, gConfig
 from DIRAC.RequestManagementSystem.Client.Request import Request, Operation, File
-
 
 ########################################################################
 class RequestClientTests(unittest.TestCase):
@@ -69,15 +66,21 @@ class RequestClientTests(unittest.TestCase):
   def test01PutRequest( self ):
     """ put request """
     requestClient = RequestClient()
+
+    ## put request
+    start = time.clock()
     ret = requestClient.putRequest( self.request )
+    print time.clock() - start
     self.assertEqual( ret["OK"], True )
 
   def test02PeekRequest( self ):
     """ peek request """
     requestClient = RequestClient()
-  
+    
     ## get requets names
+    start = time.clock()
     ret = requestClient.getRequestNamesForJobs( [ self.request.JobID] )
+    print time.clock() - start
     self.assertEqual( ret["OK"], True )
     self.assertEqual( ret["Value"][self.request.JobID], self.request.RequestName )
 
@@ -102,17 +105,22 @@ class RequestClientTests(unittest.TestCase):
     """ get request """
     requestClient = RequestClient()
     ## get request
+    start = time.clock()
     ret = requestClient.getRequest()
+    print time.clock() - start 
     self.assertEqual( ret["OK"], True )
     self.assertEqual( isinstance( ret["Value"], Request), True )
-    
+
   def test04DeleteRequest( self ):
-    """ delete requets """
+    """ delete request """
     requestClient = RequestClient()
-    ## delete request 
+    ## delete request
+    start = time.clock()
     ret = requestClient.deleteRequest( self.request.RequestName )
+    print time.clock() - start
     self.assertEqual( ret["OK"], True )
-    
+
+    ## should be empty now
     ret = requestClient.getDBSummary()
     self.assertEqual( ret["OK"], True )
     self.assertEqual( ret["Value"], { 'Operation': {} ,
