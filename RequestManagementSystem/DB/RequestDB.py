@@ -128,8 +128,8 @@ class RequestDB(DB):
     exists = exists["Value"]
 
     if exists[query] and exists[query][0]["RequestID"] != request.RequestID:
-      return S_ERROR("putRequest: request if '%s' already exists in the db (RequestID=%s)" % ( request.RequestName, 
-                                                                                               exists[query][0]["RequestID"] ) )
+      return S_ERROR("putRequest: request '%s' already exists in the db (RequestID=%s)" % ( request.RequestName, 
+                                                                                            exists[query][0]["RequestID"] ) )
     putRequest = self._transaction( request.toSQL(), connection=connection )
     if not putRequest["OK"]:
       self.log.error("putRequest: %s" % putRequest["Message"] )
@@ -165,7 +165,7 @@ class RequestDB(DB):
 
     return S_OK()
       
-  def getRequest( self, requestName=None, assigned=True ):
+  def getRequest( self, requestName='', assigned=True ):
     """ read request for execution
 
     :param str requestName: request's name (default None)

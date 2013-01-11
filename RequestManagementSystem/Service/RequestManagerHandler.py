@@ -64,7 +64,7 @@ class RequestManagerHandler(RequestHandler):
       requestID = result["Value"]
     return S_OK( requestID )
 
-  types_setRequest = [ StringTypes ]
+  types_putRequest = [ StringTypes ]
   @classmethod
   def export_putRequest( cls, requestString ):
     """ put a new request into RequestDB 
@@ -72,7 +72,7 @@ class RequestManagerHandler(RequestHandler):
     :param cls: class ref
     :param str requestString: xml string
     """
-    gLogger.info("RequestManager.setRequest: Setting request..." )
+    gLogger.info("RequestManager.putRequest: Setting request %s"  % requestString )
     requestName = "***UNKNOWN***"
     try:
       request = Request.fromXML( requestString )
@@ -86,7 +86,7 @@ class RequestManagerHandler(RequestHandler):
         return valid
       requestName = request.RequestName
       gLogger.info("RequestManagerHandler.putRequest: Attempting to set request '%s'" % requestName )   
-      return gRequestDB.setRequest( request )
+      return gRequestDB.putRequest( request )
     except Exception, error:
       errStr = "RequestManagerHandler.putRequest: Exception while setting request."
       gLogger.exception( errStr, requestName, lException=error )
@@ -129,13 +129,18 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception( errStr, lException=error )
       return S_ERROR(errStr)
 
-  types_getRequest = []
+  types_getRequest = [ StringTypes ]
   @staticmethod
-  def export_getRequest():
+  def export_getRequest( requestName = "" ):
     """ Get a request of given type from the database """
     gLogger.info("RequestHandler.getRequest: Attempting to get request")
     try:
-      return gRequestDB.getRequest()
+      ret = gRequestDB.getRequest( requestName )
+      if not ret["OK"]:
+        gLogger.error("RequestHandler.getRequest: %s" % ret["Message"] )
+      ret = ret["Value"]
+      if ret:
+        return ret.toXML()
     except Exception, error:
       errStr = "RequestManagerHandler.getRequest: Exception while getting request."
       gLogger.exception( errStr, lException=error )
@@ -226,7 +231,7 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception( errStr, '', lException=error )
       return S_ERROR( errStr )
 
-  types_getDigest = [ StringType ]
+  types_getDigest = [ StringTypes ]
   @staticmethod
   def export_getDigest( requestName ):
     """ get digest for a request given its name
@@ -238,6 +243,6 @@ class RequestManagerHandler(RequestHandler):
     try:
       return gRequestDB.getDigest( requestName )
     except Exception , error:
-      errStr = "RequestManagerHandler.getDigest: exception when getting digest for '%s'" % requestName )
+      errStr = "RequestManagerHandler.getDigest: exception when getting digest for '%s'" % requestName 
       gLogger.exception( errStr, '', lException=error )
       return S_ERROR( errStr )

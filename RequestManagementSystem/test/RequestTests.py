@@ -169,15 +169,16 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( [ op.Status for op in req ], ["Done", "Waiting"] )
     self.assertEqual( req.subStatusList() , ["Done", "Waiting"] )
 
-    digest = req.getDigest()
+    digest = req.toJSON()
     self.assertEqual( digest["OK"], True )
-    self.assertEqual( digest["Value"], 
-                      "removeFile:Done:0:::c,...<1 files>\nreplicateAndRegister:Waiting:1:::c,...<1 files>" )
+    print digest["Value"]
 
     getWaiting = req.getWaiting()
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], transfer )
 
+    rXML = req.toXML()["Value"]
+    r1 = Request.fromXML( rXML )
 
 ## test execution
 if __name__ == "__main__":

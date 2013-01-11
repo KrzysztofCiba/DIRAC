@@ -155,7 +155,6 @@ class RequestDBTests(unittest.TestCase):
                       { 'OK': True,
                         'Value': { 'Operation': {}, 'Request': {}, 'File': {} } } )
     
-
 ## test suite execution 
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()

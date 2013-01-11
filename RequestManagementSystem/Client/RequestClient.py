@@ -85,33 +85,33 @@ class RequestClient( Client ):
       self.log.error("putRequest: request not valid: %s" % valid["Message"] )
       return valid
     requestXML = request.toXML()
-    setRequestMgr = self.requestManager().putRequest( requestXML )
+    setRequestMgr = self.requestManager().putRequest( requestXML["Value"] )
     if setRequestMgr["OK"]:
       return setRequestMgr
     errorsDict["RequestManager"] = setRequestMgr["Message"]
-    self.log.warn( "setRequest: unable to set request '%s' at RequestManager" % request.RequestName )
+    self.log.warn( "putRequest: unable to set request '%s' at RequestManager" % request.RequestName )
     proxies = self.requestProxies()
     for proxyURL, proxyClient in proxies.items():
-      self.log.debug( "setRequest: trying RequestProxy at %s" % proxyURL )
+      self.log.debug( "putRequest: trying RequestProxy at %s" % proxyURL )
       setRequestProxy = proxyClient.setRequest( requestXML )
       if setRequestProxy["OK"]:
         if setRequestProxy["Value"]["set"]:
-          self.log.info( "setRequest: request '%s' successfully set using RequestProxy %s" % ( request.RequestName, 
+          self.log.info( "putRequest: request '%s' successfully set using RequestProxy %s" % ( request.RequestName, 
                                                                                                proxyURL ) )
         elif setRequestProxy["Value"]["saved"]:
-          self.log.info( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( request.RequestName, 
+          self.log.info( "putRequest: request '%s' successfully forwarded to RequestProxy %s" % ( request.RequestName, 
                                                                                                   proxyURL ) )
         return setRequestProxy
       else:
-        self.log.warn( "setRequest: unable to set request using RequestProxy %s: %s" % ( proxyURL, 
+        self.log.warn( "putRequest: unable to set request using RequestProxy %s: %s" % ( proxyURL, 
                                                                                          setRequestProxy["Message"] ) )
         errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
     ## if we're here neither requestManager nor requestProxy were successfull
-    self.log.error( "setRequest: unable to set request '%s'" % request.RequestName )
-    errorsDict["Message"] = "RequestClient.setRequest: unable to set request '%s'"
+    self.log.error( "putRequest: unable to set request '%s'" % request.RequestName )
+    errorsDict["Message"] = "RequestClient.putRequest: unable to set request '%s'"
     return errorsDict
       
-  def getRequest( self ):
+  def getRequest( self, requestName="" ):
     """ get request from RequestDB 
     
     :param self: self reference
@@ -120,9 +120,9 @@ class RequestClient( Client ):
     :return: S_OK( Request instance ) or S_OK() or S_ERROR
     """
     self.log.info( "getRequest: attempting to get request." )
-    getRequest = self.requestManager().getRequest()
+    getRequest = self.requestManager().getRequest( requestName )
     if not getRequest["OK"]:
-      self.log.error("getRequest: unable to get '%s' request: %s" % getRequest["Message"] )
+      self.log.error("getRequest: unable to get '%s' request: %s" % ( requestName, getRequest["Message"] ) )
       return getRequest
     if not getRequest["Value"]:
       return getRequest
@@ -268,7 +268,7 @@ class RequestClient( Client ):
 
     return S_OK()
 
-  def getRequestForJobs( self, jobIDs ):
+  def getRequestNamesForJobs( self, jobIDs ):
     """ get the request names for the supplied jobIDs.
 
     :param self: self reference
@@ -276,19 +276,17 @@ class RequestClient( Client ):
 
 
     """
-    self.log.info( "getRequestForJobs: attempt to get request(s) for job %s" % jobIDs )
-    requests = self.requestManager().getRequestForJobs( jobIDs )
+    self.log.info( "getRequestNamesForJobs: attempt to get request(s) for job %s" % jobIDs )
+    requests = self.requestManager().getRequestNamesForJobs( jobIDs )
     if not requests["OK"]:
-      self.log.error( "getRequestForJobs: unable to get request(s) for jobs %s: %s" % ( jobIDs, 
-                                                                                        requests["Message"] ) )
+      self.log.error( "getRequestNamesForJobs: unable to get request(s) for jobs %s: %s" % ( jobIDs, 
+                                                                                             requests["Message"] ) )
     return requests
 
-  
   def readRequestsForJobs( self, jobIDs ):
     """ read requests for jobs 
     
     :param list jobIDs: list with jobIDs
-    
     :return: S_OK( { "Successful" : { jobID1 : RequestContainer, ... },
                      "Failed" : { jobIDn : "Fail reason" } } ) 
     """
