@@ -189,15 +189,15 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception( errStr, lException=error )
       return S_ERROR(errStr)
 
-  types_getRequestForJobs = [ ListType ]
+  types_getRequestNamesForJobs = [ ListType ]
   @staticmethod
-  def export_getRequestForJobs( jobIDs ):
+  def export_getRequestNamesForJobs( jobIDs ):
     """ Select the request names for supplied jobIDs """
-    gLogger.info("RequestManagerHandler.getRequestForJobs: Attempting to get request names for %s jobs." % len(jobIDs))
+    gLogger.info("RequestManagerHandler.getRequestNamesForJobs: Attempting to get request names for %s jobs." % len(jobIDs))
     try:
-      return gRequestDB.getRequestForJobs( jobIDs )
+      return gRequestDB.getRequestNamesForJobs( jobIDs )
     except Exception, error:
-      errStr = "RequestManagerHandler.getRequestForJobs: Exception which getting request names."
+      errStr = "RequestManagerHandler.getRequestNamesForJobs: Exception which getting request names."
       gLogger.exception( errStr, '', lException=error )
       return S_ERROR(errStr)
     
@@ -226,4 +226,18 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception( errStr, '', lException=error )
       return S_ERROR( errStr )
 
-    
+  types_getDigest = [ StringType ]
+  @staticmethod
+  def export_getDigest( requestName ):
+    """ get digest for a request given its name
+
+    :param str requestName: request's name
+    :return: S_OK( json_str )
+    """
+    gLogger.verbose("RequestManagerHandler.getDigest: Attempting to get digest for request '%s'" % requestName )
+    try:
+      return gRequestDB.getDigest( requestName )
+    except Exception , error:
+      errStr = "RequestManagerHandler.getDigest: exception when getting digest for '%s'" % requestName )
+      gLogger.exception( errStr, '', lException=error )
+      return S_ERROR( errStr )
