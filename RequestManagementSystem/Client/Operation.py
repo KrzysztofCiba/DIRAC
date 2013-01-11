@@ -52,8 +52,6 @@ class Operation(object):
   :param Request parent: parent Request instance
   """
  
-  
-
   def __init__( self, fromDict=None ):
     """ c'tor
 
@@ -270,7 +268,6 @@ class Operation(object):
       self.__data__["Order"] = self._parent.indexOf( self ) if self._parent else -1
     return self.__data__["Order"]
 
-
   @property
   def CreationTime( self ):
     """ operation creation time prop """
@@ -284,7 +281,6 @@ class Operation(object):
     if type(value) == str:
       value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["CreationTime"] = value
-
 
   @property
   def SubmitTime( self ):
@@ -369,3 +365,14 @@ class Operation(object):
       query.append( columns )
       query.append(" VALUES %s;\n" % values )
     return "".join( query )
+
+  def toJSON( self ):
+    """ get digest """
+    digest = dict( zip( self.__data__.keys(),
+                        [ str(val) if val else "" for val in self.__data__.values() ] ) )
+    digest["RequestID"] = str( self.RequestID )
+    digest["Order"] = str( self.Order )
+    digest["Files"] = []
+    for opFile in self:
+      digest["Files"].append( opFile.toJSON() )
+    return digest

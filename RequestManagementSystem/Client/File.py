@@ -271,3 +271,10 @@ class File( object ):
       query.append( columns )
       query.append(" VALUES %s;\n" % values )
     return "".join( query )
+
+  def toJSON( self ):
+    """ get json """
+    digest = dict( zip( self.__data__.keys(),
+                        [ str(val) if val else "" for val in self.__data__.values() ] ) )
+    digest["OperationID"] = str(self.OperationID)
+    return digest

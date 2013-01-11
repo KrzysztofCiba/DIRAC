@@ -435,18 +435,12 @@ class Request(object):
     return "".join( query )
     
   ## digest
-  def getDigest( self ):
+  def toJSON( self ):
     """ get digest for a web """
-    digestString = []
+    digest = dict( zip( self.__data__.keys(),
+                        [ str(val) if val else "" for val in self.__data__.values() ] ) )
+    
+    digest["Operations"] = []
     for op in self:
-      digestList = [ str(op.Type),  
-                     str(op.Status), 
-                     str(op.Order), 
-                     str(op.TargetSE) if op.TargetSE else "", 
-                     str(op.Catalogue) if op.Catalogue else "" ]
-      if len(op):
-        subFile = op[0]
-        digestList.append( "%s,...<%d files>" % ( os.path.basename( subFile.LFN ), len(op) ) )
-      digestString.append( ":".join( digestList ) )
-    return S_OK( "\n".join( digestString ) ) 
-
+      digest["Operations"].append( op.toJSON() )
+    return S_OK( str(digest) )
