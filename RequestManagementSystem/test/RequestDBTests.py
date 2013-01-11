@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import unittest
+import sys
 ## from DIRAC
 from DIRAC import gConfig, gLogger
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -91,6 +92,12 @@ class RequestDBTests(unittest.TestCase):
     ret = db.putRequest( self.request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
 
+    ## get digest -> JSON as string 
+    ret = db.getDigest( self.request.RequestName )
+    self.assertEqual( ret["OK"], True )
+    self.assertEqual( bool(ret["Value"]), True  )
+    self.assertEqual( type(ret["Value"]) == str, True )
+
     ## db summary
     ret = db.getDBSummary()
     self.assertEqual( ret,
@@ -99,7 +106,7 @@ class RequestDBTests(unittest.TestCase):
                                                   'replicateAndRegister': { 'Waiting': 1L } },
                                    'Request': { 'Waiting': 1L },
                                    'File': {'Waiting': 2L } } } )
-
+    
     ## get request for jobs
     ret = db.getRequestNamesForJobs( [ 1 ] )
     self.assertEqual( ret["OK"], True )

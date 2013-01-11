@@ -11,7 +11,7 @@
     :synopsis: db holding Requests 
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    db holding Requests, Operations and their Files 
+    db holding Request, Operation and File  
 """
 __RCSID__ = "$Id $"
 ##
@@ -355,7 +355,7 @@ class RequestDB(DB):
     """ read request for jobs
 
     :param list jobIDs: list of IDs
-    :return: { jobID1 : S_OK( request.toXML() ), jobID2 : S_ERROR('Request not found'), ... }
+    :return: S_OK( { jobID1 : S_OK( request.toXML() ), jobID2 : S_ERROR('Request not found'), ... } ) or S_ERROR
     """
     self.log.debug("readRequestForJobs: got %s jobIDs to check" % str(jobIDs) )
     requestNames = self.getRequestNamesForJobs( jobIDs )
@@ -376,3 +376,20 @@ class RequestDB(DB):
     return S_OK( reqDict )
     
     
+  def getDigest( self, requestName ):
+    """ get digest for request given its name
+
+    :param str requestName: request name 
+    """
+    self.log.debug("getDigest: will create digest for request '%s'" % requestName )
+    request = self.getRequest( requestName, False )
+    if not request["OK"]:
+      self.log.error("getDigest: %s" % request["Message"] )
+    request = request["Value"]
+    if not isinstance( request, Request ):
+      self.log.info("getDigest: request '%s' not found")
+      return S_OK()
+    return request.toJSON()
+    
+    
+      
