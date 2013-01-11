@@ -75,8 +75,9 @@ class Operation(object):
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError("Unknown Operation attribute '%s'" % key )
-      setattr( self, key, value )
-
+      if key != "Order":
+        setattr( self, key, value )
+        
   @staticmethod
   def tableDesc():
     """ get table desc """

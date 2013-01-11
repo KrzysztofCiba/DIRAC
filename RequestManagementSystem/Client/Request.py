@@ -15,9 +15,7 @@
 """
 # for properties 
 # pylint: disable=E0211,W0612,W0142 
-
 __RCSID__ = "$Id$"
-
 ##
 # @file Request.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -32,11 +30,10 @@ try:
 except ImportError:
   import xml.etree.ElementTree as ElementTree
 from xml.parsers.expat import ExpatError
-  
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList 
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.Operation import Operation, File
   
 ########################################################################
 class Request(object):
@@ -48,7 +45,7 @@ class Request(object):
   :param str ownerDN: request's owner DN
   :param str ownerGroup: request owner group
   :param str setup: DIRAC setup
-  :param str sourceComponent: ??? 
+  :param str sourceComponent: whatever 
   :param int jobID: jobID 
   :param datetime.datetime creationTime: UTC datetime 
   :param datetime.datetime submissionTime: UTC datetime 
@@ -384,7 +381,7 @@ class Request(object):
       return S_ERROR( "unable to deserialise request, xml root element is not a 'request' " )
     request = Request( root.attrib )
     for subReqElement in root.findall( "operation" ):
-      request += Operation.fromXML( element=subReqElement )
+      request.addOperation( Operation.fromXML( element=subReqElement ) )
     return S_OK( request )
 
   def toXML( self ):
