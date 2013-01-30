@@ -27,6 +27,7 @@ __RCSID__ = "$Id$"
 import unittest
 import datetime
 ## from DIRAC
+from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 ## SUT
@@ -171,7 +172,7 @@ class RequestTests(unittest.TestCase):
 
     digest = req.toJSON()
     self.assertEqual( digest["OK"], True )
-    print digest["Value"]
+    #print digest["Value"]
 
     getWaiting = req.getWaiting()
     self.assertEqual( getWaiting["OK"], True )
@@ -179,6 +180,16 @@ class RequestTests(unittest.TestCase):
 
     rXML = req.toXML()["Value"]
     r1 = Request.fromXML( rXML )
+
+    rJSON = req.toJSON()["Value"]
+    #print type(rXML), rXML, len(rXML)
+    print type(rJSON), rJSON, len(str(rJSON))
+    encXML = DEncode.encode( rXML )
+    print encXML, len(encXML)
+    encJSON = DEncode.encode( rJSON )
+    print encJSON, len(encJSON)
+
+
 
 ## test execution
 if __name__ == "__main__":

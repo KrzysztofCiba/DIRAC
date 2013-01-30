@@ -440,4 +440,4 @@ class Request(object):
     digest["Operations"] = []
     for op in self:
       digest["Operations"].append( op.toJSON() )
-    return S_OK( str(digest) )
+    return S_OK( digest )
