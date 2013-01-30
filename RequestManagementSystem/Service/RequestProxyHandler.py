@@ -45,7 +45,7 @@ from DIRAC.Core.Utilities.File import makeGuid
 def initializeRequestProxyHandler( serviceInfo ):
   """ init RequestProxy handler 
 
-  :param serviceInfo:
+  :param serviceInfo: whatever
   """
   gLogger.info("Initalizing RequestProxyHandler")
   gThreadScheduler.addPeriodicTask( 120, RequestProxyHandler.sweeper )  
@@ -103,7 +103,7 @@ class RequestProxyHandler( RequestHandler ):
                          sorted( filter( os.path.isfile,
                                          [ os.path.join( cacheDir, requestName ) 
                                            for requestName in os.listdir( cacheDir ) ] ),
-                                 key = os.path.getctime ) ][:30]
+                                 key = os.path.getctime ) ][:10]
       ## set cached requests to the central RequestManager
       for cachedFile in cachedRequests:
         ## break if something went wrong last time
@@ -115,8 +115,7 @@ class RequestProxyHandler( RequestHandler ):
           if not cachedRequest["OK"]:
             gLogger.error("sweeper: unable to deserialise request: %s" % cachedRequest["Message"] )
             continue
-          cachedRequest = cachedRequest["Value"]
-          requestName = cachedRequest.RequestName
+          cachedName = cachedRequest["Value"].RequestName if cachedRequest["Value"] else ""
           setRequest = cls.requestManager().setRequest( requestString )
           if not setRequest["OK"]:
             gLogger.error("sweeper: unable to set request '%s' @ RequestManager: %s" % ( requestName, 
@@ -158,9 +157,9 @@ class RequestProxyHandler( RequestHandler ):
       return S_ERROR( err )
     return S_OK( cachedRequests )
                      
-  types_setRequest = [ StringType, StringType ]
-  def export_setRequest( self, requestName, requestString ):
-    """ forward request from local RequestDB to central RequestClient
+  types_setRequest = [ StringTypes ]
+  def export_setRequest( self, requestString ):
+    """ forward request from local RequestDB to central RequestManager
 
     :param self: self reference
     :param str requestType: request type
@@ -176,10 +175,10 @@ class RequestProxyHandler( RequestHandler ):
 
     forwardable = self.__forwardable( request )
     if not forwardable["OK"]:
-      gLogger.error("setRequest: unable to forward %s: %s" % ( requestName, forwardable["Message"] ) )
+      gLogger.error("setRequest: unable to forward: %s" % ( forwardable["Message"] ) )
       return forwardable
 
-    setRequest = self.requestManager().setRequest( requestName, requestString )
+    setRequest = self.requestManager().setRequest( requestString )
     if not setRequest["OK"]:
       gLogger.error("setReqeuest: unable to set request '%s' @ RequestManager: %s" % ( requestName,
                                                                                        setRequest["Message"] ) )
@@ -191,7 +190,7 @@ class RequestProxyHandler( RequestHandler ):
       gLogger.info("setRequest: %s is saved to %s file" % ( requestName, save["Value"] ) )
       return S_OK( { "set" : False, "saved" : True } )
     
-    gLogger.info("setRequest: request '%s' has been set to %s" % ( requestName, self.centralURL() ) )
+    gLogger.info("setRequest: request '%s' has been set to the RequestManager" % ( requestName ) )
     return S_OK( { "set" : True, "saved" : False } )
 
   @staticmethod
