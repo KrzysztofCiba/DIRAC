@@ -45,6 +45,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
 
+
 class Watchdog( object ):
   """
   .. class Watchdog
