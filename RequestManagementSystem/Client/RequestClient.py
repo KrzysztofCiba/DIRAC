@@ -17,9 +17,7 @@ from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
-from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidtor
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 class RequestClient( Client ):
   """ 
@@ -35,13 +33,13 @@ class RequestClient( Client ):
   __requestProxiesDict = {}
   __requestValidator = None
 
-  def __init__( self, **kwargs ):
+  def __init__( self, useCertificates = False ):
     """c'tor
 
     :param self: self reference
     :param bool useCertificates: flag to enable/disable certificates
     """
-    Client.__init__( self, **kwargs )
+    Client.__init__( self )
     self.log = gLogger.getSubLogger( "RequestManagement/RequestClient" )
     self.setServer( "RequestManagement/RequestManager" )
 
@@ -78,7 +76,6 @@ class RequestClient( Client ):
     :param self: self reference
     :param Request request: Request instance
     """
-
     errorsDict = { "OK" : False }
     valid = self.requestValidator().validate( request )
     if not valid["OK"]:
@@ -155,7 +152,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestName )
+    self.log.info( "getDigest: attempting to get digest for '%s' request." % requestName )
     digest = self.requestManager().getDigest( requestName )
     if not digest["OK"]:
       self.log.error( "getDigest: unable to get digest for '%s' request: %s" % ( requestName, digest["Message"] ) )
@@ -241,12 +238,12 @@ class RequestClient( Client ):
             jobMinorStatus = res["Value"]["MinorStatus"]
             if jobMinorStatus == "Pending Requests":
               if jobStatus == "Completed":
-                self.log.debug( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
+                self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
                 res = stateServer.setJobStatus( jobID, "Done", "Requests done", "" )
                 if not res["OK"]:
                   self.log.error( "finalizeRequest: Failed to set job status" )
               elif jobStatus == "Failed":
-                self.log.debug( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
+                self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
                 res = stateServer.setJobStatus( jobID, "", "Requests done", "" )
                 if not res["OK"]:
                   self.log.error( "finalizeRequest: Failed to set job status" )
@@ -254,7 +251,7 @@ class RequestClient( Client ):
       self.log.error( "finalizeRequest: failed to get request status: %s" % res["Message"] )
 
     # update the job pending request digest in any case since it is modified
-    self.log.debug( "finalizeRequest: Updating request digest for job %d" % jobID )
+    self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
     digest = self.getDigest( requestName )
     if digest["OK"]:
       digest = digest["Value"]
@@ -273,8 +270,6 @@ class RequestClient( Client ):
 
     :param self: self reference
     :param list jobID: list of job IDs (integers)
-
-
     """
     self.log.info( "getRequestNamesForJobs: attempt to get request(s) for job %s" % jobIDs )
     requests = self.requestManager().getRequestNamesForJobs( jobIDs )
@@ -287,6 +282,7 @@ class RequestClient( Client ):
     """ read requests for jobs 
     
     :param list jobIDs: list with jobIDs
+    
     :return: S_OK( { "Successful" : { jobID1 : RequestContainer, ... },
                      "Failed" : { jobIDn : "Fail reason" } } ) 
     """
