@@ -44,6 +44,8 @@ class RequestDB(DB):
     """c'tor
 
     :param self: self reference
+    :param str systemInstance: whatever
+    :param int maxQueueSize: queue size
     """
     self.getIdLock = threading.Lock() 
     DB.__init__( self, "ReqDB", "RequestManagement/ReqDB", maxQueueSize )
@@ -374,7 +376,6 @@ class RequestDB(DB):
         continue
       reqDict[jobID] = request["Value"].toXML()
     return S_OK( reqDict )
-    
     
   def getDigest( self, requestName ):
     """ get digest for request given its name
