@@ -8,19 +8,14 @@
     .. module: RequestManagerHandler
     :synopsis: Implementation of the RequestDB service in the DISET framework
 """
-
 __RCSID__ = "$Id$"
-
 ## imports 
-from types import DictType, IntType, ListType, LongType, StringTypes
+from types import DictType, IntType, ListType, StringTypes
 ## from DIRAC
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client import PathFinder
 ## from RMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 ## global RequestDB instance
@@ -29,7 +24,7 @@ gRequestDB = None
 def initializeRequestManagerHandler(serviceInfo):
   """ initialise handler """
   global gRequestDB
-  csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
+  #csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
   from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
   gRequestDB = RequestDB()
   return S_OK()
@@ -40,10 +35,8 @@ class RequestManagerHandler(RequestHandler):
   
   RequestDB interface in the DISET framework.
   """
-
   ## request validator
   validator = None
-
 
   ## helper functions 
   @classmethod
@@ -92,31 +85,6 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception( errStr, requestName, lException=error )
       return S_ERROR(errStr)
     
-
-  types_setRequestStatus = [ StringTypes, StringTypes ]
-  @staticmethod
-  def export_setRequestStatus( requestName, requestStatus ):
-    """ Set status of a request """
-    gLogger.info("RequestHandler.setRequestStatus: Setting status of %s to %s." % ( requestName, requestStatus ) )
-    try:
-      return gRequestDB.setRequestStatus( requestName, requestStatus )
-    except Exception, error:
-      errStr = "RequestHandler.setRequestStatus: Exception while setting request status."
-      gLogger.exception( errStr, requestName, lException=error )
-      return S_ERROR(errStr)
-
-  types_updateRequest = [ StringTypes, StringTypes ]
-  @staticmethod
-  def export_updateRequest( requestName, requestString ):
-    """ Update the request with the supplied string """
-    gLogger.info("RequestManagerHandler.updateRequest: Attempting to update %s." % requestName)
-    try:
-      return gRequestDB.updateRequest( requestName, requestString )
-    except Exception, error:
-      errStr = "RequestManagerHandler.updateRequest: Exception which updating request."
-      gLogger.exception( errStr, requestName, lException=error )
-      return S_ERROR(errStr)
-
   types_getDBSummary = []
   @staticmethod
   def export_getDBSummary():
@@ -158,30 +126,6 @@ class RequestManagerHandler(RequestHandler):
     """
     return gRequestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
    
-  types_getCurrentExecutionOrder = [ list(StringTypes) + [ IntType, LongType ] ]
-  def export_getCurrentExecutionOrder( self, requestName ):
-    """ Get the current execution order of the given request """
-    requestID = self.__getRequestID( requestName )
-    return gRequestDB.getCurrentExecutionOrder( requestID["Value"] ) if requestID["OK"] else requestID
-
-  types_getRequestFileStatus = [ list(StringTypes) + [ IntType, LongType ], ListType ]
-  def export_getRequestFileStatus( self, requestName, lfns ):
-    """ Get the current status of the provided files for the request """
-    requestID = self.__getRequestID( requestName )
-    return gRequestDB.getRequestFileStatus( requestID["Value"], lfns ) if requestID["OK"] else requestID
-
-  types_getRequestStatus = [ list(StringTypes) + [ IntType, LongType ] ]
-  def export_getRequestStatus( self, requestName ):
-    """ Get request status given :requestName: """
-    requestID = self.__getRequestID( requestName )
-    return gRequestDB.getRequestStatus( requestID["Value"] ) if requestID["OK"] else requestID
-
-  types_getRequestInfo = [ list(StringTypes) + [ IntType, LongType ] ]
-  def export_getRequestInfo( self, requestName ):
-    """ get request info for given :requestName: """
-    requestID = self.__getRequestID( requestName )
-    return gRequestDB.getRequestInfo( requestID["Value"] ) if requestID["OK"] else requestID
-
   types_deleteRequest = [ StringTypes ]
   @staticmethod
   def export_deleteRequest( requestName ):
@@ -206,18 +150,6 @@ class RequestManagerHandler(RequestHandler):
       gLogger.exception( errStr, '', lException=error )
       return S_ERROR(errStr)
     
-  types_selectRequests = [ DictType ]
-  @staticmethod
-  def export_selectRequests( selectDict, limit=100 ):
-    """ Select requests according to supplied criteria """
-    gLogger.verbose("RequestManagerHandler.selectRequests: Attempting to select requests." )
-    try:
-      return gRequestDB.selectRequests( selectDict, limit )
-    except Exception, error:
-      errStr = "RequestManagerHandler.selectRequests: Exception while selecting requests."
-      gLogger.exception( errStr, '', lException=error)
-      return S_ERROR(errStr)  
-
   types_readRequestsForJobs = [ ListType ]
   @staticmethod
   def export_readRequestsForJobs( jobIDs ):
