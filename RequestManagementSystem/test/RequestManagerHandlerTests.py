@@ -54,6 +54,9 @@ class RequestManagerHandlerTests(unittest.TestCase):
     self.operation.addFile( self.file )
     ## xml representation of a whole request
     self.xmlStr = self.request.toXML()
+    ## request client
+    self.requestClient = RequestClient()
+
     
   def tearDown( self ):
     """ test case tear down """
@@ -64,8 +67,8 @@ class RequestManagerHandlerTests(unittest.TestCase):
 
   def testSetRequest( self ):
     """ test set request """
-    
-    
+    put = self.requestClient.putRequest( self.request )
+    print put
 
     pass
 
