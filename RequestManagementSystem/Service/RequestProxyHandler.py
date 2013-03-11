@@ -26,8 +26,7 @@ __RCSID__ = "$Id$"
 
 ## imports 
 import os
-import threading
-from types import StringType
+from types import StringTypes
 try:
   from hashlib import md5
 except ImportError:
@@ -38,7 +37,6 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
-
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.File import makeGuid
 
@@ -107,8 +105,6 @@ class RequestProxyHandler( RequestHandler ):
       ## set cached requests to the central RequestManager
       for cachedFile in cachedRequests:
         ## break if something went wrong last time
-        if not managerOK:
-          break
         try:
           requestString = "".join( open( cachedFile, "r" ).readlines() )
           cachedRequest = Request.fromXML( requestString )
@@ -118,10 +114,10 @@ class RequestProxyHandler( RequestHandler ):
           cachedName = cachedRequest["Value"].RequestName if cachedRequest["Value"] else ""
           setRequest = cls.requestManager().setRequest( requestString )
           if not setRequest["OK"]:
-            gLogger.error("sweeper: unable to set request '%s' @ RequestManager: %s" % ( requestName, 
-                                                                                         setRequest["Message"] ) )
+            gLogger.error("sweeper: unable to set request %s @ RequestManager: %s" % ( requestName, 
+                                                                                       setRequest["Message"] ) )
             continue
-          gLogger.info("sweeper: successfully set request '%s' @ RequestManager" % requestName  )
+          gLogger.info("sweeper: successfully set request '%s' @ RequestManager" % requestName )
           os.unlink( cachedFile )
         except Exception, error:
           gLogger.exception( "sweeper: hit by exception %s" % str(error) )
