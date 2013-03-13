@@ -85,7 +85,7 @@ class Operation(object):
              { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
                "RequestID" : "INTEGER NOT NULL",
                "Type" : "VARCHAR(64) NOT NULL",
-               "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled') "\
+               "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled', 'Scheduled') "\
                  "DEFAULT 'Queued'",
                "Arguments" : "BLOB",
                "Order" : "INTEGER NOT NULL",
@@ -251,7 +251,7 @@ class Operation(object):
   @Status.setter
   def Status( self, value ):
     """ Status setter """
-    if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done" ):
+    if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done", "Scheduled" ):
       raise ValueError("unknown Status '%s'" % str(value) )
     if value in ( "Failed", "Done" ) and self.__files__:
       if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():

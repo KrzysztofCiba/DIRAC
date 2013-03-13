@@ -84,7 +84,7 @@ class Request(object):
                "RequestName" : "VARCHAR(255) NOT NULL",
                "OwnerDN" : "VARCHAR(255)",
                "OwnerGroup" : "VARCHAR(32)",
-               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled') DEFAULT 'Waiting'",
+               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled', 'Scheduled') DEFAULT 'Waiting'",
                "Error" : "VARCHAR(255)",
                "DIRACSetup" : "VARCHAR(32)",
                "SourceComponent" : "BLOB",
@@ -116,6 +116,8 @@ class Request(object):
     if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
       if self.Status != "Waiting":
         self.Status = "Waiting"
+    elif "Scheduled" in self.subStatusList():
+      self.Status = "Scheduled"
     else:
       self.Status = "Done"
 
@@ -241,7 +243,7 @@ class Request(object):
   def OwnerDN( self, value ):
     """ request owner DN setter """
     if type(value) != str:
-      raise TypeError("ownerDN should be a string!")
+      raise TypeError("OwnerDN should be a string!")
     self.__data__["OwnerDN"] = value
     
   @property
@@ -253,7 +255,7 @@ class Request(object):
   def OwnerGroup( self, value ):
     """ request owner group setter """
     if type(value) != str:
-      raise TypeError("ownerGroup should be a string!")
+      raise TypeError("OwnerGroup should be a string!")
     self.__data__["OwnerGroup"] = value
 
   @property
@@ -343,13 +345,15 @@ class Request(object):
       status = "Assigned"
     if "Waiting" in opStatuses:
       status = "Waiting"
+    if "Scheduled" in opStatuses:
+      status = "Scheduled"
     self.__data__["Status"] = status
     return self.__data__["Status"]
   
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    if value not in ( "Done", "Waiting", "Failed", "Assigned" ):
+    if value not in ( "Done", "Waiting", "Failed", "Assigned", "Scheduled" ):
       raise ValueError( "Unknown status: %s" % str(value) )
     self.__data__["Status"] = value      
   
@@ -358,7 +362,7 @@ class Request(object):
     """ ro execution order getter """
     self._notify()
     opStatuses = [ op.Status for op in self.__operations__ ]
-    return opStatuses.index("Waiting") if "Waiting" in opStatuses else len(opStatuses) 
+    return opStatuses.index( "Waiting" ) if "Waiting" in opStatuses else len(opStatuses) 
     
   @property
   def Error( self ):
@@ -412,7 +416,7 @@ class Request(object):
     return S_OK( xmlStr )
 
   def toSQL( self ):
-    """ prepare SQL INSERT or UDPATE statement """
+    """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type(value) in ( str, datetime.datetime ) else str(value) ) 
                 for column, value in self.__data__.items()
                 if value and column not in  ( "RequestID", "LastUpdate" ) ] 
@@ -436,7 +440,6 @@ class Request(object):
     """ get digest for a web """
     digest = dict( zip( self.__data__.keys(),
                         [ str(val) if val else "" for val in self.__data__.values() ] ) )
-    
     digest["Operations"] = []
     for op in self:
       digest["Operations"].append( op.toJSON() )

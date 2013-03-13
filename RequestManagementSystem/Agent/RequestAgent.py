@@ -31,6 +31,43 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.private.OperationHandler import OperationHandler
+
+def loadHandler( pluginPath ):
+  """ Create an instance of requested plugin class, loading and importing it when needed.
+  This function could raise ImportError when plugin cannot be find or TypeError when
+  loaded class object isn't inherited from FTSCurePlugin class.
+  :param str pluginName: dotted path to plugin, specified as in import statement, i.e.
+  "DIRAC.CheesShopSystem.private.Cheddar" or alternatively in 'normal' path format
+  "DIRAC/CheesShopSystem/private/Cheddar"
+  
+  :return: object instance
+  This function try to load and instantiate an object from given path. It is assumed that:
+  
+  - :pluginPath: is pointing to module directory "importable" by python interpreter, i.e.: it's
+  package's top level directory is in $PYTHONPATH env variable,
+  - the module should consist a class definition following module name,
+  - the class itself is inherited from DIRAC.DataManagementSystem.private.FTSCurePlugin.FTSCurePlugin
+  If above conditions aren't meet, function is throwing exceptions:
+  
+  - ImportError when class cannot be imported
+  - TypeError when class isn't inherited from FTSCurePlugin
+  
+  """
+  if "/" in pluginPath:
+    pluginPath = ".".join( [ chunk for chunk in pluginPath.split("/") if chunk ] )
+  pluginName = pluginPath.split(".")[-1]
+  if pluginName not in globals():
+    mod = __import__( pluginPath, globals(), fromlist=[ pluginName ] )
+    pluginClassObj = getattr( mod, pluginName )
+  else:
+    pluginClassObj = globals()[pluginName]
+  
+  if not issubclass( pluginClassObj, OperationHandler ):
+    raise TypeError( "requested operation handler '%s' isn't inherited from OperationHandler base class" % pluginName )
+  ## return an instance
+  return pluginClassObj()
+
 
 ########################################################################
 class RequestAgent( AgentModule ):
@@ -74,6 +111,16 @@ class RequestAgent( AgentModule ):
     self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout ) 
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
     self.log.info("ProcessTask timeout = %d seconds" % self.__taskTimeout )
+    self.operationHandlers = self.am_getOption( "OperationHandlers", 
+                                                [ "DIRAC/DataManagementSystem/private/ReplicateAndRegister",
+                                                  "DIRAC/DataManagementSystem/private/FTSScheduler", 
+                                                  "DIRAC/DataManagementSystem/private/PutAndRegister",
+                                                  "DIRAC/DataManagemnetSystem/private/RemoveReplica",
+                                                  "DIRAC/DataManagemnetSystem/private/RemoveFile",
+                                                  "DIRAC/DataManagemnetSystem/private/RegisterFile",
+                                                  "DIRAC/RequestManagemnetSystem/private/ForwardDISET" ] )
+    self.log.info("Operation handlers: %s" % ",".join( self.opHandlers ) )
+
     ## shifter proxy
     self.am_setOption( "shifterProxy", "DataManager" )
     self.log.info( "Will use DataManager proxy." )
@@ -152,6 +199,21 @@ class RequestAgent( AgentModule ):
       self.log.debug("resetAllRequests: request %s has been put back with its initial state" % requestName )
     return S_OK()
 
+  def initilize( self ):
+    """ initialise agent """
+    self.handlers = { }
+    for opHandler in self.opHandlers:
+      try:
+        handlerName = opHandler.split("/")[-1]
+        self.handlers[ handlerName ] = loadHandler( opHandler )
+        self.log.info("initialize: loaded handler '%s' for operation '%s'" % ( opHandler, handlerName ) )
+      except ( ImportError, TypeError ), error:
+        self.log.exception( error )
+    if not self.handlers:
+      self.log.error("initalize: operation handlers not loaded, check config!")
+      return S_ERROR("Operation handlers not loaded!")
+    return S_OK()
+
   def execute( self ):
     """ read requests from RequestClient and enqueue them into ProcessPool """
     taskCounter = 0
@@ -179,7 +241,8 @@ class RequestAgent( AgentModule ):
         else:
           self.log.info("spawning task for request '%s'" % ( request.RequestName ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
-                                                           kwargs = { "XML" : request.toXML()["Value"] },
+                                                           kwargs = { "requestXML" : request.toXML()["Value"],
+                                                                      "handlers" : self.handlers },
                                                            taskID = taskID,
                                                            blocking = True,
                                                            usePoolCallbacks = True,

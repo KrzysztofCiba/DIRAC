@@ -172,7 +172,6 @@ class RequestTests(unittest.TestCase):
 
     digest = req.toJSON()
     self.assertEqual( digest["OK"], True )
-    #print digest["Value"]
 
     getWaiting = req.getWaiting()
     self.assertEqual( getWaiting["OK"], True )
