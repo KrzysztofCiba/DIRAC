@@ -42,6 +42,11 @@ FIX: Multiple fixes to please pylint
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
      payload when updating it
 
+[v6r7p17]
+
+*Resources
+FI
+
 [v6r7p16]
 
 *DMS
@@ -55,7 +60,6 @@ FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg
 *WMS
 FIX: JobManifest - take all the SubmitPools defined in the TaskQueueAgent 
 NEW: StalledJobAgent - declare jobs stuck in Completed status as Failed
-
 
 [v6r7p15]
 
