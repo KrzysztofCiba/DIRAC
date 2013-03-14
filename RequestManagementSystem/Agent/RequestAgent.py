@@ -33,7 +33,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.OperationHandler import OperationHandler
 
-def loadHandler( pluginPath ):
+def loadHandler( pluginPath, getInstance=False ):
   """ Create an instance of requested plugin class, loading and importing it when needed.
   This function could raise ImportError when plugin cannot be find or TypeError when
   loaded class object isn't inherited from FTSCurePlugin class.
@@ -66,8 +66,7 @@ def loadHandler( pluginPath ):
   if not issubclass( pluginClassObj, OperationHandler ):
     raise TypeError( "requested operation handler '%s' isn't inherited from OperationHandler base class" % pluginName )
   ## return an instance
-  return pluginClassObj()
-
+  return pluginClassObj() if getInstance else pluginClassObj
 
 ########################################################################
 class RequestAgent( AgentModule ):

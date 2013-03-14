@@ -27,6 +27,7 @@ class OperationHandler(object):
 
   request operation handler base class
   """
+
   def __init__( self, operation ):
     """c'tor
 
@@ -34,6 +35,13 @@ class OperationHandler(object):
     :param Operation operation: Operation instance
     """
     self.operation = operation
+    self.__monitor = {}
+
+  def addMark( self, name, value=1 ):
+    """ gMonitor helper """
+    if name not in self.__monitor:
+      self.__monitor.setdefault( name, 0 )
+    self.__monitor[name] += value
 
   def __call__( self ):
     """ call me maybe 
