@@ -12,6 +12,10 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     request operation handler base class
+    
+    this should be a functor getting Operation as ctor argument
+    __call__ should return S_OK/S_ERROR
+
 """
 __RCSID__ = "$Id $"
 ##
@@ -46,6 +50,6 @@ class OperationHandler(object):
   def __call__( self ):
     """ call me maybe 
     
-    this one should return S_OK(operation) or S_ERROR()
+    this one should return S_OK() or S_ERROR()
     """
     raise NotImplementedError("Implement me please!")

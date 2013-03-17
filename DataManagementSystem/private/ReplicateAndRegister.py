@@ -41,6 +41,7 @@ class ReplicateAndRegister( OperationHandler ):
 
   def __call__( self ):
     """ call me maybe """    
+
     ## list of targetSEs
     targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE 
                              if targetSE.strip() ] ) )
