@@ -31,14 +31,14 @@ class RequestValidator(object):
   This class validates newly created requests (before setting them in RequestManager) for
   required attributes.
   """
-  reqAttrs = { "diset" : { "Operation": [ "Arguments" ],  "Files" : [] },
-               "putAndRegister" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
-               "replicateAndRegister" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN" ] },
-               "physicalRemoval" : { "Operation" : ["TargetSE" ], "Files" : [ "LFN", "PFN" ] },
-               "removeFile" : { "Operation" : [], "Files" : [ "LFN" ] },
-               "replicaRemoval" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN" ] },
-               "reTransfer" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
-               "registerFile" : { "Operation" : [], "Files" : [ "LFN", "PFN", "Size", 
+  reqAttrs = { "Diset" : { "Operation": [ "Arguments" ],  "Files" : [] },
+               "PutAndRegister" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
+               "ReplicateAndRegister" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN" ] },
+               "PhysicalRemoval" : { "Operation" : ["TargetSE" ], "Files" : [ "LFN", "PFN" ] },
+               "RemoveFile" : { "Operation" : [], "Files" : [ "LFN" ] },
+               "RemoveReplica" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN" ] },
+               "ReTransfer" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
+               "RegisterFile" : { "Operation" : [], "Files" : [ "LFN", "PFN", "Size", 
                                                                 "ChecksumType", "Checksum", "GUID"] } }
 
   def __init__( self ):

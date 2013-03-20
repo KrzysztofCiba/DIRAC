@@ -42,7 +42,7 @@ class BaseOperation(object):
     """
     ## save operation
     self.operation = operation
-    ## keep it protected
+    ## keep request protected
     self._request = operation._parent
     ## own monitor
     self.__monitor = {}
@@ -51,11 +51,14 @@ class BaseOperation(object):
                                                     self._request.Order,
                                                     self.operation.Type ) )
   def addMark( self, name, value=1 ):
-    """ gMonitor helper """
+    """ gMonitor helper 
+    
+    :param str name: monitor name
+    :param int value: monitor value
+    """
     if name not in self.__monitor:
       self.__monitor.setdefault( name, 0 )
     self.__monitor[name] += value
-
 
   def __call__( self ):
     """ call me maybe 

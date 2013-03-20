@@ -31,12 +31,12 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.private.OperationHandler import OperationHandler
+from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 
 def loadHandler( pluginPath, getInstance=False ):
   """ Create an instance of requested plugin class, loading and importing it when needed.
   This function could raise ImportError when plugin cannot be find or TypeError when
-  loaded class object isn't inherited from FTSCurePlugin class.
+  loaded class object isn't inherited from BaseOperation class.
   :param str pluginName: dotted path to plugin, specified as in import statement, i.e.
   "DIRAC.CheesShopSystem.private.Cheddar" or alternatively in 'normal' path format
   "DIRAC/CheesShopSystem/private/Cheddar"
@@ -47,11 +47,11 @@ def loadHandler( pluginPath, getInstance=False ):
   - :pluginPath: is pointing to module directory "importable" by python interpreter, i.e.: it's
   package's top level directory is in $PYTHONPATH env variable,
   - the module should consist a class definition following module name,
-  - the class itself is inherited from DIRAC.DataManagementSystem.private.FTSCurePlugin.FTSCurePlugin
+  - the class itself is inherited from DIRAC.RequestManagementSystem.private.BaseOperation.BaseOperation
   If above conditions aren't meet, function is throwing exceptions:
   
   - ImportError when class cannot be imported
-  - TypeError when class isn't inherited from FTSCurePlugin
+  - TypeError when class isn't inherited from BaseOepration
   
   """
   if "/" in pluginPath:
@@ -63,8 +63,8 @@ def loadHandler( pluginPath, getInstance=False ):
   else:
     pluginClassObj = globals()[pluginName]
   
-  if not issubclass( pluginClassObj, OperationHandler ):
-    raise TypeError( "requested operation handler '%s' isn't inherited from OperationHandler base class" % pluginName )
+  if not issubclass( pluginClassObj, BaseOperation ):
+    raise TypeError( "operation handler '%s' isn't inherited from BaseOperation class" % pluginName )
   ## return an instance
   return pluginClassObj() if getInstance else pluginClassObj
 
@@ -91,6 +91,8 @@ class RequestAgent( AgentModule ):
   __taskTimeout = 300
   ## ProcessPool finalisation timeout 
   __poolTimeout = 300
+  ## ProcessPool sleep time
+  __poolSleep = 5
   ## placeholder for RequestClient instance
   __requestClient = None
 
@@ -108,9 +110,13 @@ class RequestAgent( AgentModule ):
     self.log.info("ProcessPool queue size = %d" % self.__queueSize )
     self.__poolTimeout = int( self.am_getOption( "ProcessPoolTimeout", self.__poolTimeout ) )
     self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout ) 
+    self.__poolSleep = int( self.am_getOption( "ProcessPoolSleep", self.__poolSleep ) )
+    self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep )
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
     self.log.info("ProcessTask timeout = %d seconds" % self.__taskTimeout )
-    self.operationHandlers = self.am_getOption( "OperationHandlers", 
+    
+
+    self.operationHandlers = self.am_getOption( "Operations", 
                                                 [ "DIRAC/DataManagementSystem/private/ReplicateAndRegister",
                                                   "DIRAC/DataManagementSystem/private/FTSScheduler", 
                                                   "DIRAC/DataManagementSystem/private/PutAndRegister",
@@ -235,8 +241,8 @@ class RequestAgent( AgentModule ):
                                                                     self.processPool().getNumWorkingProcesses() ) )
       while True:
         if not self.processPool().getFreeSlots():
-          self.log.info("No free slots available in processPool, will wait 3 seconds to proceed...")
-          time.sleep(3)
+          self.log.info("No free slots available in processPool, will wait %d seconds to proceed" % self._poolSleep )
+          time.sleep( self.__poolSleep )
         else:
           self.log.info("spawning task for request '%s'" % ( request.RequestName ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
@@ -299,3 +305,5 @@ class RequestAgent( AgentModule ):
     """
     self.log.error( "%s exception callback" % taskID )
     self.log.error( taskException )
+    self.resetRequest( taskID )
+    
