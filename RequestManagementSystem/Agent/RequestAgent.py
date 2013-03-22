@@ -98,7 +98,9 @@ class RequestAgent( AgentModule ):
 
   def __init__( self, *args, **kwargs ):
     """ c'tor """
+
     AgentModule.__init__( self, *args, **kwargs )
+
     ## ProcessPool related stuff
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", self.__requestsPerCycle )
     self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
@@ -115,7 +117,7 @@ class RequestAgent( AgentModule ):
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
     self.log.info("ProcessTask timeout = %d seconds" % self.__taskTimeout )
     
-
+    ## operation handlers
     self.operationHandlers = self.am_getOption( "Operations", 
                                                 [ "DIRAC/DataManagementSystem/private/ReplicateAndRegister",
                                                   "DIRAC/DataManagementSystem/private/FTSScheduler", 
@@ -123,19 +125,16 @@ class RequestAgent( AgentModule ):
                                                   "DIRAC/DataManagemnetSystem/private/RemoveReplica",
                                                   "DIRAC/DataManagemnetSystem/private/RemoveFile",
                                                   "DIRAC/DataManagemnetSystem/private/RegisterFile",
-                                                  "DIRAC/RequestManagemnetSystem/private/ForwardDISET" ] )
-    self.log.info("Operation handlers: %s" % ",".join( self.opHandlers ) )
+                                                  "DIRAC/RequestManagementSystem/private/ForwardDISET" ] )
+    self.log.info( "Operation handlers: %s" % ",".join( self.opHandlers ) )
 
-    ## shifter proxy
-    self.am_setOption( "shifterProxy", "DataManager" )
-    self.log.info( "Will use DataManager proxy." )
     ## common monitor activity 
-    self.monitor.registerActivity( "Iteration", "Agent Loops", 
-                                   self.__class__.__name__, "Loops/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Execute", "Request Processed", 
-                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
-    self.monitor.registerActivity( "Done", "Request Completed", 
-                                   self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Iteration", "Agent Loops", 
+                               "RequestAgent", "Loops/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Execute", "Request Processed", 
+                               "RequestAgent", "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Done", "Request Completed", 
+                               "RequestAgent", "Requests/min", gMonitor.OP_SUM )
     ## create request dict
     self.__requestCache = dict()
 
@@ -204,7 +203,7 @@ class RequestAgent( AgentModule ):
       self.log.debug("resetAllRequests: request %s has been put back with its initial state" % requestName )
     return S_OK()
 
-  def initilize( self ):
+  def initialize( self ):
     """ initialise agent """
     self.handlers = { }
     for opHandler in self.opHandlers:
@@ -221,6 +220,8 @@ class RequestAgent( AgentModule ):
 
   def execute( self ):
     """ read requests from RequestClient and enqueue them into ProcessPool """
+    gMonitor.addMark( "Iteration", 1 )
+
     taskCounter = 0
     while taskCounter < self.__requestsPerCycle:
       self.log.info("execute: ")
@@ -256,6 +257,8 @@ class RequestAgent( AgentModule ):
             self.log.error( enqueue["Message"] )
           else:
             self.log.info("successfully enqueued task %s" % taskID )
+            ## update monitor
+            gMonitor.addMark( "Processed", 1 )
             ## update request counter
             taskCounter += 1
             ## task created, a little time kick to proceed
@@ -286,8 +289,9 @@ class RequestAgent( AgentModule ):
         self.resetRequest( taskID )
       self.cleanCache( taskID )
       return
-    
+    ## clean cache
     self.cleanCache( taskID )
+    
     taskResult = taskResult["Value"]
     ## add monitoring info
     monitor = taskResult["monitor"] if "monitor" in taskResult else {}

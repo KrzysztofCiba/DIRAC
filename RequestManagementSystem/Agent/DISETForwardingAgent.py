@@ -37,13 +37,6 @@ class DISETForwardingAgent( AgentModule ):
     gMonitor.registerActivity( "Successful", "Request Forward Successful", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Failed", "Request Forward Failed", "DISETForwardingAgent", "Requests/min", gMonitor.OP_SUM )
 
-    #self.local = PathFinder.getServiceURL( "RequestManagement/localURL" )
-    #if not self.local:
-    #  self.local = AgentModule.am_getOption( self, 'localURL', '' )
-    #if not self.local:
-    #  errStr = 'The RequestManagement/localURL option must be defined.'
-    #  gLogger.fatal( errStr )
-    #  return S_ERROR( errStr )
     return S_OK()
 
   def execute( self ):
