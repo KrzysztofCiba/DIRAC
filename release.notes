@@ -72,6 +72,19 @@ FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg
 FIX: JobManifest - take all the SubmitPools defined in the TaskQueueAgent 
 NEW: StalledJobAgent - declare jobs stuck in Completed status as Failed
 
+[v6r7p20]
+
+*DMS
+CHANGE: StrategyHandler - move out SourceSE checking to TransferAgent
+CHANGE: ReplicaManager, InputDataAgent - get active replicas
+FIX: StorageElement, SRM2Storage - support for '*Access' statuses, checking results
+     of return structures
+     
+*RSS
+NEW: set configurable email address on the CS to send the RSS emails
+NEW: RSSCache without thread in background
+FIX: Synchronizer - moved to ResourceManager handler     
+
 [v6r7p19]
 
 *DMS
