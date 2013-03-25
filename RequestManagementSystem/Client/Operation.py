@@ -211,12 +211,12 @@ class Operation(object):
   @SourceSE.setter
   def SourceSE( self, value ):
     """ source SE setter """
-    self.__data__["SourceSE"] = str(value)[:32] if value else ""
+    self.__data__["SourceSE"] = str(value)[:255] if value else ""
     
   @property
   def TargetSE( self ):
     """ target SE prop """
-    return self.__data__["TargetSE"]
+    return self.__data__["TargetSE"] if self.__data__["TargetSE"] else ""
 
   @TargetSE.setter
   def TargetSE( self, value ):
