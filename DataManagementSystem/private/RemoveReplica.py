@@ -39,7 +39,9 @@ class RemoveReplica(BaseOperation):
 
     :param self: self reference
     """
+    ## base class ctor
     BaseOperation.__init__( self, operation )
+    ## gMonitor stuff
 
   def __call__(self):
     

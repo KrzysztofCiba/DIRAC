@@ -39,9 +39,17 @@ class RemoveFile(BaseOperation):
 
     :param self: self reference
     """
+    ## call base class ctor
     BaseOperation.__init__(self, operation)
+    ## gMonitor stuff goes here
+    gMonitor.registerActivity( "FileRemovalsAttempted", "File removals attempted", 
+                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FileRemovalsFaild", "File removals failed", 
+                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FileRemovalsSuccesful", "File removals successful", 
+                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
 
-  def __call__(self ):
+  def __call__( self ):
     pass
 
 
