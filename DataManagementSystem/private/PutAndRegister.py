@@ -40,7 +40,7 @@ class PutAndRegister(BAseOperation):
     :param self: self reference
     """
     BaseOperation.__init__(self, operation)
-    gMonitor.register
+    gMonitor.registerActivity( "Put and register", )
 
 
   def __call__( self ):
@@ -70,7 +70,7 @@ class PutAndRegister(BAseOperation):
         self.log.info("skipping file %s, status is %s" % ( lfn,  opFile.Status ) )
         continue
       
-      self.addMark( "Put and register", 1 )
+      gMonitor.addMark( "Put and register", 1 )
 
       pfn = opFile.PFN if opFile.PFN else ""
       guid = opFile.GUID if opFile.GUID else ""
@@ -103,7 +103,7 @@ class PutAndRegister(BAseOperation):
           
           if "put" not in putAndRegister["Value"]["Successful"][lfn]:
 
-            self.addMark( "Put failed", 1 )
+            gMonitor.addMark( "Put failed", 1 )
             self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "TransferAgent" )
             self.log.info( "failed to put %s to %s." % ( lfn, targetSE ) )
             failed[lfn] = "put failed at %s" % targetSE
@@ -113,8 +113,8 @@ class PutAndRegister(BAseOperation):
 
           elif "register" not in putAndRegister["Value"]["Successful"][lfn]:
               
-            self.addMark( "Put successful", 1 )
-            self.addMark( "File registration failed", 1 )
+            gMonitor.addMark( "Put successful", 1 )
+            gMonitor.addMark( "File registration failed", 1 )
             
             self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "TransferAgent" )
             self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "TransferAgent" )

@@ -29,7 +29,6 @@ from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
 
-
 ########################################################################
 class ForwardDISET(BaseOperation):
   """
@@ -43,9 +42,14 @@ class ForwardDISET(BaseOperation):
     """
     ## call base class ctor
     BaseOperation.__init__( self, operation )
-    
+    ## gMonitor stuff goes here
+    gMonitor.registerActivity( "Attempted", "DISET forwaring attempted", 
+                               "ForwadDISET", "Operations/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Failed", "DISET forwaring failed", 
+                               "ForwadDISET", "Operations/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Successful", "DISET forwaring sucessful", 
+                               "ForwadDISET", "Operations/min", gMonitor.OP_SUM )
 
- 
   def __call__( self ):
     """ execute RPC stub """
     ## update monitor for attempted
@@ -58,7 +62,7 @@ class ForwardDISET(BaseOperation):
       gMonitor.addMark( "Failed", 1 )
       self.log.error("unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
       return forward
-    self.log.info("forwarding done")
+    self.log.info("diset forward done")
     gMonitor.addMark( "Successful", 1 )
     self.operation.Status = "Done"
     return S_OK()

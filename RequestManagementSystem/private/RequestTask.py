@@ -36,6 +36,8 @@ class RequestTask(object):
 
   request's processing task
   """
+  ## request client 
+  __requestClient = None
   
   def __init__( self, requestXML, handlers ):
     """c'tor
@@ -47,6 +49,13 @@ class RequestTask(object):
     self.request = Request.fromXML()["Value"]
     self.handelrs = handlers
     self.log = gLogger.getSubLogger( request.RequestName )
+
+  @classmethod
+  def requestClient( cls ):
+    """ on demand request client """
+    if not cls.__requestClient:
+      cls.__requestClient = RequestClient()
+    return cls.__requestClient
 
   def makeGlobal( self, objName, objDef ):
     """ export :objDef: to global name space using :objName: name 
@@ -72,13 +81,19 @@ class RequestTask(object):
       try:
         ret = self.handlers[operation.Type]( operation )()
         if not ret["OK"]:
-          ## bailout on error
+          ## bail out on error
           self.log.error( ret["Message"] )
           return ret
       except Exception, error:
         self.log.exception( error )
         break
-    
-
+    if self.request.Status == "Done":
+      if self.request.JobID:
+        finalizeRequest = self.requestClient.finalize( self.request, self.request.JobID )
+        if not finalizeRequest["OK"]:
+          self.log.error("unable to finalize request %s: %s" % ( self.request.RequestName, 
+                                                                 finalizeRequest["Message"] ) )
+          return finalizeRequest
+    return S_OK( )
     
 
