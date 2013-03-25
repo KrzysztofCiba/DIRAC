@@ -241,6 +241,12 @@ class GraphTests(unittest.TestCase):
     ret = gr.walkAll( nodeFcn=nbEdges )
     self.assertEqual( ret, { '1': 3, '2' : 0, '3': 0, '4' : 0, '5': 1 } )
 
+
+  def testDFS( self ):
+    gr = Graph( "testGraph", self.nodes, self.edges )
+    gr.topologicalSort()
+
+
 ## test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()

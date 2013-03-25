@@ -292,3 +292,20 @@ class Graph(object):
       out.append( repr(edge) )
     out.append( "}" )
     return "\n".join( out )
+  
+
+  def dfs( self, preOrder=False, inOrder=False, postOrder=False ):
+    
+    nodes = list( self.nodes() )
+    nodes.sort( key=lambda node: len(node.edges() ) )
+    
+  def topologicalSort( self ):
+    self.clock = 0
+    stack = list()
+    self.reset()
+
+    nodes = list( self.nodes() )
+    nodes.sort( key=lambda node: len(node.edges() ) )
+    for node in nodes:
+      pass
+

@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: ForwardDISET 
-    =======================
+    ==================
  
     .. module: ForwardDISET
     :synopsis: DISET forwarding operation handler
@@ -24,7 +24,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of ForwardDISET class.
 
 ## imports 
-from DIRAC import S_OK, S_ERROR, gMonitor
+from DIRAC import S_OK, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
@@ -40,30 +40,30 @@ class ForwardDISET(BaseOperation):
     
     :param Operation operation: an Operation instance
     """
-    ## call base class ctor
+    # # call base class c'tor
     BaseOperation.__init__( self, operation )
     ## gMonitor stuff goes here
-    gMonitor.registerActivity( "Attempted", "DISET forwaring attempted", 
+    gMonitor.registerActivity( "ForwardDISETAtt", "DISET forwarding attempted",
                                "ForwadDISET", "Operations/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Failed", "DISET forwaring failed", 
+    gMonitor.registerActivity( "ForwardDISETFail", "DISET forwarding failed",
                                "ForwadDISET", "Operations/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Successful", "DISET forwaring sucessful", 
+    gMonitor.registerActivity( "ForwardDISETSucc", "DISET forwarding successful",
                                "ForwadDISET", "Operations/min", gMonitor.OP_SUM )
 
   def __call__( self ):
     """ execute RPC stub """
     ## update monitor for attempted
-    gMonitor.addMark( "Attempted", 1 )
+    gMonitor.addMark( "ForwardDISETAtt", 1 )
     ## get arguments
     rpcStubString = self.operation.Arguments
-    rpcStub, length = DEncode.decode( rpcStubString )
-    forward = executeRPCStub( rpcStub )
+    decode = DEncode.decode( rpcStubString )
+    forward = executeRPCStub( decode[0] )
     if not forward["OK"]:
-      gMonitor.addMark( "Failed", 1 )
+      gMonitor.addMark( "ForwardDISETFail", 1 )
       self.log.error("unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
       return forward
-    self.log.info("diset forward done")
-    gMonitor.addMark( "Successful", 1 )
+    self.log.info( "diset forwarding done" )
+    gMonitor.addMark( "ForwardDISETSucc", 1 )
     self.operation.Status = "Done"
     return S_OK()
     

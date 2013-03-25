@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: BaseOperationTests 
-    =======================
+    ========================
  
     .. module: BaseOperationTests
     :synopsis: unittests for BaseOperation
@@ -26,6 +26,7 @@ __RCSID__ = "$Id $"
 ## imports 
 import unittest
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 ########################################################################
 class BaseOperationTests(unittest.TestCase):
@@ -39,12 +40,12 @@ class BaseOperationTests(unittest.TestCase):
 
     :param self: self reference
     """
-    self.op = Operation( )
-    pass
+    self.op = Operation()
+    self.baseOp = BaseOperation( self.op )
 
-
-
-
+  def test( self ):
+    """ base op test """
+    self.assertEqual( "log" in dir( self.baseOp ), True, "log missing" )
 
 
 ## tests execution
