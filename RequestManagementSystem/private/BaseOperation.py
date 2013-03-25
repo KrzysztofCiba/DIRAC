@@ -53,11 +53,11 @@ class BaseOperation(object):
     self._request = operation._parent
     ## std monitor
     gMonitor.registerActivity( "Attempted", "Processed Operations", 
-                               self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+                               self.__class__.__name__, "Operations/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Successful", "Successful Operations", 
-                                self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+                                self.__class__.__name__, "Operations/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Failed", "Failed Operations", 
-                                self.__class__.__name__, "Requests/min", gMonitor.OP_SUM )
+                                self.__class__.__name__, "Operations/min", gMonitor.OP_SUM )
 
     ## own logger
     self.log = gLogger.getSubLogger( "%s/%s/%s" % ( self._request.RequestName,
@@ -79,17 +79,9 @@ class BaseOperation(object):
       cls.__dataLoggingClient = DataLoggingClient()
     return cls.__dataLoggingClient
 
-  @classmethod
-  def monitor( cls ):
-    """ gMonitor facade """
-    if not cls.__monitor:
-      from DIRAC import gMonitor
-      cls.__monitor = gMonitor
-    return cls.__monitor
-
   def __call__( self ):
-    """ call me maybe 
+    """ this one should be implemented in the inherited classes
     
-    this one should return S_OK/S_ERROR
+    should return S_OK/S_ERROR
     """
     raise NotImplementedError("Implement me please!")

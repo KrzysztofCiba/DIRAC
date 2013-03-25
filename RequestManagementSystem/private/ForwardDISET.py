@@ -37,22 +37,29 @@ class ForwardDISET(BaseOperation):
   
   """
   def __init__( self, operation ):
-    """ c'tor """
+    """ c'tor 
+    
+    :param Operation operation: an Operation instance
+    """
+    ## call base class ctor
     BaseOperation.__init__( self, operation )
     
+
+ 
   def __call__( self ):
     """ execute RPC stub """
     ## update monitor for attempted
-    self.monitor().addMark( "Attempted", 1 )
+    gMonitor.addMark( "Attempted", 1 )
     ## get arguments
     rpcStubString = self.operation.Arguments
     rpcStub, length = DEncode.decode( rpcStubString )
     forward = executeRPCStub( rpcStub )
     if not forward["OK"]:
-      self.monitor().addMark( "Failed", 1 )
+      gMonitor.addMark( "Failed", 1 )
       self.log.error("unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
       return forward
-    self.monitor().addMark( "Successful", 1 )
+    self.log.info("forwarding done")
+    gMonitor.addMark( "Successful", 1 )
     self.operation.Status = "Done"
     return S_OK()
     

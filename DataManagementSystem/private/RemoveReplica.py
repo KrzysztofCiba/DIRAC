@@ -42,6 +42,7 @@ class RemoveReplica(BaseOperation):
     BaseOperation.__init__( self, operation )
 
   def __call__(self):
+    
     pass
 
 
