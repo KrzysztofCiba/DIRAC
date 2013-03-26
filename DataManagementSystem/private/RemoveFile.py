@@ -41,13 +41,6 @@ class RemoveFile(BaseOperation):
     """
     ## call base class ctor
     BaseOperation.__init__(self, operation)
-    ## gMonitor stuff goes here
-    gMonitor.registerActivity( "FileRemovalsAtt", "File removals attempted",
-                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "FileRemovalsFail", "File removals failed",
-                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "FileRemovalsSucc", "File removals successful",
-                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
 
   def __call__( self ):
     """ action for 'removeFile' operation  """
@@ -56,7 +49,7 @@ class RemoveFile(BaseOperation):
     self.log.debug( "about to remove %d files" % len( lfns ) )
     # # keep removal status for each file
     removalStatus = dict.fromkeys( lfns, "" )
-    gMonitor.addMark( "FileRemovalsAtt", len( lfns ) )
+    gMonitor.addMark( "RemoveFileAtt", len( lfns ) )
 
     # # bulk removal 1st
     bulkRemoval = self.replicaManager().removeFile( lfns )
@@ -80,7 +73,7 @@ class RemoveFile(BaseOperation):
 
     # # loop over LFNs to remove
     for lfn in toRemove:
-      self.debug( "removeFile: processing file %s" % lfn )
+      self.log.debug( "processing file %s" % lfn )
       try:
         # # try to remove using proxy already defined in os.environ
         removal = self.replicaManager().removeFile( lfn )
@@ -94,11 +87,11 @@ class RemoveFile(BaseOperation):
            ( removal["OK"] and "Failed" in removal["Value"] and
              lfn in removal["Value"]["Failed"] and
              "permission denied" in str( removal["Value"]["Failed"][lfn] ).lower() ):
-          self.debug( "removeFile: retrieving proxy for %s" % lfn )
+          self.log.debug( "retrieving proxy for %s" % lfn )
           getProxyForLFN = self.getProxyForLFN( lfn )
           # # can't get correct proxy? continue...
           if not getProxyForLFN["OK"]:
-            self.warn( "removeFile: unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
+            self.log.warn( "unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
             removal = getProxyForLFN
           else:
             # # you're a DataManager, retry with the new one proxy
@@ -130,40 +123,33 @@ class RemoveFile(BaseOperation):
 
       # # set file error if any
       if error:
-        self.debug( "removeFile: %s: %s" % ( lfn, str( error ) ) )
+        self.log.debug( "%s: %s" % ( lfn, str( error ) ) )
         fileError = str( error ).replace( "'", "" )[:255]
         fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn,
                                                                 "Error", fileError )
-        if not fileError["OK"]:
-          self.error( "removeFile: unable to set Error for %s: %s" % ( lfn, fileError["Message"] ) )
       # # no error? file not exists? - we are able to recover
       if not error or "no such file or directory" in str( error ).lower() or \
             "file does not exist in the catalog" in str( error ).lower():
         filesRemoved += 1
-        self.info( "removeFile: successfully removed %s" % lfn )
+        self.log.info( "successfully removed %s" % lfn )
         updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
         if not updateStatus["OK"]:
-          self.error( "removeFile: unable to change status to 'Done' for %s" % lfn )
+          self.log.error( "unable to change status to 'Done' for %s" % lfn )
       else:
         filesFailed += 1
-        self.warn( "removeFile: unable to remove file %s : %s" % ( lfn, error ) )
+        self.log.warn( "unable to remove file %s : %s" % ( lfn, error ) )
         errorStr = str( error )
         if type( error ) == DictType:
           errorStr = ";".join( [ "%s:%s" % ( key, value ) for key, value in error.items() ] )
         errorStr = errorStr.replace( "'", "" )
         subRequestError.append( "%s:%s" % ( lfn, errorStr ) )
 
-    self.addMark( "RemoveFileDone", filesRemoved )
+    self.addMark( "RemoveFileSucc", filesRemoved )
     self.addMark( "RemoveFileFail", filesFailed )
 
-    # # all 'Done'?
-    if requestObj.isSubRequestDone( index, "removal" )["Value"]:
-      self.info( "removeFile: all files processed, setting subrequest status to 'Done'" )
-      requestObj.setSubRequestStatus( index, "removal", "Done" )
-    elif filesFailed:
-      self.info( "removeFile: all files processed, %s files failed to remove" % filesFailed )
-      subRequestError = ";".join( subRequestError )[:255]
-      subRequestError = requestObj.setSubRequestAttributeValue( index, "removal", "Error", subRequestError )
+    if filesFailed:
+      self.log.info( "all files processed, %s files failed to remove" % filesFailed )
+      self.operation.Error = ";".join( subRequestError )[:255]
 
     return S_OK()
 
