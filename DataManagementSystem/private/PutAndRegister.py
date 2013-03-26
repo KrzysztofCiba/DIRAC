@@ -26,9 +26,11 @@ __RCSID__ = "$Id $"
 ## imports 
 from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
-class PutAndRegister(BAseOperation):
+class PutAndRegister( BaseOperation ):
   """
   .. class:: PutAndRegister
   
@@ -41,8 +43,6 @@ class PutAndRegister(BAseOperation):
     """
     ## base class ctor
     BaseOperation.__init__(self, operation)
-    ## gMonitor
-    gMonitor.registerActivity( "Put and register", )
 
 
   def __call__( self ):
@@ -138,7 +138,20 @@ class PutAndRegister(BAseOperation):
                             "Addler" : fileDict["Addler"], 
                             "GUID" : fileDict["GUID"] } ] }
             self.info( "putAndRegister: setting registration request for failed file" )
-            requestObj.addSubRequest( registerRequestDict, "register" )
+
+            registerOperation = Operation()
+            registerOperation.TargetSE = targetSE
+            registerOperation.Type = "RegisterFile"
+            registerOperation.Catalogue = self.operation.Catalogue
+            registerFile = File()
+            registerFile.LFN = opFile.LFN
+            registerFile.PFN = opFile.PFN
+            registerFile.Size = opFile.Size
+            registerFile.Checksum = opFile.Checksum
+            registerFile.GUID = opFile.GUID
+            registerOperation.addFile( registerFile )
+            self.request.insertAfter( self.operation, registerOperation )
+
 
           else:
 

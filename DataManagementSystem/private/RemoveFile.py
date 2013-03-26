@@ -24,6 +24,8 @@ __RCSID__ = "$Id $"
 # @brief Definition of RemoveFile class.
 
 ## imports 
+import os
+# # from DIRAC
 from DIRAC import S_OK, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 
