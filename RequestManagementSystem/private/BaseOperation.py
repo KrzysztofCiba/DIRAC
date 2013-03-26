@@ -4,21 +4,21 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 13:48:52
 ########################################################################
-""" :mod: BaseOperation 
-    =======================
- 
+""" :mod: BaseOperation
+    ===================
+
     .. module: BaseOperation
     :synopsis: request operation handler base class
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     request operation handler base class
-    
+
     this should be a functor getting Operation as ctor argument
     __call__ should return S_OK/S_ERROR
 
 """
 __RCSID__ = "$Id $"
-##
+# #
 # @file BaseOperation.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/13 13:49:02
@@ -26,43 +26,38 @@ __RCSID__ = "$Id $"
 
 from DIRAC import gLogger, gMonitor
 
-
 ########################################################################
-class BaseOperation(object):
+class BaseOperation( object ):
   """
   .. class:: BaseOperation
 
   request operation handler base class
   """
-  ## private replica manager
+  # # private replica manager
   __replicaManager = None
-  ## private data logging client
+  # # private data logging client
   __dataLoggingClient = None
-  ## private monitor
-  __monitor = None
 
-  def __init__( self, operation ):
+  def __init__( self, operation = None ):
     """c'tor
 
-    :param self: self reference
     :param Operation operation: Operation instance
     """
-    ## save operation
-    self.operation = operation
-    ## keep request protected
-    self._request = operation._parent
-    ## std monitor
-    gMonitor.registerActivity( "Attempted", "Processed Operations", 
-                               self.__class__.__name__, "Operations/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Successful", "Successful Operations", 
-                                self.__class__.__name__, "Operations/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Failed", "Failed Operations", 
-                                self.__class__.__name__, "Operations/min", gMonitor.OP_SUM )
+    if operation:
+      self.setOperation( operation )
+    # # std monitor
+    name = self.__class__.__name__
+    for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
+      gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
 
-    ## own logger
-    self.log = gLogger.getSubLogger( "%s/%s/%s" % ( self._request.RequestName,
-                                                    self._request.Order,
-                                                    self.operation.Type ) )
+  def setOperation( self, operation ):
+      """ operation setter """
+      self.operation = operation
+      self.request = operation._parent
+      self.log = gLogger.getSubLogger( "%s/%s/%s" % ( self.request.RequestName,
+                                                      self.request.Order,
+                                                      self.operation.Type ) )
+
   @classmethod
   def replicaManager( cls ):
     """ ReplicaManger getter """
@@ -81,7 +76,7 @@ class BaseOperation(object):
 
   def __call__( self ):
     """ this one should be implemented in the inherited classes
-    
+
     should return S_OK/S_ERROR
     """
-    raise NotImplementedError("Implement me please!")
+    raise NotImplementedError( "Implement me please!" )
