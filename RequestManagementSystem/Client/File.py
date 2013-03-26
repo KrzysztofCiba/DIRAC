@@ -32,7 +32,6 @@ try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
   import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
 ## from DIRAC
 from DIRAC.Core.Utilities.File import checkGuid
 
@@ -232,9 +231,9 @@ class File( object ):
       raise ValueError( "Unknown Status: %s!" % str(value) )
     self.__data__["Status"] = value
   
-  ## (de)serialisation   
+  # # (de)serialization
   def toXML( self ):
-    """ serialise File to XML """
+    """ serialize File to XML """
     attrs = dict( [ ( k, str( getattr(self, k) ) if getattr(self, k) else "") for k in self.__data__ ] )
     return ElementTree.Element( "file", attrs )
 
@@ -242,7 +241,7 @@ class File( object ):
   def fromXML( cls, element ):
     """ build File form ElementTree.Element :element: """
     if element.tag != "file":
-      raise ValueError("wrong tag, excpected 'file', got %s" % element.tag )
+      raise ValueError( "wrong tag, expected 'file', got %s" % element.tag )
     fromDict = dict( [ (key, value) for key, value in element.attrib.items() if value ] ) 
     return File( fromDict )
   

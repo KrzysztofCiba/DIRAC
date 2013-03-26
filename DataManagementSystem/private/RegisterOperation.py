@@ -28,7 +28,7 @@ from DIRAC import gMonitor, S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 
 ########################################################################
-class RegisterOperation( BaseOperation ):
+class RegisterFile( BaseOperation ):
   """
   .. class:: RegisterOperation
   
@@ -53,7 +53,7 @@ class RegisterOperation( BaseOperation ):
     targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split(",") 
                              if targetSE.strip() ] ) )
     if not targetSEs:
-      self.error( "targetSE misssing")
+      self.error( "targetSE missing" )
       self.operation.Error = "TargetSE is not specified"
       self.operation.Status = "Failed"
       return S_ERROR( self.operation.Error )
@@ -111,7 +111,7 @@ class RegisterOperation( BaseOperation ):
 
     self.operation.Status = "Done"
     gMonitor.addMark( "Successful", 1 )
-    returen S_OK()
+    return S_OK()
 
 
 

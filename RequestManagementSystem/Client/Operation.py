@@ -29,9 +29,7 @@ except ImportError:
   import xml.etree.ElementTree
 from xml.parsers.expat import ExpatError
 import datetime
-import itertools
 ## from DIRAC
-from DIRAC import S_OK
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.Client.File import File
 
@@ -98,7 +96,7 @@ class Operation(object):
              "PrimaryKey" : "OperationID" }
   
   def __setattr__( self, name, value ):
-    """ beawre of tpyos """
+    """ bweare of tpyos!!! """
     if not name.startswith("_") and name not in dir(self):
       raise AttributeError("'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
     try:
@@ -326,10 +324,10 @@ class Operation(object):
   def fromXML( cls, element ):
     """ generate Operation instance from :element: 
     
-    :param ElementTree.Element element: subrequest element
+    :param ElementTree.Element element: operation element
     """
     if not isinstance( element, type(ElementTree.Element("operation")) ):
-      raise TypeError("wrong argument type %s, excpected ElementTree.Element" % type(element) )
+      raise TypeError( "wrong argument type %s, expected ElementTree.Element" % type( element ) )
     if element.tag != "operation":
       raise ValueError("wrong tag <%s>, expected <operation>!" % element.tag )
     fromDict = dict( [ (key, value) for key, value in element.attrib.items() if value ] ) 

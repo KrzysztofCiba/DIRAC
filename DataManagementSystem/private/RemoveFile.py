@@ -28,6 +28,7 @@ import os
 # # from DIRAC
 from DIRAC import S_OK, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from types import DictType
 
 ########################################################################
 class RemoveFile(BaseOperation):

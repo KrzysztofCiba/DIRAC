@@ -74,6 +74,11 @@ class BaseOperation( object ):
       cls.__dataLoggingClient = DataLoggingClient()
     return cls.__dataLoggingClient
 
+  def withProxy( self, ownerDN, ownerGroup ):
+    """ proxy wrapper """
+    pass
+
+
   def __call__( self ):
     """ this one should be implemented in the inherited classes
 
