@@ -24,9 +24,10 @@ __RCSID__ = "$Id $"
 # @brief Definition of RequestTask class.
 
 # # imports
-from DIRAC import gLogger, S_OK, gMonitor
+from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 
 ########################################################################
 class RequestTask( object ):
@@ -38,7 +39,7 @@ class RequestTask( object ):
   # # request client
   __requestClient = None
 
-  def __init__( self, requestXML, handlers ):
+  def __init__( self, requestXML, handlersDict ):
     """c'tor
 
     :param self: self reference
@@ -46,14 +47,74 @@ class RequestTask( object ):
     :param dict opHandlers: operation handlers
     """
     self.request = Request.fromXML()["Value"]
-    self.handelrs = handlers
+    # # handlers dict
+    self.handlersDict = handlersDict
+    # # handlers class def
+    self.handlers = {}
+    # # own sublogger
     self.log = gLogger.getSubLogger( self.request.RequestName )
+    # # own gMOnitor activities
     gMonitor.registerActivity( "RequestsAtt", "Requests processed",
                                "RequestTask", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RequestsFail", "Requests failed",
                                "RequestTask", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RequestsDone", "Requests done",
                                "RequestTask", "Requests/min", gMonitor.OP_SUM )
+  @staticmethod
+  def loadHandler( pluginPath ):
+    """ Create an instance of requested plugin class, loading and importing it when needed.
+    This function could raise ImportError when plugin cannot be find or TypeError when
+    loaded class object isn't inherited from BaseOperation class.
+    :param str pluginName: dotted path to plugin, specified as in import statement, i.e.
+    "DIRAC.CheesShopSystem.private.Cheddar" or alternatively in 'normal' path format
+    "DIRAC/CheesShopSystem/private/Cheddar"
+
+    :return: object instance
+    This function try to load and instantiate an object from given path. It is assumed that:
+
+    - :pluginPath: is pointing to module directory "importable" by python interpreter, i.e.: it's
+    package's top level directory is in $PYTHONPATH env variable,
+    - the module should consist a class definition following module name,
+    - the class itself is inherited from DIRAC.RequestManagementSystem.private.BaseOperation.BaseOperation
+    If above conditions aren't meet, function is throwing exceptions:
+
+    - ImportError when class cannot be imported
+    - TypeError when class isn't inherited from BaseOepration
+    """
+    if "/" in pluginPath:
+      pluginPath = ".".join( [ chunk for chunk in pluginPath.split( "/" ) if chunk ] )
+    pluginName = pluginPath.split( "." )[-1]
+    if pluginName not in globals():
+      mod = __import__( pluginPath, globals(), fromlist = [ pluginName ] )
+      pluginClassObj = getattr( mod, pluginName )
+    else:
+      pluginClassObj = globals()[pluginName]
+
+    if not issubclass( pluginClassObj, BaseOperation ):
+      raise TypeError( "operation handler '%s' isn't inherited from BaseOperation class" % pluginName )
+    # # return an instance
+    return pluginClassObj
+
+  def getHandler( self, operation ):
+    """ return instance of a handler for a given operation type
+
+    :param Operation operation: Operation instance
+    """
+    if operation.Type not in self.handlersDict:
+      return S_ERROR( "handler for operation '%s' not set" % operation.Type )
+    handler = self.handlers.get( operation.Type, None )
+    if not handler:
+      try:
+        handlerCls = self.loadHandler( self.handlersDict[operation.Type] )
+        self.handlers[operation.Type] = handlerCls()
+        handler = self.handlers[ operation.Type ]
+      except ( ImportError, TypeError ), error:
+        self.log.exception( "getHandler: %s" % str( error ), lException = error )
+        return S_ERROR( str( error ) )
+    # # set operation for this handler
+    handler.setOperation( operation )
+    # # and return
+    return S_OK( handler )
 
   @classmethod
   def requestClient( cls ):
@@ -62,37 +123,26 @@ class RequestTask( object ):
       cls.__requestClient = RequestClient()
     return cls.__requestClient
 
-  def makeGlobal( self, objName, objDef ):
-    """ export :objDef: to global name space using :objName: name
-
-    :param self: self reference
-    :param str objName: symbol name
-    :param mixed objDef: symbol definition
-    :throws: NameError if symbol of that name is already in
-    """
-    if objName not in __builtins__:
-      if type( __builtins__ ) == type( {} ):
-        __builtins__[objName] = objDef
-      else:
-        setattr( __builtins__, objName, objDef )
-
   def __call__( self ):
     """ request processing """
     gMonitor.addMark( "RequestsAtt", 1 )
     while self.request.getWaiting():
       operation = self.request.getWaiting()
-      if operation.Type not in self.handlers:
-        self.log.error( "handler for '%s' operation not defined" % operation.Type )
+      handler = self.getHandler( operation )
+      if not handler["OK"]:
+        self.log.error( "unable to process operation %s: %s" % ( operation.Type, handler["Message"] ) )
         break
+      handler = handler["Value"]
       try:
-        ret = self.handlers[operation.Type]( operation )()
-        if not ret["OK"]:
-          # # bail out on error
-          self.log.error( ret["Message"] )
-          return ret
+        exe = handler()
+        if not exe["OK"]:
+          self.log.error( "unable to process operation %s: %s" % ( operation.Type, exe["Message"] ) )
+          break
       except Exception, error:
-        self.log.exception( error )
+        self.log.exeption( "hit by exception: %s" % str( error ), lException = error )
         break
+      if operation.Status in ( "Done", "Failed" ):
+        continue
 
     if self.request.Status == "Done":
       gMonitor.addMark( "RequestsDone", 1 )
@@ -111,5 +161,3 @@ class RequestTask( object ):
       return updateRequest
     # # if we're here request has been processed
     return S_OK()
-
-

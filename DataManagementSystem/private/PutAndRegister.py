@@ -42,7 +42,18 @@ class PutAndRegister( BaseOperation ):
     :param self: self reference
     """
     ## base class ctor
-    BaseOperation.__init__(self, operation)
+    BaseOperation.__init__( self, operation )
+    # # gMonitor stuff
+    gMonitor.registerActivity( "Put and register", "Put and register operations",
+                               "PutAndRegister", "Attempts/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Put failed", "Failed puts",
+                               "PutAndRegister", "Failed/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Put successful", "Successful puts",
+                               "PutAndRegister", "Successful/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "File registration successful", "Successful file registrations",
+                               "PutAndRegister", "Successful/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "File registration failed", "Failed file registrations",
+                               "PutAndRegister", "Failed/min", gMonitor.OP_SUM )
 
 
   def __call__( self ):
@@ -72,7 +83,7 @@ class PutAndRegister( BaseOperation ):
         self.log.info("skipping file %s, status is %s" % ( lfn,  opFile.Status ) )
         continue
       
-      gMonitor.addMark( "Put and register", 1 )
+      gMonitor.addMark( "Files Put", 1 )
 
       pfn = opFile.PFN if opFile.PFN else ""
       guid = opFile.GUID if opFile.GUID else ""

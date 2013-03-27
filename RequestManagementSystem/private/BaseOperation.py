@@ -24,7 +24,10 @@ __RCSID__ = "$Id $"
 # @date 2013/03/13 13:49:02
 # @brief Definition of BaseOperation class.
 
-from DIRAC import gLogger, gMonitor
+import os
+from DIRAC import gLogger, gMonitor, S_ERROR, S_OK
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 
 ########################################################################
 class BaseOperation( object ):
@@ -43,6 +46,10 @@ class BaseOperation( object ):
 
     :param Operation operation: Operation instance
     """
+    # # placeholders for operation and request
+    self.operation = None
+    self.request = None
+
     if operation:
       self.setOperation( operation )
     # # std monitor
@@ -57,7 +64,6 @@ class BaseOperation( object ):
       self.log = gLogger.getSubLogger( "%s/%s/%s" % ( self.request.RequestName,
                                                       self.request.Order,
                                                       self.operation.Type ) )
-
   @classmethod
   def replicaManager( cls ):
     """ ReplicaManger getter """
@@ -74,10 +80,51 @@ class BaseOperation( object ):
       cls.__dataLoggingClient = DataLoggingClient()
     return cls.__dataLoggingClient
 
+  def withProxyForLFN( self, lfn ):
+    """ get proxy for lfn """
+    dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
+    if not dirMeta["OK"]:
+      return dirMeta
+    dirMeta = dirMeta["Value"]
+
+    ownerRole = "/%s" % dirMeta["OwnerRole"] if not dirMeta["OwnerRole"].startswith( "/" ) else dirMeta["OwnerRole"]
+    ownerDN = dirMeta["OwnerDN"]
+
+    ownerProxy = None
+    for ownerGroup in getGroupsWithVOMSAttribute( ownerRole ):
+      vomsProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup, limited = True,
+                                                   requiredVOMSAttribute = ownerRole )
+      if not vomsProxy["OK"]:
+        self.log.debug( "getProxyForLFN: failed to get VOMS proxy for %s role=%s: %s" % ( ownerDN,
+                                                                                          ownerRole,
+                                                                                          vomsProxy["Message"] ) )
+        continue
+      ownerProxy = vomsProxy["Value"]
+      self.log.debug( "getProxyForLFN: got proxy for %s@%s [%s]" % ( ownerDN, ownerGroup, ownerRole ) )
+      break
+
+    if not ownerProxy:
+      return S_ERROR( "Unable to get owner proxy" )
+
+    dumpToFile = ownerProxy.dumpAllToFile()
+    if not dumpToFile["OK"]:
+      self.log.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
+      return dumpToFile
+    dumpToFile = dumpToFile["Value"]
+    os.environ["X509_USER_PROXY"] = dumpToFile
+
   def withProxy( self, ownerDN, ownerGroup ):
     """ proxy wrapper """
-    pass
-
+    ownerProxy = gProxyManager.downloadVOMSProxy( str( ownerDN ), str( ownerGroup ) )
+    if not ownerProxy["OK"] or not ownerProxy["Value"]:
+      reason = ownerProxy["Message"] if "Message" in ownerProxy else "No valid proxy found in ProxyManager."
+      return S_ERROR( "Change proxy error for '%s'@'%s': %s" % ( ownerDN, ownerGroup, reason ) )
+    ownerProxyFile = ownerProxy["Value"].dumpAllToFile()
+    if not ownerProxyFile["OK"]:
+      return S_ERROR( ownerProxyFile["Message"] )
+    ownerProxyFile = ownerProxyFile["Value"]
+    os.environ["X509_USER_PROXY"] = ownerProxyFile
+    return S_OK( ownerProxyFile )
 
   def __call__( self ):
     """ this one should be implemented in the inherited classes

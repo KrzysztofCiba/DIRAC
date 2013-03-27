@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: RequestAgent 
-    =======================
+    ==================
  
     .. module: RequestAgent
     :synopsis: request processing agent
@@ -24,56 +24,22 @@ __RCSID__ = "$Id $"
 # @brief Definition of RequestAgent class.
 
 ## imports 
-
+import time
 ## from DIRAC
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 
-def loadHandler( pluginPath, getInstance=False ):
-  """ Create an instance of requested plugin class, loading and importing it when needed.
-  This function could raise ImportError when plugin cannot be find or TypeError when
-  loaded class object isn't inherited from BaseOperation class.
-  :param str pluginName: dotted path to plugin, specified as in import statement, i.e.
-  "DIRAC.CheesShopSystem.private.Cheddar" or alternatively in 'normal' path format
-  "DIRAC/CheesShopSystem/private/Cheddar"
-  
-  :return: object instance
-  This function try to load and instantiate an object from given path. It is assumed that:
-  
-  - :pluginPath: is pointing to module directory "importable" by python interpreter, i.e.: it's
-  package's top level directory is in $PYTHONPATH env variable,
-  - the module should consist a class definition following module name,
-  - the class itself is inherited from DIRAC.RequestManagementSystem.private.BaseOperation.BaseOperation
-  If above conditions aren't meet, function is throwing exceptions:
-  
-  - ImportError when class cannot be imported
-  - TypeError when class isn't inherited from BaseOepration
-  
-  """
-  if "/" in pluginPath:
-    pluginPath = ".".join( [ chunk for chunk in pluginPath.split("/") if chunk ] )
-  pluginName = pluginPath.split(".")[-1]
-  if pluginName not in globals():
-    mod = __import__( pluginPath, globals(), fromlist=[ pluginName ] )
-    pluginClassObj = getattr( mod, pluginName )
-  else:
-    pluginClassObj = globals()[pluginName]
-  
-  if not issubclass( pluginClassObj, BaseOperation ):
-    raise TypeError( "operation handler '%s' isn't inherited from BaseOperation class" % pluginName )
-  ## return an instance
-  return pluginClassObj() if getInstance else pluginClassObj
+# # agent name
+AGENT_NAME = "RequestManagement/RequestAgent"
 
 ########################################################################
 class RequestAgent( AgentModule ):
   """
   .. class:: RequestAgent
 
-  request processing agent
+  request processing agent using ProcessPool and Operation handlers
   """
   ## process pool
   __processPool = None
@@ -88,9 +54,9 @@ class RequestAgent( AgentModule ):
   ## ProcessPool queue size 
   __queueSize = 20
   ## ProcessTask default timeout in seconds
-  __taskTimeout = 300
-  ## ProcessPool finalisation timeout 
-  __poolTimeout = 300
+  __taskTimeout = 900
+  # # ProcessPool finalization timeout
+  __poolTimeout = 900
   ## ProcessPool sleep time
   __poolSleep = 5
   ## placeholder for RequestClient instance
@@ -98,7 +64,7 @@ class RequestAgent( AgentModule ):
 
   def __init__( self, *args, **kwargs ):
     """ c'tor """
-
+    # # call base class ctor
     AgentModule.__init__( self, *args, **kwargs )
 
     ## ProcessPool related stuff
@@ -166,7 +132,7 @@ class RequestAgent( AgentModule ):
 
     :param str requestName: Request.RequestName
     """
-    if request.RequestName in self.__requestCache:
+    if requestName in self.__requestCache:
       del self.__requestCache[requestName]
     return S_OK()
 
@@ -204,18 +170,18 @@ class RequestAgent( AgentModule ):
     return S_OK()
 
   def initialize( self ):
-    """ initialise agent """
-    self.handlers = { }
+    """ initialize agent
+
+    at the moment creates handlers dictionary
+    """
+    self.handlersDict = { }
     for opHandler in self.opHandlers:
-      try:
-        handlerName = opHandler.split("/")[-1]
-        self.handlers[ handlerName ] = loadHandler( opHandler )
-        self.log.info("initialize: loaded handler '%s' for operation '%s'" % ( opHandler, handlerName ) )
-      except ( ImportError, TypeError ), error:
-        self.log.exception( error )
-    if not self.handlers:
-      self.log.error("initalize: operation handlers not loaded, check config!")
-      return S_ERROR("Operation handlers not loaded!")
+      handlerName = opHandler.split( "/" )[-1]
+      self.handlersDict[ handlerName ] = opHandler
+      self.log.info( "initialize: registered handler '%s' for operation '%s'" % ( opHandler, handlerName ) )
+    if not self.handlersDict:
+      self.log.error( "initialize: operation handlers not set, check configuration option 'Operations'!" )
+      return S_ERROR( "Operation handlers not set!" )
     return S_OK()
 
   def execute( self ):
@@ -235,7 +201,7 @@ class RequestAgent( AgentModule ):
       ## OK, we've got you
       request = getRequest["Value"]
       taskID = request.RequestName
-      ## save curent request in cache  
+      # # save current request in cache
       self.cacheRequest( request )
 
       self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(), 
@@ -248,7 +214,7 @@ class RequestAgent( AgentModule ):
           self.log.info("spawning task for request '%s'" % ( request.RequestName ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
                                                            kwargs = { "requestXML" : request.toXML()["Value"],
-                                                                      "handlers" : self.handlers },
+                                                                      "handlersDict" : self.handlersDict },
                                                            taskID = taskID,
                                                            blocking = True,
                                                            usePoolCallbacks = True,
@@ -269,7 +235,7 @@ class RequestAgent( AgentModule ):
     return S_OK()
 
   def finalize( self ):
-    """ agent finalisation """
+    """ agent finalization """
     if self.__processPool:
       self.processPool().finalize( timeout = self.__poolTimeout )
     self.resetAllRequests()
@@ -302,7 +268,7 @@ class RequestAgent( AgentModule ):
         self.log.exception( str(error) )
     
   def exceptionCallback( self, taskID, taskException ):
-    """ definition of exception callbak function
+    """ definition of exception callback function
     
     :param str taskID: Request.RequestName
     :param Exception taskException: Exception instance
