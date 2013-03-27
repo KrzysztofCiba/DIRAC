@@ -27,7 +27,9 @@ import time
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 ## from DIRAC 
 from DIRAC import gLogger, gConfig
-from DIRAC.RequestManagementSystem.Client.Request import Request, Operation, File
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
 class RequestClientTests(unittest.TestCase):
@@ -50,7 +52,8 @@ class RequestClientTests(unittest.TestCase):
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/Host', 'localhost' )
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/DBName', 'ReqDB' )
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/User', 'Dirac' )
-    gConfig.setOptionValue( '/Systems/RequestManagement/Test/URLs/RequestManager', 'dips://volhcb13.cern.ch:9143/RequestManagement/RequestManager' )
+    gConfig.setOptionValue( '/Systems/RequestManagement/Test/URLs/RequestManager', 
+                            'dips://volhcb13.cern.ch:9143/RequestManagement/RequestManager' )
 
   def tearDown( self ):
     """ test case tear down """

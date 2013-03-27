@@ -75,25 +75,25 @@ class RequestValidatorTests(unittest.TestCase):
     ret = validator.validate( self.request )
     self.assertEqual( ret, { 'Message' : "Operation #0 in request 'test_request' hasn't got Type set", 
                              'OK' : False } )
-    self.operation.Type = "replicateAndRegister"
+    self.operation.Type = "ReplicateAndRegister"
 
     ## files not present 
     ret = validator.validate( self.request )
-    self.assertEqual( ret, { 'Message' : "Operation #0 of type 'replicateAndRegister' hasn't got files to process.", 
+    self.assertEqual( ret, { 'Message' : "Operation #0 of type 'ReplicateAndRegister' hasn't got files to process.", 
                              'OK' : False } )
     self.operation.addFile( self.file ) 
 
     ## targetSE not set
     ret = validator.validate( self.request )
-    self.assertEqual( ret,  { 'Message' : "Operation #0 of type 'replicateAndRegister' is missing TargetSE attribute.", 
+    self.assertEqual( ret,  { 'Message' : "Operation #0 of type 'ReplicateAndRegister' is missing TargetSE attribute.", 
                               'OK': False } )
     self.operation.TargetSE = "CERN-USER"
 
     ## missing LFN
     ret = validator.validate( self.request )
     self.assertEqual( ret,  
-                      { "Message" : "Operation #0 of type 'replicateAndRegister' is missing LFN attribute for file.", 
-                        "OK": False} )
+                      { "Message" : "Operation #0 of type 'ReplicateAndRegister' is missing LFN attribute for file.", 
+                        "OK": False } )
     self.file.LFN = "/a/b/c"
 
 
@@ -125,7 +125,6 @@ class RequestValidatorTests(unittest.TestCase):
     self.file.ChecksumType = None
     ret = validator.validate( self.request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
-
 
     ## all OK
     ret = validator.validate( self.request )

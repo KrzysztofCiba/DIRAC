@@ -31,7 +31,7 @@ class RequestValidator(object):
   This class validates newly created requests (before setting them in RequestManager) for
   required attributes.
   """
-  reqAttrs = { "Diset" : { "Operation": [ "Arguments" ],  "Files" : [] },
+  reqAttrs = { "ForwardDISET" : { "Operation": [ "Arguments" ],  "Files" : [] },
                "PutAndRegister" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
                "ReplicateAndRegister" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN" ] },
                "PhysicalRemoval" : { "Operation" : ["TargetSE" ], "Files" : [ "LFN", "PFN" ] },
@@ -40,7 +40,6 @@ class RequestValidator(object):
                "ReTransfer" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
                "RegisterFile" : { "Operation" : [], "Files" : [ "LFN", "PFN", "Size", 
                                                                 "ChecksumType", "Checksum", "GUID"] } }
-
   def __init__( self ):
     """ c'tor 
 
@@ -89,8 +88,8 @@ class RequestValidator(object):
   def hasFiles( request ):
     """ check for files presence """
     for operation in request:
-      if operation.Type in ( "putAndRegister", "replicateAndRegister", "physicalRemoval", 
-                             "removeFile", "replicaRemoval", "reTransfer" ):
+      if operation.Type in ( "PutAndRegister", "ReplicateAndRegister", "PhysicalRemoval", 
+                             "RemoveFile", "RemoveReplica", "Retransfer" ):
         if not len( operation ):
           return S_ERROR( "Operation #%d of type '%s' hasn't got files to process." % ( request.indexOf( operation ),
                                                                                         operation.Type ) )
