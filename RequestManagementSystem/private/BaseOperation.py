@@ -26,6 +26,7 @@ __RCSID__ = "$Id $"
 
 import os
 from DIRAC import gLogger, gMonitor, S_ERROR, S_OK
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 
@@ -40,6 +41,8 @@ class BaseOperation( object ):
   __replicaManager = None
   # # private data logging client
   __dataLoggingClient = None
+  # # private ResourceStatusClient
+  __rssClient = None
 
   def __init__( self, operation = None ):
     """c'tor
@@ -49,16 +52,22 @@ class BaseOperation( object ):
     # # placeholders for operation and request
     self.operation = None
     self.request = None
-
+    name = self.__class__.__name__
+    self.log = gLogger.getSubLogger( name, True )
     if operation:
       self.setOperation( operation )
     # # std monitor
-    name = self.__class__.__name__
     for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
       gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
 
   def setOperation( self, operation ):
-      """ operation setter """
+      """ operation and request setter
+
+      :param Operation operation: operation instance
+      :raises: TypeError is :operation: in not an instance of Operation
+      """
+      if not isinstance( operation, Operation ):
+        raise TypeError( "expecting Operation instance" )
       self.operation = operation
       self.request = operation._parent
       self.log = gLogger.getSubLogger( "%s/%s/%s" % ( self.request.RequestName,
@@ -79,6 +88,14 @@ class BaseOperation( object ):
       from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
       cls.__dataLoggingClient = DataLoggingClient()
     return cls.__dataLoggingClient
+
+  @classmethod
+  def rssClient( cls ):
+    """ ResourceStatusClient getter """
+    if not cls.__rssClient:
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+      cls.__rssClient = ResourceStatusClient()
+    return cls.__rssClient
 
   def withProxyForLFN( self, lfn ):
     """ get proxy for lfn """
@@ -118,7 +135,7 @@ class BaseOperation( object ):
     ownerProxy = gProxyManager.downloadVOMSProxy( str( ownerDN ), str( ownerGroup ) )
     if not ownerProxy["OK"] or not ownerProxy["Value"]:
       reason = ownerProxy["Message"] if "Message" in ownerProxy else "No valid proxy found in ProxyManager."
-      return S_ERROR( "Change proxy error for '%s'@'%s': %s" % ( ownerDN, ownerGroup, reason ) )
+      return S_ERROR( "Error when getting proxy for '%s'@'%s': %s" % ( ownerDN, ownerGroup, reason ) )
     ownerProxyFile = ownerProxy["Value"].dumpAllToFile()
     if not ownerProxyFile["OK"]:
       return S_ERROR( ownerProxyFile["Message"] )

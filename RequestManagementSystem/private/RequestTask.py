@@ -6,13 +6,13 @@
 ########################################################################
 
 """ :mod: RequestTask
-    =======================
+    =================
 
     .. module: RequestTask
     :synopsis: request processing task
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    request processing task
+    request processing task to be used inside ProcessTask created in RequestAgent
 """
 
 __RCSID__ = "$Id $"
@@ -96,7 +96,8 @@ class RequestTask( object ):
     return pluginClassObj
 
   def getHandler( self, operation ):
-    """ return instance of a handler for a given operation type
+    """ return instance of a handler for a given operation type on demand
+        all created handlers are kept in self.handlers dict for further use
 
     :param Operation operation: Operation instance
     """
@@ -126,38 +127,49 @@ class RequestTask( object ):
   def __call__( self ):
     """ request processing """
     gMonitor.addMark( "RequestsAtt", 1 )
+
     while self.request.getWaiting():
+      # # get waiting operation
       operation = self.request.getWaiting()
+      # # and hendlre for it
       handler = self.getHandler( operation )
       if not handler["OK"]:
         self.log.error( "unable to process operation %s: %s" % ( operation.Type, handler["Message"] ) )
         break
       handler = handler["Value"]
+      # # and execute
       try:
         exe = handler()
         if not exe["OK"]:
           self.log.error( "unable to process operation %s: %s" % ( operation.Type, exe["Message"] ) )
+          gMonitor.addMark( "RequestsFail", 1 )
           break
       except Exception, error:
         self.log.exeption( "hit by exception: %s" % str( error ), lException = error )
+        gMonitor.addMark( "RequestsFail", 1 )
         break
-      if operation.Status in ( "Done", "Failed" ):
-        continue
+      # # operation still waiting? break!
+      if operation.Status not in ( "Done", "Failed" ):
+        break
 
+    # # final checks
+
+    # # request done?
     if self.request.Status == "Done":
       gMonitor.addMark( "RequestsDone", 1 )
+      # # and there is a job waiting for it? finalize!
       if self.request.JobID:
         finalizeRequest = self.requestClient.finalize( self.request, self.request.JobID )
         if not finalizeRequest["OK"]:
           self.log.error( "unable to finalize request %s: %s" % ( self.request.RequestName,
-                                                                 finalizeRequest["Message"] ) )
+                                                                  finalizeRequest["Message"] ) )
           return finalizeRequest
-    else:
-      gMonitor.addMark( "RequestsFail", 1 )
 
+    # # put back request to the RequestDB
     updateRequest = self.requestClient().updateRequest( self.request )
     if not updateRequest["OK"]:
       self.log.error( updateRequest["Message"] )
       return updateRequest
+
     # # if we're here request has been processed
     return S_OK()
