@@ -46,7 +46,7 @@ class RequestTask( object ):
     :param str requestXML: request serilised to XML
     :param dict opHandlers: operation handlers
     """
-    self.request = Request.fromXML()["Value"]
+    self.request = Request.fromXML( requestXML )["Value"]
     # # handlers dict
     self.handlersDict = handlersDict
     # # handlers class def
@@ -127,11 +127,15 @@ class RequestTask( object ):
   def __call__( self ):
     """ request processing """
     gMonitor.addMark( "RequestsAtt", 1 )
-
-    while self.request.getWaiting():
+    while self.request.Status == "Waiting":
       # # get waiting operation
       operation = self.request.getWaiting()
-      # # and hendlre for it
+      if not operation["OK"]:
+        self.log.error( operation["Message"] )
+        return operation
+      operation = operation["Value"]
+      self.log.always( operation )
+      # # and hendler for it
       handler = self.getHandler( operation )
       if not handler["OK"]:
         self.log.error( "unable to process operation %s: %s" % ( operation.Type, handler["Message"] ) )
@@ -145,7 +149,7 @@ class RequestTask( object ):
           gMonitor.addMark( "RequestsFail", 1 )
           break
       except Exception, error:
-        self.log.exeption( "hit by exception: %s" % str( error ), lException = error )
+        self.log.exception( "hit by exception: %s" % str( error ) )
         gMonitor.addMark( "RequestsFail", 1 )
         break
       # # operation still waiting? break!
@@ -156,6 +160,7 @@ class RequestTask( object ):
 
     # # request done?
     if self.request.Status == "Done":
+      self.log.always( "request done" )
       gMonitor.addMark( "RequestsDone", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
