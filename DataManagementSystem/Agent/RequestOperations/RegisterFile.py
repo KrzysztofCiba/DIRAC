@@ -5,9 +5,9 @@
 # Date: 2013/03/19 13:55:14
 ########################################################################
 
-""" :mod: RegisterOperation 
+""" :mod: RegisterOperation
     =======================
- 
+
     .. module: RegisterOperation
     :synopsis: register operation handler
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -17,13 +17,13 @@
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file RegisterOperation.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/19 13:55:24
 # @brief Definition of RegisterOperation class.
 
-## imports 
+# # imports
 from DIRAC import gMonitor, S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 
@@ -31,86 +31,69 @@ from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 class RegisterFile( BaseOperation ):
   """
   .. class:: RegisterOperation
-  
+
   register operation handler
   """
 
-  def __init__( self, operation ):
+  def __init__( self, operation = None ):
     """c'tor
 
     :param self: self reference
+    :param Operation operation: Operation instance
     """
     BaseOperation.__init__( self, operation )
-    ## register specific monitor info
-    gMonitor.registerActivity( "RegFileSucc", "Registration successful",
+    # # RegisterFile specific monitor info
+    gMonitor.registerActivity( "RegFileOK", "Successful file registrations",
                                self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RegFileFail", "Registration failed",
+    gMonitor.registerActivity( "RegFileFail", "Failed file registrations",
                                self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
-    
+
   def __call__( self ):
     """ call me maybe """
-    ## list of targetSE
-    targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split(",") 
+    # # list of targetSE
+    targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
                              if targetSE.strip() ] ) )
-    if not targetSEs:
-      self.error( "targetSE missing" )
-      self.operation.Error = "TargetSE is not specified"
+    if len( targetSEs ) != 1:
+      self.log.error( "wrong TargetSE attribute, expecting one entry, got %s" % len( targetSEs ) )
+      self.operation.Error = "Wrongly formatted TargetSE"
       self.operation.Status = "Failed"
       return S_ERROR( self.operation.Error )
-
-    ## dict for failed LFNs
-    failed = {}
+    targetSE = targetSEs[0]
+    # # counter for failed files
     failedFiles = 0
-
-    # # get cataloge
+    # # catalogue to use
     catalogue = self.operation.Catalogue
-
+    # # loop over files
     for opFile in self.operation:
+      # # skip non-waiting
       if opFile.Status != "Waiting":
         continue
-
+      # # get LFN
       lfn = opFile.LFN
-      failed.setdefault( lfn, {} )
-      pfn = opFile.PFN
-      size = opFile.Size 
-      guid = opFile.GUID
-      chksum = opFile.Checksum
-
-      for targetSE in targetSEs:
-        
-        fileTuple = ( lfn, pfn, size, targetSE, guid, chksum )
-        res = self.replicaManager().registerFile( fileTuple, catalogue )
-        
-        if not res["OK"] or lfn in res["Value"]["Failed"]:
-          self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegisterOperation" )
-          reason = res["Message"] if not res["OK"] else res["Value"]["Failed"][lfn] # "registration in ReplicaManager failed"
-          errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
-          failed[lfn][targetSE] = reason
-          self.log.warn( errorStr )
-          failedFiles += 1
-        else:
-          self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegisterOperation" )
-          self.info( "file %s has been registered at %s" % ( lfn, targetSE ) )
-     
-      if not failed[lfn]:
-        opFile.Status = "Done"
-        self.info( "registerFile: file %s has been registered at all targetSEs" % lfn )        
+      # # and others
+      fileTuple = ( lfn , opFile.PFN, opFile.Size, targetSE, opFile.GUID, opFile.Checksum )
+      # # call ReplicaManager
+      registerFile = self.replicaManager().registerFile( fileTuple, catalogue )
+      # # check results
+      if not registerFile["OK"] or lfn in registerFile["Value"]["Failed"]:
+        gMonitor.addMark( "RegFileFail", 1 )
+        self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegisterFile" )
+        reason = registerFile["Message"] if not registerFile["OK"] else registerFile["Value"]["Failed"][lfn]
+        errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
+        opFile.Error = reason
+        self.log.warn( errorStr )
+        failedFiles += 1
       else:
-        opFile.Error =  ";".join( [ "%s:%s" % (targetSE, reason.replace("'", "") ) 
-                                    for targetSE, reason in failed[lfn].items() ] )
-
+        gMonitor.addMark( "RegFileOK", 1 )
+        self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegisterFile" )
+        self.info( "file %s has been registered at %s" % ( lfn, targetSE ) )
+        opFile.Status = "Done"
+    # # final check
     if failedFiles:
-      self.log.info("all files processed, %s files failed to register" % failedFiles )
-      errors = []
-      for lfn in failed:
-        for targetSE, reason in failed[lfn].items():
-          error = "%s:%s:%s" % ( lfn, targetSE, reason.replace("'", "") )
-          self.log.warn( "registerFile: %s@%s - %s" % ( lfn, targetSE, reason ) )
-          errors.append( error )
-      self.operation.Error = "Some files failed to register"
+      self.log.info( "all files processed, %s files failed to register" % failedFiles )
+      self.operation.Error = "some files failed to register"
       return S_ERROR( self.operation.Error )
 
-    self.operation.Status = "Done"
     return S_OK()
 
 
