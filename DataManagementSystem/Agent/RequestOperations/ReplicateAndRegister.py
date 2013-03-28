@@ -1,118 +1,157 @@
 ########################################################################
 # $HeadURL $
-# File: ReplicateAndRegisterOperation.py
+# File: ReplicateAndRegister.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 18:49:12
 ########################################################################
-""" :mod: ReplicateAndRegisterOperation
-    =======================
+""" :mod: ReplicateAndRegister
+    ==========================
 
-    .. module: ReplicateAndRegisterOperation
-    :synopsis: ReplicateAndRegisterOperation operation handler
+    .. module: ReplicateAndRegister
+    :synopsis: ReplicateAndRegister operation handler
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    ReplicateAndRegisterOperation operation handler
+    ReplicateAndRegister operation handler
 """
 __RCSID__ = "$Id $"
 # #
-# @file ReplicateAndRegisterOperation.py
+# @file ReplicateAndRegister.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/13 18:49:28
-# @brief Definition of ReplicateAndRegisterOperation class.
+# @brief Definition of ReplicateAndRegister class.
 
 # # imports
-from DIRAC import S_OK, S_ERROR, gMonitor
+from DIRAC import S_OK, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
-class ReplicateAndRegisterOperation( BaseOperation ):
+class ReplicateAndRegister( BaseOperation ):
   """
-  .. class:: ReplicateAndRegisterOperation
+  .. class:: ReplicateAndRegister
 
-  ReplicateAndRegisterOperation operation handler
+  ReplicateAndRegister operation handler
   """
 
-  def __init__( self, operation ):
+  def __init__( self, operation = None ):
     """c'tor
 
     :param self: self reference
+    :param Operation operation: Operation instance
     """
     BaseOperation.__init__( self, operation )
     # # own gMonitor stuff for files
+    name = self.__class__.__name__
+    gMonitor.registerActivity( "ReplicateAndRegisterAtt", "Replicate and register attempted",
+                                name, "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "ReplicateOK", "Replications successful",
+                                name, "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "ReplicateFail", "Replications failed",
+                                name, "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RegisterOK", "Registrations successful",
+                                name, "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RegisterFail", "Registrations failed",
+                                name, "Files/min", gMonitor.OP_SUM )
+
 
   def __call__( self ):
     """ call me maybe """
+
     # # list of targetSEs
     targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
                              if targetSE.strip() ] ) )
     # # source SE
-    sourceSE = self.operation.SourceSE if self.operation.SourceSE else ""
+    sourceSE = self.operation.SourceSE
 
-    # # dict for failed lfns
-    failed = {}
-
+    # # loop over targetSE
     for targetSE in targetSEs:
+
+      # # TODO: add RSS check
+
+      # # loop over files
       for opFile in self.operation:
+        # # skip non-waiting files
         if opFile.Status != "Waiting":
           continue
 
+        gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
         lfn = opFile.LFN
-        failed.setdefault( lfn, { } )
 
-        gMonitor.addMark( "Replicate and register", 1 )
+        # # call ReplicaManager
         res = self.replicaManager().replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
 
         if res["OK"]:
+
           if lfn in res["Value"]["Successful"]:
+
             if "replicate" in res["Value"]["Successful"][lfn]:
+
               repTime = res["Value"]["Successful"][lfn]["replicate"]
               self.log.info( "file %s replicated at %s in %s s." % ( lfn, targetSE, repTime ) )
-              gMonitor.addMark( "Replication successful", 1 )
+
+              gMonitor.addMark( "ReplicateOK", 1 )
+
               if "register" in res["Value"]["Successful"][lfn]:
-                gMonitor.addMark( "Replica registration successful", 1 )
+
+                gMonitor.addMark( "RegisterOK", 1 )
                 regTime = res["Value"]["Successful"][lfn]["register"]
                 self.log.info( "file %s registered at %s in %s s." % ( lfn, targetSE, regTime ) )
+
               else:
-                gMonitor.addMark( "Replica registration failed", 1 )
+
+                gMonitor.addMark( "RegisterFail", 1 )
                 self.log.info( "failed to register %s at %s." % ( lfn, targetSE ) )
+
                 opFile.Error = "Failed to register"
-
-                # # TODO: add RegisterFile operation here
-
-
-                # fileDict = res["Value"]["Failed"][lfn]["register"]
-                # registerRequestDict = {
-                #  "Attributes" : {
-                #    "TargetSE" : fileDict["TargetSE"],
-                #    "Operation": "registerReplica" },
-                #  "Files": [ {
-                #      "LFN" : fileDict["LFN"],
-                #      "PFN" : fileDict["PFN"] } ] }
-                # self.info( "replicateAndRegister: adding registration request for failed replica." )
-                # requestObj.addSubRequest( registerRequestDict, "register" )
+                opFile.Status = "Failed"
+                # # add register replica operation
+                self.addRegisterReplica( opFile, targetSE )
 
             else:
+
               self.log.info( "failed to replicate %s to %s." % ( lfn, targetSE ) )
-              gMonitor.addMark( "Replication failed", 1 )
+              gMonitor.addMark( "ReplicateFail", 1 )
               opFile.Error = "Failed to replicate"
-              failed[lfn][targetSE] = "Replication failed for %s at %s" % ( lfn, targetSE )
+
           else:
-            gMonitor.addMark( "Replication failed", 1 )
+
+            gMonitor.addMark( "ReplicateFail", 1 )
             reason = res["Value"]["Failed"][lfn]
             self.log.error( "failed to replicate and register file %s at %s: %s" % ( lfn, targetSE, reason ) )
-            failed[lfn][targetSE] = reason
+            opFile.Error = reason
+
         else:
-          gMonitor.addMark( "Replication failed", 1 )
+
+          gMonitor.addMark( "ReplicateFail", 1 )
           opFile.Error = "ReplicaManager error: %s" % res["Message"]
           self.log.error( opFile.Error )
-          failed[lfn][targetSE] = res["Message"]
 
-      if not failed[lfn]:
-        self.log.info( "file %s has been successfully processed at all targetSEs" % lfn )
-        opFile.Status = "Done"
-      else:
-        self.log.error( "replication of %s failed: %s" % ( lfn, failed[lfn] ) )
-        opFile.Status = "Failed"
+        if not opFile.Error:
+          self.log.info( "file %s has been replicated to all targetSEs" % lfn )
+          opFile.Status = "Done"
 
     return S_OK()
 
+  def addRegisterReplica( self, opFile, targetSE ):
+    """ add RegisterReplica operation for file
+
+    :param File opFile: operation file
+    :param str targetSE: target SE
+    """
+    # # add RegisterReplica operation
+    registerOperation = Operation()
+    registerOperation.Type = "RegisterReplica"
+    registerOperation.TargetSE = targetSE
+
+    registerFile = File()
+    registerFile.LFN = opFile.LFN
+    registerFile.PFN = opFile.PFN
+    registerFile.GUID = opFile.GUID
+    registerFile.Checksum = opFile.Checksum
+    registerFile.ChecksumType = opFile.ChecksumType
+    registerFile.Size = opFile.Size
+
+    registerOperation.addFile( registerFile )
+    self.request.insertAfter( registerOperation, self.operation )
+    return S_OK()

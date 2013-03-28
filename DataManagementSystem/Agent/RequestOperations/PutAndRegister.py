@@ -115,83 +115,88 @@ class PutAndRegister( BaseOperation ):
                                                              checksum = checksum,
                                                              catalog = catalog )
 
-      if putAndRegister["OK"]:
+      if not putAndRegister["OK"]:
+        gMonitor.addMark( "PutFail", 1 )
+        self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
+        self.log.error( "completely failed to put and register file: %s" % putAndRegister["Message"] )
+        opFile.Error = putAndRegister["Message"]
+        self.operation.Error = putAndRegister["Message"]
+        continue
 
-        if lfn in putAndRegister["Value"]["Successful"]:
+      putAndRegister = putAndRegister["Value"]
 
-          if "put" not in putAndRegister["Value"]["Successful"][lfn]:
+      if lfn in putAndRegister["Failed"]:
+        gMonitor.addMark( "PutFail", 1 )
+        self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
+        reason = putAndRegister["Failed"][lfn]
+        self.log.error( "failed to put and register file %s at %s: %s" % ( lfn, targetSE, reason ) )
+        opFile.Error = reason
+        self.operation.Error = reason
+        continue
 
-            gMonitor.addMark( "PutFail", 1 )
-            self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
+      if lfn in putAndRegister["Successful"]:
 
-            self.log.info( "failed to put %s to %s." % ( lfn, targetSE ) )
-
-            self.operation.Error = "put failed"
-            opFile.Error = "put failed"
-
-          elif "register" not in putAndRegister["Value"]["Successful"][lfn]:
-
-            gMonitor.addMark( "PutOK", 1 )
-            gMonitor.addMark( "RegisterFail", 1 )
-            self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
-            self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
-
-            putTime = putAndRegister["Value"]["Successful"][lfn]["put"]
-            self.log.info( "successfully put %s to %s in %s seconds" % ( lfn, targetSE, putTime ) )
-
-            opFile.Error = "failed to register %s at %s" % ( lfn, targetSE )
-            opFile.Status = "Failed"
-
-            self.log.info( opFile.Error )
-            self.log.info( "setting registration request for failed file" )
-
-            registerOperation = Operation( { "Type" : "RegisterFile",
-                                             "TargetSE" : targetSE,
-                                             "Catalogue" : catalog } )
-            registerFile = File()
-            registerFile.LFN = lfn
-            registerFile.PFN = pfn
-            registerFile.Checksum = checksum
-            registerFile.ChecksumType = opFile.ChecksumType
-            registerFile.GUID = guid
-
-            registerOperation.addFile( registerFile )
-
-            self.request.insertAfter( self.operation, registerOperation )
-
-          else:
-
-            gMonitor.addMark( "PutOK", 1 )
-            gMonitor.addMark( "RegisterOK", 1 )
-            self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
-            self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "PutAndRegister" )
-
-            opFile.Status = "Done"
-
-            putTime = putAndRegister["Value"]["Successful"][lfn]["put"]
-            self.log.info( "successfully put %s to %s in %s seconds" % ( lfn, targetSE, putTime ) )
-            regTime = putAndRegister["Value"]["Successful"][lfn]["register"]
-            self.log.info( "successfully registered %s to %s in %s seconds" % ( lfn, targetSE, regTime ) )
-
-        else:
+        if "put" not in putAndRegister["Successful"][lfn]:
 
           gMonitor.addMark( "PutFail", 1 )
           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
-          reason = putAndRegister["Value"]["Failed"][lfn]
-          self.log.error( "failed to put and register file %s at %s: %s" % ( lfn, targetSE, reason ) )
+          self.log.info( "failed to put %s to %s" % ( lfn, targetSE ) )
 
-          opFile.Error = reason
-          self.operation.Error = reason
+          opFile.Error = "put failed"
+          self.operation.Error = "put failed"
 
-      else:
+        elif "register" not in putAndRegister["Successful"][lfn]:
 
-        gMonitor.addMark( "PutFail", 1 )
-        self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
+          gMonitor.addMark( "PutOK", 1 )
+          gMonitor.addMark( "RegisterFail", 1 )
 
-        self.log.error( "completely failed to put and register file: %s" % putAndRegister["Message"] )
+          self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
+          self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
 
-        opFile.Error = putAndRegister["Message"]
-        self.operation.Error = putAndRegister["Message"]
+          putTime = putAndRegister["Successful"][lfn]["put"]
+          self.log.info( "successfully put %s to %s in %s seconds" % ( lfn, targetSE, putTime ) )
 
+          opFile.Error = "failed to register %s at %s" % ( lfn, targetSE )
+          opFile.Status = "Failed"
+
+          self.log.info( opFile.Error )
+          self.addRegisterReplica( opFile, targetSE )
+
+        else:
+
+          gMonitor.addMark( "PutOK", 1 )
+          gMonitor.addMark( "RegisterOK", 1 )
+
+          self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
+          self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "PutAndRegister" )
+
+          opFile.Status = "Done"
+          for op in ( "put", "register" ):
+            opTime = putAndRegister["Value"]["Successful"][lfn][op]
+            self.log.info( "successfully %s %s to %s in %s seconds" % ( op, lfn, targetSE, opTime ) )
+
+    return S_OK()
+
+  def addRegisterReplica( self, opFile, targetSE ):
+    """ add RegisterReplica operation for file
+
+    :param File opFile: operation file
+    :param str targetSE: target SE
+    """
+    # # add RegisterReplica operation
+    registerOperation = Operation()
+    registerOperation.Type = "RegisterReplica"
+    registerOperation.TargetSE = targetSE
+
+    registerFile = File()
+    registerFile.LFN = opFile.LFN
+    registerFile.PFN = opFile.PFN
+    registerFile.GUID = opFile.GUID
+    registerFile.Checksum = opFile.Checksum
+    registerFile.ChecksumType = opFile.ChecksumType
+    registerFile.Size = opFile.Size
+
+    registerOperation.addFile( registerFile )
+    self.request.insertAfter( registerOperation, self.operation )
     return S_OK()
