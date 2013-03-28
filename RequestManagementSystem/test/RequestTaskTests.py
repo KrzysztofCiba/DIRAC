@@ -21,8 +21,13 @@ __RCSID__ = "$Id $"
 # @brief Definition of RequestTaskTests class.
 # # imports
 import unittest
+from mock import *
 # # SUT
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
+
+## requect client 
+from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+RequestClient = Mock(spec=RequestClient)
 # # from DIRAC
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -36,13 +41,12 @@ class RequestTaskTests( unittest.TestCase ):
 
   def setUp( self ):
     """ test case set up """
-    self.handlerDict = { "ForwardDISET" : "DIRAC/RequestManagementSystem/private/ForwardDISET" }
+    self.handlersDict = { "ForwardDISET" : "DIRAC/RequestManagementSystem/private/ForwardDISET" }
     self.req = Request()
     self.req.RequestName = "foobarbaz"
-    self.op = Operation( { "Type": "ForwardDISET", "Arguments" : "foobar" } )
+    self.op = Operation( { "Type": "ForwardDISET", "Arguments" : "tts10:helloWorldee" } )
     self.req.addOperation( self.op )
-
-    self.task = None  # RequestTask( self.req.toXML()["Value"], self.handlerDict )
+    self.task = None  
 
   def tearDown( self ):
     """ test case tear down """
@@ -52,9 +56,13 @@ class RequestTaskTests( unittest.TestCase ):
 
   def testAPI( self ):
     """ test API """
-    self.task = RequestTask( self.req.toXML()["Value"], self.handlerDict )
+    self.task = RequestTask( self.req.toXML()["Value"], self.handlersDict )
+    self.task.requestClient = Mock( return_value = Mock(spec=RequestClient) ) 
+    self.task.requestClient().updateRequest = Mock()
+    self.task.requestClient().updateRequest.return_value = { "OK" : True, "Value" : None }    
     ret = self.task()
-    print ret
+    self.assertEqual( ret["OK"], True , "call failed")
+
 
 # # tests execution
 if __name__ == "__main__":

@@ -45,27 +45,20 @@ class ForwardDISET( BaseOperation ):
 
   def __call__( self ):
     """ execute RPC stub """
-
-    # # update monitor for attempted
-    gMonitor.addMark( "ForwardDISETAtt", 1 )
-
     # # decode arguments
     try:
-      decode = DEncode.decode( self.operation.Arguments )
+      decode, lenght = DEncode.decode( self.operation.Arguments )  
+      self.log.debug( "decoded len=%s val=%s" % ( lenght, decode ) )
     except ValueError, error:
       self.log.exception( error )
       self.operation.Error = str( error )
       self.operation.Status = "Failed"
-      gMonitor.addMark( "ForwardDISETFail", 1 )
       return S_ERROR( str( error ) )
-    
-    forward = executeRPCStub( decode[0] )
+    forward = executeRPCStub( decode )
     if not forward["OK"]:
-      gMonitor.addMark( "ForwardDISETFail", 1 )
       self.log.error( "unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
+      self.operation.Error = str( error )
       return forward
-
     self.log.info( "DISET forwarding done" )
-    gMonitor.addMark( "ForwardDISETSucc", 1 )
     self.operation.Status = "Done"
     return S_OK()
