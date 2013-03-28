@@ -95,7 +95,7 @@ class RequestTask( object ):
     if not issubclass( pluginClassObj, BaseOperation ):
       raise TypeError( "operation handler '%s' isn't inherited from BaseOperation class" % pluginName )
     for status in ( "Attempted", "Succeeded", "Failed" ):
-      gMonitor.registerActivity( "%s%s" % ( pluginName, status), "s% %s" % ( pluginName, status ),
+      gMonitor.registerActivity( "%s%s" % ( pluginName, status ), "%s %s" % ( pluginName, status ),
                                  pluginName, "Operations/min", gMonitor.OP_SUM  )
     # # return an instance
     return pluginClassObj
@@ -114,10 +114,6 @@ class RequestTask( object ):
         handlerCls = self.loadHandler( self.handlersDict[operation.Type] )
         self.handlers[operation.Type] = handlerCls()
         handler = self.handlers[ operation.Type ]
-        # # add gMonitor stuff here
-        for status in ( "Attempted", "Done", "Failed" ):
-          gMonitor.registerActivity( "%s%s" % ( operation.Type, status ), "s% %s" % ( operation.Type, status ),
-                                     operation.Type, "Operations/min", gMonitor.OP_SUM  )
       except ( ImportError, TypeError ), error:
         self.log.exception( "getHandler: %s" % str( error ), lException = error )
         return S_ERROR( str( error ) )
@@ -146,17 +142,17 @@ class RequestTask( object ):
         self.log.error( operation["Message"] )
         return operation
       operation = operation["Value"]
-
       gMonitor.addMark( "%s%s" % ( operation.Type, "Attempted" ), 1 )
-      # # and hendler for it
+
+      # # and handler for it
       handler = self.getHandler( operation )
       if not handler["OK"]:
         self.log.error( "unable to process operation %s: %s" % ( operation.Type, handler["Message"] ) )
         gMonitor.addMark( "%s%s" % ( operation.Type, "Failed" ), 1 )
-        operation.Error = getHandler["Message"]
+        operation.Error = handler["Message"]
         break
-
       handler = handler["Value"]
+
       # # and execute
       try:
         exe = handler()
@@ -170,7 +166,8 @@ class RequestTask( object ):
         gMonitor.addMark( "%s%s" % ( operation.Type, "Failed" ), 1 )
         gMonitor.addMark( "RequestsFailed", 1 )
         break
-      # # operation still waiting? break!
+
+      # # operation status check 
       if operation.Status == "Done":
         gMonitor.addMark( "%s%s" % ( operation.Type, "Done" ), 1 )
       elif operation.Status == "Failed":
@@ -178,7 +175,8 @@ class RequestTask( object ):
       elif operation.Status in ( "Waiting", "Scheduled" ):
         break
  
-    # # final checks
+    # # request checks
+
     # # request done?
     if self.request.Status == "Done":
       self.log.always( "request done" )

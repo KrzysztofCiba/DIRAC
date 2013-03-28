@@ -30,6 +30,7 @@ from DIRAC import gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 # # agent name
 AGENT_NAME = "RequestManagement/RequestAgent"
@@ -82,7 +83,8 @@ class RequestAgent( AgentModule ):
     self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep )
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
     self.log.info("ProcessTask timeout = %d seconds" % self.__taskTimeout )
-    
+    ##  RequestTask class def
+    self.__requestTask = RequestTask
     ## operation handlers
     self.operationHandlers = self.am_getOption( "Operations", 
                                                 [ "DIRAC/DataManagementSystem/private/ReplicateAndRegister",
@@ -92,8 +94,9 @@ class RequestAgent( AgentModule ):
                                                   "DIRAC/DataManagemnetSystem/private/RemoveFile",
                                                   "DIRAC/DataManagemnetSystem/private/RegisterFile",
                                                   "DIRAC/RequestManagementSystem/private/ForwardDISET" ] )
-    self.log.info( "Operation handlers: %s" % ",".join( self.opHandlers ) )
-
+    self.log.info( "Operation handlers: %s" % ",".join( self.operationHandlers ) )
+    ## handlers dict
+    self.handlersDict = dict()
     ## common monitor activity 
     gMonitor.registerActivity( "Iteration", "Agent Loops", 
                                "RequestAgent", "Loops/min", gMonitor.OP_SUM )
@@ -174,8 +177,7 @@ class RequestAgent( AgentModule ):
 
     at the moment creates handlers dictionary
     """
-    self.handlersDict = { }
-    for opHandler in self.opHandlers:
+    for opHandler in self.operationHandlers:
       handlerName = opHandler.split( "/" )[-1]
       self.handlersDict[ handlerName ] = opHandler
       self.log.info( "initialize: registered handler '%s' for operation '%s'" % ( opHandler, handlerName ) )
@@ -208,7 +210,7 @@ class RequestAgent( AgentModule ):
                                                                     self.processPool().getNumWorkingProcesses() ) )
       while True:
         if not self.processPool().getFreeSlots():
-          self.log.info("No free slots available in processPool, will wait %d seconds to proceed" % self._poolSleep )
+          self.log.info("No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
           time.sleep( self.__poolSleep )
         else:
           self.log.info("spawning task for request '%s'" % ( request.RequestName ) )

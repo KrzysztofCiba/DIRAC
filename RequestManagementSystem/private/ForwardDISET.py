@@ -23,7 +23,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of ForwardDISET class.
 
 # # imports
-from DIRAC import S_OK, S_ERROR, gMonitor
+from DIRAC import S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
