@@ -42,9 +42,9 @@ class RegisterFile( BaseOperation ):
     """
     BaseOperation.__init__( self, operation )
     ## register specific monitor info
-    gMonitor.registerActivity( "RegFileSucc", "Files registratered successfully", 
+    gMonitor.registerActivity( "RegFileSucc", "Registration successful",
                                self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RegFileFail", "Files registration failed", 
+    gMonitor.registerActivity( "RegFileFail", "Registration failed",
                                self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
     
   def __call__( self ):
@@ -62,12 +62,13 @@ class RegisterFile( BaseOperation ):
     failed = {}
     failedFiles = 0
 
-    ## get catalogue
+    # # get cataloge
     catalogue = self.operation.Catalogue
 
     for opFile in self.operation:
-      if opFile.Status in ( "Done", "Failed" ):
+      if opFile.Status != "Waiting":
         continue
+
       lfn = opFile.LFN
       failed.setdefault( lfn, {} )
       pfn = opFile.PFN
@@ -104,13 +105,12 @@ class RegisterFile( BaseOperation ):
       for lfn in failed:
         for targetSE, reason in failed[lfn].items():
           error = "%s:%s:%s" % ( lfn, targetSE, reason.replace("'", "") )
-          self.warn( "registerFile: %s@%s - %s" % ( lfn, targetSE, reason ) )
+          self.log.warn( "registerFile: %s@%s - %s" % ( lfn, targetSE, reason ) )
           errors.append( error )
       self.operation.Error = "Some files failed to register"
       return S_ERROR( self.operation.Error )
 
     self.operation.Status = "Done"
-    gMonitor.addMark( "Successful", 1 )
     return S_OK()
 
 
