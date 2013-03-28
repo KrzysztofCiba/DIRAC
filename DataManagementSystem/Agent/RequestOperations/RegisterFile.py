@@ -4,7 +4,6 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/19 13:55:14
 ########################################################################
-
 """ :mod: RegisterOperation
     =======================
 
@@ -32,7 +31,7 @@ class RegisterFile( BaseOperation ):
   """
   .. class:: RegisterOperation
 
-  register operation handler
+  RegisterFile operation handler
   """
 
   def __init__( self, operation = None ):
@@ -43,9 +42,11 @@ class RegisterFile( BaseOperation ):
     """
     BaseOperation.__init__( self, operation )
     # # RegisterFile specific monitor info
-    gMonitor.registerActivity( "RegFileOK", "Successful file registrations",
+    gMonitor.registerActivity( "RegisterAtt", "Attempted file registrations",
                                self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RegFileFail", "Failed file registrations",
+    gMonitor.registerActivity( "RegisterOK", "Successful file registrations",
+                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RegisterFail", "Failed file registrations",
                                self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
 
   def __call__( self ):
@@ -56,8 +57,19 @@ class RegisterFile( BaseOperation ):
     if len( targetSEs ) != 1:
       self.log.error( "wrong TargetSE attribute, expecting one entry, got %s" % len( targetSEs ) )
       self.operation.Error = "Wrongly formatted TargetSE"
+      for opFile in self.operation:
+
+        gMonitor.addMark( "RegisterAtt", 1 )
+        gMonitor.addMark( "RegisterFail", 1 )
+        self.dataLoggingClient().addFileRecord( opFile.LFN, "RegisterFail",
+                                                self.operation.TargetSE, "", "RegisterFile" )
+
+        opFile.Error = "wrongly formatted targetSE"
+        opFile.Status = "Failed"
+
       self.operation.Status = "Failed"
       return S_ERROR( self.operation.Error )
+
     targetSE = targetSEs[0]
     # # counter for failed files
     failedFiles = 0
@@ -68,6 +80,9 @@ class RegisterFile( BaseOperation ):
       # # skip non-waiting
       if opFile.Status != "Waiting":
         continue
+
+      gMonitor.addMark( "RegisterAtt", 1 )
+
       # # get LFN
       lfn = opFile.LFN
       # # and others
@@ -76,18 +91,24 @@ class RegisterFile( BaseOperation ):
       registerFile = self.replicaManager().registerFile( fileTuple, catalogue )
       # # check results
       if not registerFile["OK"] or lfn in registerFile["Value"]["Failed"]:
-        gMonitor.addMark( "RegFileFail", 1 )
+
+        gMonitor.addMark( "RegisterFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "RegisterFile" )
+
         reason = registerFile["Message"] if not registerFile["OK"] else registerFile["Value"]["Failed"][lfn]
         errorStr = "failed to register LFN %s: %s" % ( lfn, reason )
         opFile.Error = reason
         self.log.warn( errorStr )
         failedFiles += 1
+
       else:
-        gMonitor.addMark( "RegFileOK", 1 )
+
+        gMonitor.addMark( "RegisterOK", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "RegisterFile" )
-        self.info( "file %s has been registered at %s" % ( lfn, targetSE ) )
+
+        self.log.info( "file %s has been registered at %s" % ( lfn, targetSE ) )
         opFile.Status = "Done"
+
     # # final check
     if failedFiles:
       self.log.info( "all files processed, %s files failed to register" % failedFiles )
