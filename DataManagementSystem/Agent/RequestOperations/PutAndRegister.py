@@ -95,18 +95,6 @@ class PutAndRegister( BaseOperation ):
       guid = opFile.GUID
       checksum = opFile.Checksum
 
-      # # missing parameters
-      if "" in ( lfn, pfn, guid, checksum ):
-        self.log.error( "missing parameters: %s" % ( ", ".join( [ k for k, v in { "PFN" : pfn,
-                                                                                  "GUID" : guid,
-                                                                                  "Checksum" : checksum,
-                                                                                  "LFN" : lfn  }.items()
-                                                                  if v in ( "", None ) ] ) ) )
-        opFile.Status = "Failed"
-        opFile.Error = "Wrong parameters"
-        gMonitor.addMark( "PutFail", 1 )
-        continue
-
       # # call RM at least
       putAndRegister = self.replicaManager().putAndRegister( lfn,
                                                              pfn,
@@ -124,19 +112,20 @@ class PutAndRegister( BaseOperation ):
         continue
 
       putAndRegister = putAndRegister["Value"]
-
       if lfn in putAndRegister["Failed"]:
         gMonitor.addMark( "PutFail", 1 )
         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
+
         reason = putAndRegister["Failed"][lfn]
         self.log.error( "failed to put and register file %s at %s: %s" % ( lfn, targetSE, reason ) )
         opFile.Error = reason
         self.operation.Error = reason
         continue
 
-      if lfn in putAndRegister["Successful"]:
+      putAndRegister = putAndRegister["Successful"]
+      if lfn in putAndRegister:
 
-        if "put" not in putAndRegister["Successful"][lfn]:
+        if "put" not in putAndRegister[lfn]:
 
           gMonitor.addMark( "PutFail", 1 )
           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
@@ -145,8 +134,9 @@ class PutAndRegister( BaseOperation ):
 
           opFile.Error = "put failed"
           self.operation.Error = "put failed"
+          continue
 
-        elif "register" not in putAndRegister["Successful"][lfn]:
+        if "register" not in putAndRegister[lfn]:
 
           gMonitor.addMark( "PutOK", 1 )
           gMonitor.addMark( "RegisterFail", 1 )
@@ -154,27 +144,25 @@ class PutAndRegister( BaseOperation ):
           self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
 
-          putTime = putAndRegister["Successful"][lfn]["put"]
-          self.log.info( "successfully put %s to %s in %s seconds" % ( lfn, targetSE, putTime ) )
+          self.log.info( "put of %s to %s took %s seconds" % ( lfn, targetSE, putAndRegister[lfn]["put"] ) )
+          self.log.error( "register of %s to %s failed" % ( lfn, targetSE ) )
 
           opFile.Error = "failed to register %s at %s" % ( lfn, targetSE )
           opFile.Status = "Failed"
 
           self.log.info( opFile.Error )
           self.addRegisterReplica( opFile, targetSE )
+          continue
 
-        else:
+        gMonitor.addMark( "PutOK", 1 )
+        gMonitor.addMark( "RegisterOK", 1 )
 
-          gMonitor.addMark( "PutOK", 1 )
-          gMonitor.addMark( "RegisterOK", 1 )
+        self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
+        self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "PutAndRegister" )
 
-          self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
-          self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "PutAndRegister" )
-
-          opFile.Status = "Done"
-          for op in ( "put", "register" ):
-            opTime = putAndRegister["Value"]["Successful"][lfn][op]
-            self.log.info( "successfully %s %s to %s in %s seconds" % ( op, lfn, targetSE, opTime ) )
+        opFile.Status = "Done"
+        for op in ( "put", "register" ):
+          self.log.info( "%s of %s to %s took %s seconds" % ( op, lfn, targetSE, putAndRegister[lfn][op] ) )
 
     return S_OK()
 

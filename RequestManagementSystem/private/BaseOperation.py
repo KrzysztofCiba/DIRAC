@@ -143,6 +143,20 @@ class BaseOperation( object ):
     os.environ["X509_USER_PROXY"] = ownerProxyFile
     return S_OK( ownerProxyFile )
 
+
+  def rssSEStatus( self, se, status ):
+    """ check SE :se: for status :status:
+
+    :param str se: SE name
+    :param str status: RSS status
+    """
+    rssStatus = self.rssClient().getStorageElementStatus( se, status )
+    if not rssStatus["OK"]:
+      return S_ERROR( "unknown SE: %s" % se )
+    if rssStatus["Value"][se][status] == "Banned":
+      return S_OK( False )
+    return S_OK( True )
+
   def __call__( self ):
     """ this one should be implemented in the inherited classes
 

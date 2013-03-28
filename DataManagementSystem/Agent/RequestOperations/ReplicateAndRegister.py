@@ -21,7 +21,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of ReplicateAndRegister class.
 
 # # imports
-from DIRAC import S_OK, gMonitor
+from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -64,10 +64,38 @@ class ReplicateAndRegister( BaseOperation ):
     # # source SE
     sourceSE = self.operation.SourceSE
 
+    sourceRead = self.rssSEStatus( sourceSE, "Read" )
+    if not sourceRead["OK"]:
+      self.log.error( sourceRead["Message"] )
+      for opFile in self.operation:
+        opFile.Error = sourceRead["Message"]
+        opFile.Status = "Failed"
+      self.operation.Error = sourceRead["Message"]
+      return sourceRead
+
+    if not sourceRead["Value"]:
+      reason = "SourceSE %s is banned for reading" % sourceSE
+      self.log.error( reason )
+      self.operation.Error = reason
+      return S_ERROR( reason )
+
     # # loop over targetSE
     for targetSE in targetSEs:
 
-      # # TODO: add RSS check
+      # # check target SE
+      targetWrite = self.rssSEStatus( targetSE, "Write" )
+      if not targetWrite["OK"]:
+        self.log.error( targetWrite["Message"] )
+        for opFile in self.operation:
+          opFile.Error = targetWrite["Message"]
+          opFile.Status = "Failed"
+        self.operation.Error = sourceRead["Message"]
+        return targetWrite
+      if not targetWrite["Value"]:
+        reason = "TargetSE %s is banned for writing" % targetSE
+        self.log.error( reason )
+        self.operation.Error = reason
+        continue
 
       # # loop over files
       for opFile in self.operation:
