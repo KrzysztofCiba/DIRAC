@@ -24,10 +24,12 @@ __RCSID__ = "$Id $"
 # @brief Definition of RequestTask class.
 
 # # imports
+import os
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 ########################################################################
 class RequestTask( object ):
@@ -54,14 +56,30 @@ class RequestTask( object ):
     # # own sublogger
     self.log = gLogger.getSubLogger( self.request.RequestName )
     # # own gMonitor activities
-    gMonitor.registerActivity( "RequestsAttempted", "Requests processed",
+    gMonitor.registerActivity( "RequestAtt", "Requests processed",
                                "RequestTask", "Requests/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RequestsFailed", "Requests failed",
+    gMonitor.registerActivity( "RequestFail", "Requests failed",
                                "RequestTask", "Requests/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RequestsDone", "Requests done",
+    gMonitor.registerActivity( "RequestOK", "Requests done",
                                "RequestTask", "Requests/min", gMonitor.OP_SUM )
-    
 
+  def setupProxy( self ):
+    """ download and dump request owner proxy to file and env
+
+    :return: S_OK with name of newly created owner proxy file
+    """
+    ownerProxy = gProxyManager.downloadVOMSProxy( str( self.request.OwnerDN ), str( self.request.OwnerGroup ) )
+    if not ownerProxy["OK"] or not ownerProxy["Value"]:
+      reason = ownerProxy["Message"] if "Message" in ownerProxy else "No valid proxy found in ProxyManager."
+      return S_ERROR( "Change proxy error for '%s'@'%s': %s" % ( self.request.OwnerDN,
+                                                                 self.request.OwnerGroup,
+                                                                 reason ) )
+    ownerProxyFile = ownerProxy["Value"].dumpAllToFile()
+    if not ownerProxyFile["OK"]:
+      return S_ERROR( ownerProxyFile["Message"] )
+    ownerProxyFile = ownerProxyFile["Value"]
+    os.environ["X509_USER_PROXY"] = ownerProxyFile
+    return S_OK( ownerProxyFile )
 
   @staticmethod
   def loadHandler( pluginPath ):
@@ -94,9 +112,9 @@ class RequestTask( object ):
       pluginClassObj = globals()[pluginName]
     if not issubclass( pluginClassObj, BaseOperation ):
       raise TypeError( "operation handler '%s' isn't inherited from BaseOperation class" % pluginName )
-    for status in ( "Attempted", "Succeeded", "Failed" ):
-      gMonitor.registerActivity( "%s%s" % ( pluginName, status ), "%s %s" % ( pluginName, status ),
-                                 pluginName, "Operations/min", gMonitor.OP_SUM  )
+    for key, status in ( ( "Att", "Attempted" ), ( "OK", "Succeeded" ) , ( "Fail", "Failed" ) ):
+      gMonitor.registerActivity( "%s%s" % ( pluginName, key ), "%s %s" % ( pluginName, status ),
+                                 pluginName, "Operations/min", gMonitor.OP_SUM )
     # # return an instance
     return pluginClassObj
 
@@ -129,10 +147,23 @@ class RequestTask( object ):
       cls.__requestClient = RequestClient()
     return cls.__requestClient
 
+  def updateRequest( self ):
+    """ put back request to the RequestDB """
+    updateRequest = self.requestClient().updateRequest( self.request )
+    if not updateRequest["OK"]:
+      self.log.error( updateRequest["Message"] )
+    return updateRequest
+
   def __call__( self ):
     """ request processing """
 
-    gMonitor.addMark( "RequestsAttempted", 1 )
+    gMonitor.addMark( "RequestAtt", 1 )
+
+    setupProxy = self.setupProxy()
+    if not setupProxy["OK"]:
+      self.log.error( setupProxy["Message"] )
+      self.request.Error = setupProxy["Message"]
+      return self.updateRequest()
 
     while self.request.Status == "Waiting":
 
@@ -142,13 +173,13 @@ class RequestTask( object ):
         self.log.error( operation["Message"] )
         return operation
       operation = operation["Value"]
-      gMonitor.addMark( "%s%s" % ( operation.Type, "Attempted" ), 1 )
+      gMonitor.addMark( "%s%s" % ( operation.Type, "Att" ), 1 )
 
       # # and handler for it
       handler = self.getHandler( operation )
       if not handler["OK"]:
         self.log.error( "unable to process operation %s: %s" % ( operation.Type, handler["Message"] ) )
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Failed" ), 1 )
+        gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
         operation.Error = handler["Message"]
         break
       handler = handler["Value"]
@@ -158,29 +189,27 @@ class RequestTask( object ):
         exe = handler()
         if not exe["OK"]:
           self.log.error( "unable to process operation %s: %s" % ( operation.Type, exe["Message"] ) )
-          gMonitor.addMark( "%s%s" % ( operation.Type, "Failed" ), 1 )
-          gMonitor.addMark( "RequestsFailed", 1 )
+          gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
+          gMonitor.addMark( "RequestFail", 1 )
           break
       except Exception, error:
         self.log.exception( "hit by exception: %s" % str( error ) )
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Failed" ), 1 )
-        gMonitor.addMark( "RequestsFailed", 1 )
+        gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
+        gMonitor.addMark( "RequestFail", 1 )
         break
 
-      # # operation status check 
+      # # operation status check
       if operation.Status == "Done":
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Done" ), 1 )
+        gMonitor.addMark( "%s%s" % ( operation.Type, "OK" ), 1 )
       elif operation.Status == "Failed":
-        gMonitor.addMark( "%s%s" % ( operation.Type, "Failed" ), 1 )
+        gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
       elif operation.Status in ( "Waiting", "Scheduled" ):
         break
- 
-    # # request checks
 
     # # request done?
     if self.request.Status == "Done":
       self.log.always( "request done" )
-      gMonitor.addMark( "RequestsDone", 1 )
+      gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
         finalizeRequest = self.requestClient.finalize( self.request, self.request.JobID )
@@ -189,11 +218,5 @@ class RequestTask( object ):
                                                                   finalizeRequest["Message"] ) )
           return finalizeRequest
 
-    # # put back request to the RequestDB
-    updateRequest = self.requestClient().updateRequest( self.request )
-    if not updateRequest["OK"]:
-      self.log.error( updateRequest["Message"] )
-      return updateRequest
-
-    # # if we're here request has been processed
-    return S_OK()
+    # # update request to the RequestDB
+    return self.updateRequest()
