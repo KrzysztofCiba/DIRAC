@@ -65,6 +65,19 @@ class RequestValidatorTests(unittest.TestCase):
                              'OK' : False } )
     self.request.RequestName = "test_request"
 
+    # # no ownerDN
+    ret = validator.validate( self.request )
+    self.assertEqual( ret, { 'Message' : "Request 'test_request' is missing OwnerDN value",
+                             'OK': False} )
+    self.request.OwnerDN = "foo/bar=baz"
+
+    # # no owner group
+    ret = validator.validate( self.request )
+    self.assertEqual( ret, { 'Message' : "Request 'test_request' is missing OwnerGroup value",
+                             'OK': False} )
+    self.request.OwnerGroup = "dirac_user"
+
+
     ## no operations 
     ret = validator.validate( self.request )
     self.assertEqual( ret, { 'Message' : "Operations not present in request 'test_request'", 

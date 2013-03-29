@@ -1,15 +1,15 @@
 ########################################################################
 # $HeadURL $
-# File: RequestAgent.py
+# File: RequestExecutingAgent.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/12 15:36:47
 ########################################################################
 
-""" :mod: RequestAgent 
-    ==================
- 
-    .. module: RequestAgent
-    :synopsis: request processing agent
+""" :mod: RequestExecutingAgent
+    ===========================
+
+    .. module: RequestExecutingAgent
+    :synopsis: request executing agent
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     request processing agent
@@ -17,15 +17,15 @@
 
 __RCSID__ = "$Id $"
 
-##
-# @file RequestAgent.py
+# #
+# @file RequestExecutingAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/12 15:36:56
-# @brief Definition of RequestAgent class.
+# @brief Definition of RequestExecutingAgent class.
 
-## imports 
+# # imports
 import time
-## from DIRAC
+# # from DIRAC
 from DIRAC import gMonitor, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
@@ -33,92 +33,91 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 # # agent name
-AGENT_NAME = "RequestManagement/RequestAgent"
+AGENT_NAME = "RequestManagement/RequestExecutingAgent"
 
 ########################################################################
-class RequestAgent( AgentModule ):
+class RequestExecutingAgent( AgentModule ):
   """
-  .. class:: RequestAgent
+  .. class:: RequestExecutingAgent
 
   request processing agent using ProcessPool and Operation handlers
   """
-  ## process pool
+  # # process pool
   __processPool = None
-  ## request cache
-  __requestCache = {}  
-  ## requests/cycle 
-  __requestsPerCycle = 500
-  ## minimal nb of subprocess running 
+  # # request cache
+  __requestCache = {}
+  # # requests/cycle
+  __requestsPerCycle = 100
+  # # minimal nb of subprocess running
   __minProcess = 2
-  ## maximal nb of subprocess executed same time
+  # # maximal nb of subprocess executed same time
   __maxProcess = 4
-  ## ProcessPool queue size 
+  # # ProcessPool queue size
   __queueSize = 20
-  ## ProcessTask default timeout in seconds
+  # # ProcessTask default timeout in seconds
   __taskTimeout = 900
   # # ProcessPool finalization timeout
   __poolTimeout = 900
-  ## ProcessPool sleep time
+  # # ProcessPool sleep time
   __poolSleep = 5
-  ## placeholder for RequestClient instance
+  # # placeholder for RequestClient instance
   __requestClient = None
 
   def __init__( self, *args, **kwargs ):
     """ c'tor """
     # # call base class ctor
     AgentModule.__init__( self, *args, **kwargs )
-
-    ## ProcessPool related stuff
+    # # ProcessPool related stuff
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", self.__requestsPerCycle )
-    self.log.info("requests/cycle = %d" % self.__requestsPerCycle )
+    self.log.info( "requests/cycle = %d" % self.__requestsPerCycle )
     self.__minProcess = self.am_getOption( "MinProcess", self.__minProcess )
-    self.log.info("ProcessPool min process = %d" % self.__minProcess )
+    self.log.info( "ProcessPool min process = %d" % self.__minProcess )
     self.__maxProcess = self.am_getOption( "MaxProcess", 4 )
-    self.log.info("ProcessPool max process = %d" % self.__maxProcess )
+    self.log.info( "ProcessPool max process = %d" % self.__maxProcess )
     self.__queueSize = self.am_getOption( "ProcessPoolQueueSize", self.__queueSize )
-    self.log.info("ProcessPool queue size = %d" % self.__queueSize )
+    self.log.info( "ProcessPool queue size = %d" % self.__queueSize )
     self.__poolTimeout = int( self.am_getOption( "ProcessPoolTimeout", self.__poolTimeout ) )
-    self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout ) 
+    self.log.info( "ProcessPool timeout = %d seconds" % self.__poolTimeout )
     self.__poolSleep = int( self.am_getOption( "ProcessPoolSleep", self.__poolSleep ) )
-    self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep )
+    self.log.info( "ProcessPool sleep time = %d seconds" % self.__poolSleep )
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
-    self.log.info("ProcessTask timeout = %d seconds" % self.__taskTimeout )
-    ##  RequestTask class def
+    self.log.info( "ProcessTask timeout = %d seconds" % self.__taskTimeout )
+    # #  RequestTask class def
     self.__requestTask = RequestTask
-    ## operation handlers
-    self.operationHandlers = self.am_getOption( "Operations", 
-                                                [ "DIRAC/DataManagementSystem/private/ReplicateAndRegister",
-                                                  "DIRAC/DataManagementSystem/private/FTSScheduler", 
-                                                  "DIRAC/DataManagementSystem/private/PutAndRegister",
-                                                  "DIRAC/DataManagemnetSystem/private/RemoveReplica",
-                                                  "DIRAC/DataManagemnetSystem/private/RemoveFile",
-                                                  "DIRAC/DataManagemnetSystem/private/RegisterFile",
-                                                  "DIRAC/RequestManagementSystem/private/ForwardDISET" ] )
+    # # operation handlers
+    self.operationHandlers = self.am_getOption( "Operations",
+                                                [ "DIRAC/DataManagementSystem/Agent/RequestOperations/ReplicateAndRegister",
+                                                  "DIRAC/DataManagementSystem/Agent/RequestOperations/FTSScheduler",
+                                                  "DIRAC/DataManagementSystem/Agent/RequestOperations/PutAndRegister",
+                                                  "DIRAC/DataManagemnetSystem/Agent/RequestOperations/RemoveReplica",
+                                                  "DIRAC/DataManagemnetSystem/Agent/RequestOperations/RemoveFile",
+                                                  "DIRAC/DataManagemnetSystem/Agent/RequestOperations/RegisterFile",
+                                                  "DIRAC/RequestManagementSystem/Agent/RequestOperations/ForwardDISET" ] )
     self.log.info( "Operation handlers: %s" % ",".join( self.operationHandlers ) )
-    ## handlers dict
+    # # handlers dict
     self.handlersDict = dict()
-    ## common monitor activity 
-    gMonitor.registerActivity( "Iteration", "Agent Loops", 
-                               "RequestAgent", "Loops/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Execute", "Request Processed", 
-                               "RequestAgent", "Requests/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Done", "Request Completed", 
-                               "RequestAgent", "Requests/min", gMonitor.OP_SUM )
-    ## create request dict
+    # # common monitor activity
+    gMonitor.registerActivity( "Iteration", "Agent Loops",
+                               "RequestExecutingAgent", "Loops/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Execute", "Request Processed",
+                               "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "Done", "Request Completed",
+                               "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
+    # # create request dict
     self.__requestCache = dict()
 
   def processPool( self ):
     """ facede for ProcessPool """
     if not self.__processPool:
-      minProcess = max( 1, self.__minProcess ) 
+      minProcess = max( 1, self.__minProcess )
       maxProcess = max( self.__minProcess, self.__maxProcess )
-      queueSize = abs(self.__queueSize) 
-      self.log.info( "ProcessPool: minProcess = %d maxProcess = %d queueSize = %d" % ( minProcess, 
-                                                                                       maxProcess, 
+      queueSize = abs( self.__queueSize )
+      self.log.info( "ProcessPool: minProcess = %d maxProcess = %d queueSize = %d" % ( minProcess,
+                                                                                       maxProcess,
                                                                                        queueSize ) )
-      self.__processPool = ProcessPool( minProcess, 
-                                        maxProcess, 
-                                        queueSize, 
+      self.__processPool = ProcessPool( minProcess,
+                                        maxProcess,
+                                        queueSize,
                                         poolCallback = self.resultCallback,
                                         poolExceptionCallback = self.exceptionCallback )
       self.__processPool.daemonize()
@@ -130,7 +129,7 @@ class RequestAgent( AgentModule ):
       self.__requestClient = RequestClient()
     return self.__requestClient
 
-  def cleanCache( self, requestName=None ):
+  def cleanCache( self, requestName = None ):
     """ delete request from requestCache
 
     :param str requestName: Request.RequestName
@@ -146,7 +145,7 @@ class RequestAgent( AgentModule ):
     """
     self.__requestCache.setdefault( request.RequestName, request )
     return S_OK()
-    
+
   def resetRequest( self, requestName ):
     """ put back :requestName: to RequestClient
 
@@ -155,21 +154,21 @@ class RequestAgent( AgentModule ):
     if requestName in self.__requestCache:
       reset = self.requestClient().updateRequest( self.__requestCache[requestName] )
       if not reset["OK"]:
-        return S_ERROR("resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        return S_ERROR( "resetRequest: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
     return S_OK()
 
   def resetAllRequests( self ):
-    """ put back all requests without callback called into requestClient 
+    """ put back all requests without callback called into requestClient
 
     :param self: self reference
     """
-    self.log.info("resetAllRequests: will put %s back requests" % len(self.__requestCache) )
+    self.log.info( "resetAllRequests: will put %s back requests" % len( self.__requestCache ) )
     for requestName, request in self.__requestCache.iteritems():
       reset = self.requestClient().updateRequest( request )
       if not reset["OK"]:
-        self.log.error("resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
+        self.log.error( "resetAllRequests: unable to reset request %s: %s" % ( requestName, reset["Message"] ) )
         continue
-      self.log.debug("resetAllRequests: request %s has been put back with its initial state" % requestName )
+      self.log.debug( "resetAllRequests: request %s has been put back with its initial state" % requestName )
     return S_OK()
 
   def initialize( self ):
@@ -192,29 +191,29 @@ class RequestAgent( AgentModule ):
 
     taskCounter = 0
     while taskCounter < self.__requestsPerCycle:
-      self.log.info("execute: ")
+      self.log.info( "execute: " )
       getRequest = self.requestClient().getRequest()
       if not getRequest["OK"]:
-        self.log.error("execute: %s" % getRequest["Message"] )
+        self.log.error( "execute: %s" % getRequest["Message"] )
         break
       if not getRequest["Value"]:
-        self.log.info("execute: not more waiting requests to process")
+        self.log.info( "execute: not more waiting requests to process" )
         break
-      ## OK, we've got you
+      # # OK, we've got you
       request = getRequest["Value"]
       taskID = request.RequestName
       # # save current request in cache
       self.cacheRequest( request )
 
-      self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(), 
+      self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                     self.processPool().getNumWorkingProcesses() ) )
       while True:
         if not self.processPool().getFreeSlots():
-          self.log.info("No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
+          self.log.info( "No free slots available in processPool, will wait %d seconds to proceed" % self.__poolSleep )
           time.sleep( self.__poolSleep )
         else:
-          self.log.info("spawning task for request '%s'" % ( request.RequestName ) )
-          enqueue = self.processPool().createAndQueueTask( self.__requestTask, 
+          self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
+          enqueue = self.processPool().createAndQueueTask( self.__requestTask,
                                                            kwargs = { "requestXML" : request.toXML()["Value"],
                                                                       "handlersDict" : self.handlersDict },
                                                            taskID = taskID,
@@ -224,16 +223,16 @@ class RequestAgent( AgentModule ):
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
-            self.log.info("successfully enqueued task %s" % taskID )
-            ## update monitor
+            self.log.info( "successfully enqueued task %s" % taskID )
+            # # update monitor
             gMonitor.addMark( "Processed", 1 )
-            ## update request counter
+            # # update request counter
             taskCounter += 1
-            ## task created, a little time kick to proceed
+            # # task created, a little time kick to proceed
             time.sleep( 0.1 )
             break
 
-    ## clean return
+    # # clean return
     return S_OK()
 
   def finalize( self ):
@@ -245,11 +244,11 @@ class RequestAgent( AgentModule ):
 
   def resultCallback( self, taskID, taskResult ):
     """ definition of request callback function
-    
+
     :param str taskID: Reqiest.RequestName
     :param dict taskResult: task result S_OK/S_ERROR
     """
-    self.log.info("%s result callback" %  taskID ) 
+    self.log.info( "%s result callback" % taskID )
 
     if not taskResult["OK"]:
       self.log.error( "%s result callback: %s" % ( taskID, taskResult["Message"] ) )
@@ -257,25 +256,25 @@ class RequestAgent( AgentModule ):
         self.resetRequest( taskID )
       self.cleanCache( taskID )
       return
-    ## clean cache
+    # # clean cache
     self.cleanCache( taskID )
-    
+
     taskResult = taskResult["Value"]
-    ## add monitoring info
+    # # add monitoring info
     monitor = taskResult["monitor"] if "monitor" in taskResult else {}
     for mark, value in monitor.items():
       try:
         gMonitor.addMark( mark, value )
       except Exception, error:
-        self.log.exception( str(error) )
-    
+        self.log.exception( str( error ) )
+
   def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callback function
-    
+
     :param str taskID: Request.RequestName
     :param Exception taskException: Exception instance
     """
     self.log.error( "%s exception callback" % taskID )
     self.log.error( taskException )
     self.resetRequest( taskID )
-    
+

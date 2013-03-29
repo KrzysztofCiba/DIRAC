@@ -59,7 +59,6 @@ class PutAndRegister( BaseOperation ):
 
   def __call__( self ):
     """ PutAndRegister operation processing """
-
     # # list of targetSEs
     targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
                              if targetSE.strip() ] ) )
@@ -77,6 +76,19 @@ class PutAndRegister( BaseOperation ):
       return S_ERROR( "TargetSE should contain only one target, got %s" % targetSEs )
 
     targetSE = targetSEs[0]
+    targetWrite = self.rssSEStatus( targetSE, "Write" )
+    if not targetWrite["OK"]:
+      self.log.error( targetWrite["Message"] )
+      for opFile in self.operation:
+        opFile.Status = "Failed"
+        opFile.Error = "Wrong parameters: %s" % targetWrite["Message"]
+        gMonitor.addMark( "PutAtt", 1 )
+        gMonitor.addMark( "PutFail", 1 )
+      self.operation.Error = targetWrite["Message"]
+    if not targetWrite["Value"]:
+      self.operation.Error = "TargetSE %s is banned for writing"
+      return S_ERROR( self.operation.Error )
+
     catalog = self.operation.Catalogue
 
     # # loop over files

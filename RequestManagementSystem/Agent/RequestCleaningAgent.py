@@ -7,11 +7,10 @@
     .. module: RequestCleaningAgent
     :synopsis: The RequestCleaningAgent removes the already executed requests from the database afte a grace period.
 """
-## rscid
+# # rcsid
 __RCSID__ = "$Id: $" 
-
 # imports
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.Core.Utilities.Time import dateTime, day, second
@@ -24,7 +23,7 @@ class RequestCleaningAgent(AgentModule):
 
   """
   def initialize(self):
-    """ agent initialisation """
+    """ agent initialization """
     self.graceRemovalPeriod = self.am_getOption('GraceRemovalPeriod',7)
     self.checkAssigned = self.am_getOption('CheckAssigned',True)
     self.assignedResetDelay = self.am_getOption('AssignedResetDelay',7200)
