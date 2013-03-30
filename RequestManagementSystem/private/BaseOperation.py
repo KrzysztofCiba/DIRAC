@@ -24,7 +24,9 @@ __RCSID__ = "$Id $"
 # @date 2013/03/13 13:49:02
 # @brief Definition of BaseOperation class.
 
+# # imports
 import os
+# # from DIRAC 
 from DIRAC import gLogger, gMonitor, S_ERROR, S_OK, gConfig
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -82,8 +84,7 @@ class BaseOperation( object ):
         continue
       userName = shifterDict["Value"].get( "User", "" )
       userGroup = shifterDict["Value"].get( "Group", "" )
-      self.log.debug( "got %s shifter: %s %s" % ( shifter, userName, userGroup  ) )
-                      
+
       userDN = CS.getDNForUsername( userName )
       if not userDN["OK"]:
         self.log.error( userDN["Message"] )
@@ -91,25 +92,26 @@ class BaseOperation( object ):
       userDN = userDN["Value"][0]
       vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
       if vomsAttr:
-        self.log.info( "Getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
+        self.log.debug( "getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
                                                                             userGroup, userDN ) )
         getProxy = gProxyManager.downloadVOMSProxyToFile( userDN, userGroup,
                                                         requiredTimeLeft = 1200,
                                                         cacheTime = 4 * 43200 )
       else:
-        self.log.info( "Getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
+        self.log.debug( "getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
         getProxy = gProxyManager.downloadProxyToFile( userDN, userGroup,
                                                       requiredTimeLeft = 1200,
                                                       cacheTime = 4 * 43200 )
       if not getProxy["OK"]:
-        self.log.error( getProxy["Message" ])
-      chain = getProxy[ 'chain' ]
-      fileName = getProxy[ 'Value' ]
-      self.__managersProxiesDict[shifter] = { 'DN' : userDN,
-                                              'username' : userName,
-                                              'group' : userGroup,
-                                              'chain' : chain,
-                                              'proxyFile' : fileName } )
+        self.log.error( getProxy["Message" ] )
+      chain = getProxy["chain"]
+      fileName = getProxy["Value" ]
+      self.log.debug( "got %s: %s %s" % ( shifter, userName, userGroup ) )
+      self.__managersProxiesDict[shifter] = { "ShifterDN" : userDN,
+                                              "ShifterName" : userName,
+                                              "ShifterGroup" : userGroup,
+                                              "Chain" : chain,
+                                              "ProxyFile" : fileName } )
     return S_OK()
 
   def setOperation( self, operation ):
