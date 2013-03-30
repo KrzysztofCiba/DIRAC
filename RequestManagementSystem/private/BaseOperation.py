@@ -26,13 +26,11 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-# # from DIRAC 
-from DIRAC import gLogger, gMonitor, S_ERROR, S_OK, gConfig
+# # from DIRAC
+from DIRAC import gLogger, gMonitor, S_ERROR, S_OK
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Security import CS
 
 ########################################################################
 class BaseOperation( object ):
@@ -47,8 +45,8 @@ class BaseOperation( object ):
   __dataLoggingClient = None
   # # private ResourceStatusClient
   __rssClient = None
-  # # managers credentials dict
-  __managersProxiesDict = { }
+  # # shifter is any
+  __shifter = None
 
   def __init__( self, operation = None ):
     """c'tor
@@ -62,57 +60,20 @@ class BaseOperation( object ):
     self.log = gLogger.getSubLogger( name, True )
     # # setup proxies
     self.__setupManagerProxies()
-    # # setup operation  
+    # # setup operation
     if operation:
       self.setOperation( operation )
     # # std monitor
     for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
       gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
 
-  def __setupManagerProxies( self ):
-    """ get various managers creds """
-    oHelper = Operations()
-    shifters = oHelper.getSections( "Shifter" )
-    if not shifters["OK"]:
-      self.log.error( shifters["Message"] )
-      return shifters
-    shifters = shifters["Value"]
-    for shifter in shifters:
-      shifterDict = oHelper.getOptionsDict( "Shifter/%s" % shifter )
-      if not shifterDict["OK"]:
-        self.log.error( shifterDict["Message"] )
-        continue
-      userName = shifterDict["Value"].get( "User", "" )
-      userGroup = shifterDict["Value"].get( "Group", "" )
+  @property
+  def shifter( self ):
+    return self.__shifter
 
-      userDN = CS.getDNForUsername( userName )
-      if not userDN["OK"]:
-        self.log.error( userDN["Message"] )
-        continue
-      userDN = userDN["Value"][0]
-      vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
-      if vomsAttr:
-        self.log.debug( "getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
-                                                                            userGroup, userDN ) )
-        getProxy = gProxyManager.downloadVOMSProxyToFile( userDN, userGroup,
-                                                        requiredTimeLeft = 1200,
-                                                        cacheTime = 4 * 43200 )
-      else:
-        self.log.debug( "getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
-        getProxy = gProxyManager.downloadProxyToFile( userDN, userGroup,
-                                                      requiredTimeLeft = 1200,
-                                                      cacheTime = 4 * 43200 )
-      if not getProxy["OK"]:
-        self.log.error( getProxy["Message" ] )
-      chain = getProxy["chain"]
-      fileName = getProxy["Value" ]
-      self.log.debug( "got %s: %s %s" % ( shifter, userName, userGroup ) )
-      self.__managersProxiesDict[shifter] = { "ShifterDN" : userDN,
-                                              "ShifterName" : userName,
-                                              "ShifterGroup" : userGroup,
-                                              "Chain" : chain,
-                                              "ProxyFile" : fileName } )
-    return S_OK()
+  @shifter.setter
+  def shifter( self, shifter ):
+    self.__shifter = shifter
 
   def setOperation( self, operation ):
       """ operation and request setter

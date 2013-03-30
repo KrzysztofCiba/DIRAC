@@ -30,6 +30,8 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security import CS
 
 ########################################################################
 class RequestTask( object ):
@@ -55,6 +57,9 @@ class RequestTask( object ):
     self.handlers = {}
     # # own sublogger
     self.log = gLogger.getSubLogger( self.request.RequestName )
+    # # get shifters info
+    self.__managersDict = {}
+    self.__setupManagerProxies()
     # # own gMonitor activities
     gMonitor.registerActivity( "RequestAtt", "Requests processed",
                                "RequestTask", "Requests/min", gMonitor.OP_SUM )
@@ -63,23 +68,79 @@ class RequestTask( object ):
     gMonitor.registerActivity( "RequestOK", "Requests done",
                                "RequestTask", "Requests/min", gMonitor.OP_SUM )
 
+
+  def __setupManagerProxies( self ):
+    """ setup grid proxy for all defined managers """
+    oHelper = Operations()
+    shifters = oHelper.getSections( "Shifter" )
+    if not shifters["OK"]:
+      self.log.error( shifters["Message"] )
+      return shifters
+    shifters = shifters["Value"]
+    for shifter in shifters:
+      shifterDict = oHelper.getOptionsDict( "Shifter/%s" % shifter )
+      if not shifterDict["OK"]:
+        self.log.error( shifterDict["Message"] )
+        continue
+      userName = shifterDict["Value"].get( "User", "" )
+      userGroup = shifterDict["Value"].get( "Group", "" )
+
+      userDN = CS.getDNForUsername( userName )
+      if not userDN["OK"]:
+        self.log.error( userDN["Message"] )
+        continue
+      userDN = userDN["Value"][0]
+      vomsAttr = CS.getVOMSAttributeForGroup( userGroup )
+      if vomsAttr:
+        self.log.debug( "getting VOMS [%s] proxy for shifter %s@%s (%s)" % ( vomsAttr, userName,
+                                                                             userGroup, userDN ) )
+        getProxy = gProxyManager.downloadVOMSProxyToFile( userDN, userGroup,
+                                                          requiredTimeLeft = 1200,
+                                                          cacheTime = 4 * 43200 )
+      else:
+        self.log.debug( "getting proxy for shifter %s@%s (%s)" % ( userName, userGroup, userDN ) )
+        getProxy = gProxyManager.downloadProxyToFile( userDN, userGroup,
+                                                      requiredTimeLeft = 1200,
+                                                      cacheTime = 4 * 43200 )
+      if not getProxy["OK"]:
+        self.log.error( getProxy["Message" ] )
+      chain = getProxy["chain"]
+      fileName = getProxy["Value" ]
+      self.log.debug( "got %s: %s %s" % ( shifter, userName, userGroup ) )
+      self.__managersDict[shifter] = { "ShifterDN" : userDN,
+                                       "ShifterName" : userName,
+                                       "ShifterGroup" : userGroup,
+                                       "Chain" : chain,
+                                       "ProxyFile" : fileName }
+    return S_OK()
+
   def setupProxy( self ):
     """ download and dump request owner proxy to file and env
 
-    :return: S_OK with name of newly created owner proxy file
+    :return: S_OK with name of newly created owner proxy file and shifter name if any
     """
-    ownerProxy = gProxyManager.downloadVOMSProxy( str( self.request.OwnerDN ), str( self.request.OwnerGroup ) )
+    ownerDN = self.request.OwnerDN
+    ownerGroup = self.request.OwnerGroup
+    isShifter = None
+    for shifter, creds in self.__managersDict.items():
+      if creds["ShifterDN"] == ownerDN and creds["ShifterGroup"] == ownerGroup:
+        isShifter = shifter
+    if isShifter:
+      proxyFile = self.__managersDict[isShifter]["ProxyFile"]
+      os.environ["X509_USER_PROXY"] = proxyFile
+      return S_OK( {"Shifter": isShifter, "ProxyFile": proxyFile} )
+
+    # # if we're here owner is not a shifter at all
+    ownerProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup )
     if not ownerProxy["OK"] or not ownerProxy["Value"]:
       reason = ownerProxy["Message"] if "Message" in ownerProxy else "No valid proxy found in ProxyManager."
-      return S_ERROR( "Change proxy error for '%s'@'%s': %s" % ( self.request.OwnerDN,
-                                                                 self.request.OwnerGroup,
-                                                                 reason ) )
+      return S_ERROR( "Change proxy error for '%s'@'%s': %s" % ( ownerDN, ownerGroup, reason ) )
     ownerProxyFile = ownerProxy["Value"].dumpAllToFile()
     if not ownerProxyFile["OK"]:
       return S_ERROR( ownerProxyFile["Message"] )
     ownerProxyFile = ownerProxyFile["Value"]
     os.environ["X509_USER_PROXY"] = ownerProxyFile
-    return S_OK( ownerProxyFile )
+    return S_OK( { "Shifter": isShifter, "ProxyFile": ownerProxyFile } )
 
   @staticmethod
   def loadHandler( pluginPath ):
@@ -164,6 +225,8 @@ class RequestTask( object ):
       self.log.error( setupProxy["Message"] )
       self.request.Error = setupProxy["Message"]
       return self.updateRequest()
+    shifter = setupProxy["Value"]["Shifter"]
+    proxyFile = setupProxy["Value"]["ProxyFile"]
 
     while self.request.Status == "Waiting":
 
@@ -183,6 +246,7 @@ class RequestTask( object ):
         operation.Error = handler["Message"]
         break
       handler = handler["Value"]
+      handler.shifter = shifter
 
       # # and execute
       try:
@@ -205,6 +269,10 @@ class RequestTask( object ):
         gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
       elif operation.Status in ( "Waiting", "Scheduled" ):
         break
+
+    # # not a shifter at all? delete temporary proxy file
+    if not shifter:
+      os.unlink( proxyFile )
 
     # # request done?
     if self.request.Status == "Done":
