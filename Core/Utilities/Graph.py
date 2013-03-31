@@ -303,6 +303,8 @@ class Graph(object):
     """ wall all nodes excuting :nodeFcn: on each node and :edgeFcn: on each edge
     result is a dict { Node.name : result from :nodeFcn:, Edge.name : result from edgeFcn }
     """
+    if not any( self.INORDER, self.PREORDER, self.POSTORDER ):
+      self.INORDER = True
     res = res if res else {}
     self.reset()
     for node in self.nodes():
@@ -316,19 +318,33 @@ class Graph(object):
     ## already visited, return 
     if node.visited:
       return res
-    ## mark node visited
-    node.visited = True 
-    ## execute node fcn 
-    if callable(nodeFcn):
-      res.update( { node.name : nodeFcn( node ) } )
-    for edge in node:
-      ## execute edge fcn
-      if callable(edgeFcn):
-        res[edge.name] = edgeFcn( edge )
-      ## mark edge visited
-      edge.visited = True 
-      res.update( self.walkNode( edge.toNode, nodeFcn, edgeFcn, res ) )  
-    return res
+
+    if self.PREORDER:
+      if callable(nodeFcn):
+        res.update( { node.name : nodeFcn( node ) } )
+        node.visited = True 
+      for edge in node:
+        ## execute edge fcn
+        if callable(edgeFcn):
+          res[edge.name] = edgeFcn( edge )
+        ## mark edge visited
+        edge.visited = True 
+        res.update( self.walkNode( edge.toNode, nodeFcn, edgeFcn, res ) )  
+      return res
+
+    if self.POSTORDER:
+      for edge in node:
+        ## execute edge fcn
+        if callable(edgeFcn):
+          res[edge.name] = edgeFcn( edge )
+        ## mark edge visited
+        edge.visited = True 
+        res.update( self.walkNode( edge.toNode, nodeFcn, edgeFcn, res ) )  
+      if callable(nodeFcn):
+        res.update( { node.name : nodeFcn( node ) } )
+        node.visited = True 
+      return res
+      
 
   def __repr__( self ):
     """ repr operator creating dot string """
