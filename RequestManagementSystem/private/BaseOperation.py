@@ -46,8 +46,8 @@ class BaseOperation( object ):
   __dataLoggingClient = None
   # # private ResourceStatusClient
   __rssClient = None
-  # # shifter
-  __shifter = None
+  # # shifter list
+  __shifterList = []
 
   def __init__( self, operation = None ):
     """c'tor
@@ -166,11 +166,11 @@ class BaseOperation( object ):
 
   @property
   def shifter( self ):
-    return self.__shifter
+    return self.__shifterList
 
   @shifter.setter
-  def shifter( self, shifter ):
-    self.__shifter = shifter
+  def shifter( self, shifterList ):
+    self.__shifterList = shifterList
 
   def __call__( self ):
     """ this one should be implemented in the inherited classes

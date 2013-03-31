@@ -121,10 +121,10 @@ class RequestTask( object ):
     """
     ownerDN = self.request.OwnerDN
     ownerGroup = self.request.OwnerGroup
-    isShifter = None
+    isShifter = []
     for shifter, creds in self.__managersDict.items():
       if creds["ShifterDN"] == ownerDN and creds["ShifterGroup"] == ownerGroup:
-        isShifter = shifter
+        isShifter.append( shifter )
     if isShifter:
       proxyFile = self.__managersDict[isShifter]["ProxyFile"]
       os.environ["X509_USER_PROXY"] = proxyFile
