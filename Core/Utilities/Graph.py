@@ -160,7 +160,15 @@ class Graph(object):
   
   a generic directed graph with attributes attached to its nodes and edges
   """
+  ## metaclass
   __metaclass__ = DynamicProps 
+
+  ## flag to indicate INORDER traversal 
+  __INORDER = True
+  ## flag to indicate PREORDER traversal
+  __PREORDER = False
+  ## flag to indicate POSTORDER traversal
+  __POSTORDER = False
 
   def __init__( self, name, nodes=None, edges=None ):
     """c'tor
@@ -205,6 +213,45 @@ class Graph(object):
     for edge in self.__edges:
       if edge.name == edgeName:
         return edge
+
+  @property
+  def INORDER( self ):
+    """ INORDER getter """
+    return self.__INORDER
+
+  @INORDER.setter
+  def INORDER( self, flag = True ):
+    """ INORDER setter """
+    self.__INORDER = bool( flag )
+    if self.__INORDER:
+      self.__PREORDER = False
+      self.__POSTORDER = False
+      
+  @property
+  def PREORDER( self ):
+    """ PREORDER getter """
+    return self.__PREORDER
+
+  @PREORDER.setter
+  def PREORDER( self, flag = True ):
+    """ PREORDER setter """
+    self.__PREORDER = bool( flag )
+    if self.__PREORDER:
+      self.__INORDER = False
+      self.__POSTORDER = False
+
+  @property
+  def POSTORDER( self ):
+    """ POSTORDER getter """
+    return self.__POSTORDER
+
+  @POSTORDER.setter
+  def POSTORDER( self, flag = True ):
+    """ POSTORDER setter """
+    self.__POSTORDER = bool( flag )
+    if self.__POSTORDER:
+      self.__INORDER = False
+      self.__PRETORDER = False
 
   def connect( self, fromNode, toNode, rwAttrs=None, roAttrs=None ):
     """ connect :fromNode: to :toNode: with edge of attributes """
