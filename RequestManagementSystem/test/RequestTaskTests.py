@@ -44,6 +44,8 @@ class RequestTaskTests( unittest.TestCase ):
     self.handlersDict = { "ForwardDISET" : "DIRAC/RequestManagementSystem/private/ForwardDISET" }
     self.req = Request()
     self.req.RequestName = "foobarbaz"
+    self.req.OwnerGroup = "dirac_user"
+    self.req.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
     self.op = Operation( { "Type": "ForwardDISET", "Arguments" : "tts10:helloWorldee" } )
     self.req.addOperation( self.op )
     self.task = None  

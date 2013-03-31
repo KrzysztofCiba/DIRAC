@@ -246,6 +246,8 @@ class RequestTask( object ):
         operation.Error = handler["Message"]
         break
       handler = handler["Value"]
+
+      # # set shifter property in handler
       handler.shifter = shifter
 
       # # and execute

@@ -16,6 +16,7 @@
     this should be a functor getting Operation as ctor argument
     __call__ should return S_OK/S_ERROR
 
+
 """
 __RCSID__ = "$Id $"
 # #
@@ -45,7 +46,7 @@ class BaseOperation( object ):
   __dataLoggingClient = None
   # # private ResourceStatusClient
   __rssClient = None
-  # # shifter is any
+  # # shifter
   __shifter = None
 
   def __init__( self, operation = None ):
@@ -66,14 +67,6 @@ class BaseOperation( object ):
     # # std monitor
     for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
       gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
-
-  @property
-  def shifter( self ):
-    return self.__shifter
-
-  @shifter.setter
-  def shifter( self, shifter ):
-    self.__shifter = shifter
 
   def setOperation( self, operation ):
       """ operation and request setter
@@ -170,6 +163,14 @@ class BaseOperation( object ):
     if rssStatus["Value"][se][status] == "Banned":
       return S_OK( False )
     return S_OK( True )
+
+  @property
+  def shifter( self ):
+    return self.__shifter
+
+  @shifter.setter
+  def shifter( self, shifter ):
+    self.__shifter = shifter
 
   def __call__( self ):
     """ this one should be implemented in the inherited classes

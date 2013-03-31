@@ -5,7 +5,7 @@
 # Date: 2012/05/25 07:49:30
 ########################################################################
 """ :mod: StrategyHandler 
-    =======================
+    =====================
  
     .. module: StrategyHandler
     :synopsis: implementation of helper class for FTS scheduling
