@@ -4,10 +4,9 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 14:24:21
 ########################################################################
+""" :mod: ReTransfer
+    ================
 
-""" :mod: ReTransfer 
-    =======================
- 
     .. module: ReTransfer
     :synopsis: ReTransfer Operation handler
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -17,13 +16,13 @@
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file ReTransfer.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/02 14:24:31
 # @brief Definition of ReTransfer class.
 
-## imports 
+# # imports
 from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 
@@ -31,7 +30,7 @@ from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 class ReTransfer( BaseOperation ):
   """
   .. class:: ReTransfer
-  
+
 
   online ReTransfer operation handler
   """
