@@ -186,7 +186,7 @@ class PutAndRegister( BaseOperation ):
     """
     # # add RegisterReplica operation
     registerOperation = Operation()
-    registerOperation.Type = "RegisterReplica"
+    registerOperation.Type = "RegisterFile"
     registerOperation.TargetSE = targetSE
 
     registerFile = File()
