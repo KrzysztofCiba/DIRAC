@@ -53,10 +53,14 @@ class FTSSchedule( BaseOperation ):
     gMonitor.registerActivity( "FileScheduleFail", "File schedule failed",
                                "FTSSchedule", "Files/min", gMonitor.OP_SUM )
 
-
-
   def __call__( self ):
     """ execute """
     self.log.always( "called " % self.__class__.__name__ )
+
+
     return S_OK()
+
+  def checkFiles( self ):
+    """ """
+    pass
 

@@ -62,6 +62,8 @@ class RequestExecutingAgent( AgentModule ):
   __poolSleep = 5
   # # placeholder for RequestClient instance
   __requestClient = None
+  # # FTS scheduling flag
+  __FTSMode = False
 
   def __init__( self, *args, **kwargs ):
     """ c'tor """
@@ -201,6 +203,7 @@ class RequestExecutingAgent( AgentModule ):
         break
       # # OK, we've got you
       request = getRequest["Value"]
+      # # set task id
       taskID = request.RequestName
       # # save current request in cache
       self.cacheRequest( request )
@@ -256,17 +259,11 @@ class RequestExecutingAgent( AgentModule ):
         self.resetRequest( taskID )
       self.cleanCache( taskID )
       return
+
     # # clean cache
     self.cleanCache( taskID )
-
     taskResult = taskResult["Value"]
-    # # add monitoring info
-    monitor = taskResult["monitor"] if "monitor" in taskResult else {}
-    for mark, value in monitor.items():
-      try:
-        gMonitor.addMark( mark, value )
-      except Exception, error:
-        self.log.exception( str( error ) )
+    self.log.info( "got %s" % taskResult )
 
   def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callback function
@@ -277,4 +274,3 @@ class RequestExecutingAgent( AgentModule ):
     self.log.error( "%s exception callback" % taskID )
     self.log.error( taskException )
     self.resetRequest( taskID )
-
