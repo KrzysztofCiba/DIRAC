@@ -1,27 +1,26 @@
 ########################################################################
 # $HeadURL $
-# File: RemoveReplica.py
+# File: PhysicalRemoval.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2013/03/25 07:45:06
+# Date: 2013/04/02 11:56:10
 ########################################################################
+""" :mod: PhysicalRemoval
+    =====================
 
-""" :mod: RemoveReplica
-    =======================
-
-    .. module: RemoveReplica
-    :synopsis: removeReplica operation handler
+    .. module: PhysicalRemoval
+    :synopsis: PhysicalRemoval operation handler
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    removeReplica operation handler
+    PhysicalRemoval operation handler
 """
 
 __RCSID__ = "$Id $"
 
 # #
-# @file RemoveReplica.py
+# @file PhysicalRemoval.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/03/25 07:45:17
-# @brief Definition of RemoveReplica class.
+# @date 2013/04/02 11:56:22
+# @brief Definition of PhysicalRemoval class.
 
 # # imports
 import os
@@ -30,37 +29,32 @@ from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 
 ########################################################################
-class RemoveReplica( BaseOperation ):
+class PhysicalRemoval( BaseOperation ):
   """
-  .. class:: RemoveReplica
+  .. class:: PhysicalRemoval
 
   """
 
-  def __init__( self, operation ):
+  def __init__( self, operation = None ):
     """c'tor
 
     :param self: self reference
     """
-    # # base class ctor
     BaseOperation.__init__( self, operation )
     # # gMonitor stuff
-    gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
-                               "RemoveReplica", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveReplicaeOK", "Successful replica removals",
-                               "RemoveReplica", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveReplicaFail", "Failed replica removals",
-                               "RemoveReplica", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical file removals attempted",
+                               "PhysicalRemoval", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "PhysicalRemovalOK", "Successful file physical removals",
+                               "PhysicalRemoval", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "PhysicalRemovalFail", "Failed file physical removals",
+                               "PhysicalRemoval", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "PhysicalRemovalSize", "Physically removed size",
+                               "PhysicalRemoval", "Bytes", gMonitor.OP_ACUM )
 
   def __call__( self ):
-    """ remove replicas """
-    # # prepare list of targetSEs
+    """ perform physical removal operation """
     targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
-                            if targetSE.strip() ] ) )
-    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
-
-    self.log.info( "found %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
-    gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
-
+                           if targetSE.strip() ] ) )
     # # check targetSEs for removal
     bannedTargets = []
     for targetSE in targetSEs:
@@ -82,80 +76,75 @@ class RemoveReplica( BaseOperation ):
     if bannedTargets:
       return S_ERROR( "targets %s are banned for removal" % ",".join( bannedTargets ) )
 
-    # # keep status for each targetSE
+    # # prepare pfn dict
+    toRemoveDict = dict( [ ( opFile.PFN, opFile ) for opFile in self.operation in opFile.Status == "Waiting" ] )
+
+    gMonitor.addMark( "PhysicalRemovalAtt", len( toRemoveDict ) * len( targetSEs ) )
+
+    # # keep errors dict
     removalStatus = dict.fromkeys( toRemoveDict.keys(), None )
-    for lfn in removalStatus:
-      removalStatus[lfn] = dict.fromkeys( targetSEs, None )
+    for pfn in removalStatus:
+      removalStatus[pfn] = dict.fromkeys( targetSEs, "" )
 
     for targetSE in targetSEs:
 
-      self.log.info( "removing replicas at %s" % targetSE )
+      self.log.info( "removing files from %s" % targetSE )
 
-      # # 1st step - bulk removal
+      # # 1st - bulk removal
       bulkRemoval = self.bulkRemoval( toRemoveDict, targetSE )
       if not bulkRemoval["OK"]:
         self.log.error( bulkRemoval["Message"] )
+        self.operation.Error = bulkRemoval["Message"]
         return bulkRemoval
+
       bulkRemoval = bulkRemoval["Value"]
 
-      # # update removal status for successful files
-      removalOK = [ opFile for opFile in bulkRemoval.values() if not opFile.Error ]
-      for opFile in removalOK:
-        removalStatus[lfn][targetSE] = ""
-      gMonitor.addMark( "RemoveReplicaOK", len( removalOK ) )
+      for pfn, opFile in toRemoveDict.items():
+        removalStatus[pfn][targetSE] = bulkRemoval["Failed"].get( pfn, "" )
+        opFile.Error = removalStatus[pfn][targetSE]
 
-      # # 2nd step - process the rest again
-      toRetry = dict( [ ( lfn, opFile ) for lfn, opFile in bulkRemoval.items() if opFile.Error ] )
-      for lfn, opFile in toRetry.items():
+      # # 2nd - single file removal
+      toRetry = dict( [ ( pfn, opFile ) for pfn, opFile in toRemoveDict.items() if pfn in bulkRemoval["Failed"] ] )
+      for pfn, opFile in toRetry.items():
         self.singleRemoval( opFile, targetSE )
         if not opFile.Error:
-          gMonitor.addMark( "RemoveReplicaOK", 1 )
-          removalStatus[lfn][targetSE] = ""
+          removalStatus[pfn][targetSE] = ""
         else:
-          gMonitor.addMark( "RemoveReplicaFail", 1 )
-          removalStatus[lfn][targetSE] = opFile.Error
+          gMonitor.addMark( "PhysicalRemovalFail", 1 )
+          removalStatus[pfn][targetSE] = opFile.Error
 
     # # update file status for waiting files
     failed = 0
     for opFile in self.operation:
       if opFile.Status == "Waiting":
-        errors = [ error for error in removalStatus[lfn].values() if error ]
+        errors = [ error for error in removalStatus[opFile.PFN].values() if error.strip() ]
         if errors:
           failed += 1
           opFile.Error = ",".join( errors )
           if "Write access not permitted for this credential" in opFile.Error:
             opFile.Status = "Failed"
+            gMonitor.addMark( "PhysicalRemovalFail", len( errors ) )
             continue
+        gMonitor.addMark( "PhysicalRemovalOK", len( targetSEs ) )
+        gMonitor.addMark( "PhysicalRemovalSize", opFile.Size * len( targetSEs ) )
         opFile.Status = "Done"
 
     if failed:
-      self.operation.Error = "failed to remove %s replicas" % failed
+      self.operation.Error = "failed to remove %s files" % failed
 
     return S_OK()
 
   def bulkRemoval( self, toRemoveDict, targetSE ):
-    """ remove replicas :toRemoveDict: at :targetSE:
+    """ bulk removal of pfns from :targetSE:
 
-    :param dict toRemoveDict: { lfn: opFile, ... }
+    :param dict toRemoveDict: { pfn : opFile, ... }
     :param str targetSE: target SE name
     """
-    removeReplicas = self.replicaManager().removeReplica( targetSE, toRemoveDict.keys() )
-    if not removeReplicas["OK"]:
-      for opFile in toRemoveDict.values():
-        opFile.Error = removeReplicas["Message"]
-      return S_ERROR( removeReplicas["Message"] )
-    removeReplicas = removeReplicas["Value"]
-    for lfn, opFile in toRemoveDict.items():
-      if lfn in removeReplicas["Failed"]:
-        opFile.Error = removeReplicas["Failed"][lfn]
-    return S_OK()
+    bulkRemoval = self.replicaManager().removeStorageFile( toRemoveDict.keys(), targetSE )
+    return bulkRemoval
 
   def singleRemoval( self, opFile, targetSE ):
-    """ remove opFile replica from targetSE
-
-    :param File opFile: File instance
-    :param str targetSE: target SE name
-    """
+    """ remove single file from :targetSE: """
     proxyFile = None
     if "Write access not permitted for this credential" in opFile.Error:
       # # not a DataManger? set status to failed and return
@@ -170,13 +159,13 @@ class RemoveReplica( BaseOperation ):
             opFile.Error = proxyFile["Message"]
           else:
             proxyFile = proxyFile["Value"]
-            removeReplica = self.replicaManager().removeReplica( targetSE, opFile.LFN )
-            if not removeReplica["OK"]:
-              opFile.Error = removeReplica["Message"]
+            removeFile = self.replicaManager().removeStorageFile( opFile.PFN, targetSE )
+            if not removeFile["OK"]:
+              opFile.Error = removeFile["Message"]
             else:
-              removeReplica = removeReplica["Value"]
-              if opFile.LFN in removeReplica["Failed"]:
-                opFile.Error = removeReplica["Failed"][opFile.LFN]
+              removeFile = removeFile["Value"]
+              if opFile.LFN in removeFile["Failed"]:
+                opFile.Error = removeFile["Failed"][opFile.LFN]
               else:
                 # # reset error - replica has been removed this time
                 opFile.Error = ""
