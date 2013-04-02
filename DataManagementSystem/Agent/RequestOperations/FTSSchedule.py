@@ -30,6 +30,8 @@ __RCSID__ = "$Id $"
 from DIRAC import S_OK, S_ERROR, gMonitor, gConfig
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler
+from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
+
 
 ########################################################################
 class FTSSchedule( BaseOperation ):
