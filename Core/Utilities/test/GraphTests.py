@@ -20,7 +20,7 @@ __RCSID__ = "$Id$"
 ## imports 
 import unittest
 ## SUT
-from DIRAC.Core.Utilities.Graph import Node, Edge, Graph, DynamicProps
+from DIRAC.Core.Utilities.Graph import Node, Edge, Graph, DynamicProps, topologicalSort
 
 class DynamicPropTests( unittest.TestCase ):
   """
@@ -224,13 +224,14 @@ class GraphTests(unittest.TestCase):
     self.assertEqual( anotherNode in gr, True )
     self.assertEqual( anotherEdge in gr, True )
 
-    ## walking
 
     ## walk no nodeFcn
     ret = gr.walkAll()
     self.assertEqual( ret, {} )
+
     for node in gr.nodes():
       self.assertEqual( node.visited, True )
+
     gr.reset()
     for node in gr.nodes():
       self.assertEqual( node.visited, False )
@@ -244,7 +245,12 @@ class GraphTests(unittest.TestCase):
 
   def testDFS( self ):
     gr = Graph( "testGraph", self.nodes, self.edges )
-    gr.topologicalSort()
+    gr.addNode( self.aloneNode )
+    nodesSorted = topologicalSort( gr )
+    nodes = gr.nodes()
+    nodes.sort( key = lambda node: node.clock, reverse = True )
+    self.assertEqual( nodes, nodesSorted, "topo sort failed" )
+    gr.reset()
 
 
 ## test execution
