@@ -71,13 +71,14 @@ class ReplicateAndRegister( BaseOperation ):
         opFile.Error = sourceRead["Message"]
         opFile.Status = "Failed"
       self.operation.Error = sourceRead["Message"]
+      gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
+      gMonitor.addMark( "ReplicateFail", len( self.operation ) )
       return sourceRead
 
     if not sourceRead["Value"]:
-      reason = "SourceSE %s is banned for reading" % sourceSE
-      self.log.error( reason )
-      self.operation.Error = reason
-      return S_ERROR( reason )
+      self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
+      self.log.error( self.operation.Error )
+      return S_ERROR( self.operation.Error )
 
     # # loop over targetSE
     for targetSE in targetSEs:
