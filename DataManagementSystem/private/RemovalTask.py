@@ -5,7 +5,7 @@
 # Date: 2011/10/25 07:52:37
 ########################################################################
 """ :mod: RemovalTask 
-    =======================
+    =================
  
     .. module: RemovalTask
     :synopsis: removal requests processing 

@@ -80,6 +80,26 @@ class ReplicateAndRegister( BaseOperation ):
       self.log.error( self.operation.Error )
       return S_ERROR( self.operation.Error )
 
+    # # check targetSEs for removal
+    bannedTargets = []
+    for targetSE in targetSEs:
+      writeStatus = self.rssSEStatus( targetSE, "Write" )
+      if not writeStatus["OK"]:
+        self.log.error( writeStatus["Message"] )
+        for opFile in self.operation:
+          opFile.Error = "unknown targetSE: %s" % targetSE
+          opFile.Status = "Failed"
+        self.operation.Error = "unknown targetSE: %s" % targetSE
+        return S_ERROR( self.operation.Error )
+
+      if not writeStatus["Value"]:
+        self.log.error( "TargetSE %s in banned for writing right now" % targetSE )
+        bannedTargets.append( targetSE )
+        self.operation.Error += "banned targetSE: %s;" % targetSE
+    # # some targets are banned? return
+    if bannedTargets:
+      return S_ERROR( "%s targets are banned for writing" % ",".join( bannedTargets ) )
+
     # # loop over targetSE
     for targetSE in targetSEs:
 

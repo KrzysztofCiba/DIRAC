@@ -73,11 +73,11 @@ class RemoveReplica( BaseOperation ):
         self.operation.Error = "unknown targetSE: %s" % targetSE
         return S_ERROR( self.operation.Error )
 
-      removeStatus = removeStatus["Value"]
-      if not removeStatus:
+      if not removeStatus["Value"]:
         self.log.error( "%s in banned for remove right now" % targetSE )
         bannedTargets.append( targetSE )
         self.operation.Error += "banned targetSE: %s;" % targetSE
+
     # # some targets are banned? return
     if bannedTargets:
       return S_ERROR( "targets %s are banned for removal" % ",".join( bannedTargets ) )
@@ -87,6 +87,7 @@ class RemoveReplica( BaseOperation ):
     for lfn in removalStatus:
       removalStatus[lfn] = dict.fromkeys( targetSEs, None )
 
+    # # loop over targetSEs
     for targetSE in targetSEs:
 
       self.log.info( "removing replicas at %s" % targetSE )

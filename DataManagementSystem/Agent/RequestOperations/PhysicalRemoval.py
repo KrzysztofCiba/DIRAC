@@ -67,8 +67,7 @@ class PhysicalRemoval( BaseOperation ):
         self.operation.Error = "unknown targetSE: %s" % targetSE
         return S_ERROR( self.operation.Error )
 
-      removeStatus = removeStatus["Value"]
-      if not removeStatus:
+      if not removeStatus["Value"]:
         self.log.error( "%s in banned for remove right now" % targetSE )
         bannedTargets.append( targetSE )
         self.operation.Error += "banned targetSE: %s;" % targetSE
