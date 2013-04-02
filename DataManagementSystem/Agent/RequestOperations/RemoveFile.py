@@ -25,11 +25,11 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-from types import DictType
 # # from DIRAC
-from DIRAC import S_OK, gMonitor
+from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 
 ########################################################################
 class RemoveFile( BaseOperation ):
@@ -71,88 +71,19 @@ class RemoveFile( BaseOperation ):
 
     # # 2nd step - single file removal
     for lfn, opFile in toRemoveDict.items():
-      self.log.debug( "processing single file %s" % lfn )
+      self.log.info( "processing file %s" % lfn )
       singleRemoval = self.singleRemoval( opFile )
       if not singleRemoval["OK"]:
         self.log.error( singleRemoval["Message"] )
         gMonitor.addMark( "RemoveFileFail", 1 )
-
-      try:
-        # # try to remove using proxy already defined in os.environ
-        removal = self.replicaManager().removeFile( lfn )
-        # # file is not existing?
-        if not removal["OK"] and "no such file or directory" in str( removal["Message"] ).lower():
-          removalStatus[lfn] = removal["Message"]
-          continue
-        # # not OK but request belongs to DataManager?
-        if not self.requestOwnerDN and \
-           ( not removal["OK"] and "Write access not permitted for this credential." in removal["Message"] ) or \
-           ( removal["OK"] and "Failed" in removal["Value"] and
-             lfn in removal["Value"]["Failed"] and
-             "permission denied" in str( removal["Value"]["Failed"][lfn] ).lower() ):
-          self.log.debug( "retrieving proxy for %s" % lfn )
-          getProxyForLFN = self.getProxyForLFN( lfn )
-          # # can't get correct proxy? continue...
-          if not getProxyForLFN["OK"]:
-            self.log.warn( "unable to get proxy for file %s: %s" % ( lfn, getProxyForLFN["Message"] ) )
-            removal = getProxyForLFN
-          else:
-            # # you're a DataManager, retry with the new one proxy
-            removal = self.replicaManager().removeFile( lfn )
-      finally:
-        # # make sure DataManager proxy is set back in place
-        if not self.requestOwnerDN and self.dataManagerProxy():
-          # # remove temp proxy
-          if os.environ["X509_USER_PROXY"] != self.dataManagerProxy():
-            os.unlink( os.environ["X509_USER_PROXY"] )
-          # # put back DataManager proxy
-          os.environ["X509_USER_PROXY"] = self.dataManagerProxy()
-
-      # # save error
-      if not removal["OK"]:
-        removalStatus[lfn] = removal["Message"]
         continue
-      # # check fail reason, filter out missing files
-      removal = removal["Value"]
-      if lfn in removal["Failed"]:
-        removalStatus[lfn] = removal["Failed"][lfn]
+      self.log.info( "file %s has been removed" % lfn )
+      gMonitor.addMark( "RemoveFileOK", 1 )
 
-    # # counters
-    filesRemoved = 0
-    filesFailed = 0
-    subRequestError = []
-    # # update File statuses and errors
-    for lfn, error in removalStatus.items():
-
-      # # set file error if any
-      if error:
-        self.log.debug( "%s: %s" % ( lfn, str( error ) ) )
-        fileError = str( error ).replace( "'", "" )[:255]
-        fileError = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn,
-                                                                "Error", fileError )
-      # # no error? file not exists? - we are able to recover
-      if not error or "no such file or directory" in str( error ).lower() or \
-            "file does not exist in the catalog" in str( error ).lower():
-        filesRemoved += 1
-        self.log.info( "successfully removed %s" % lfn )
-        updateStatus = requestObj.setSubRequestFileAttributeValue( index, "removal", lfn, "Status", "Done" )
-        if not updateStatus["OK"]:
-          self.log.error( "unable to change status to 'Done' for %s" % lfn )
-      else:
-        filesFailed += 1
-        self.log.warn( "unable to remove file %s : %s" % ( lfn, error ) )
-        errorStr = str( error )
-        if type( error ) == DictType:
-          errorStr = ";".join( [ "%s:%s" % ( key, value ) for key, value in error.items() ] )
-        errorStr = errorStr.replace( "'", "" )
-        subRequestError.append( "%s:%s" % ( lfn, errorStr ) )
-
-    self.addMark( "RemoveFileSucc", filesRemoved )
-    self.addMark( "RemoveFileFail", filesFailed )
-
-    if filesFailed:
-      self.log.info( "all files processed, %s files failed to remove" % filesFailed )
-      self.operation.Error = ";".join( subRequestError )[:255]
+    # # set
+    failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.items() if opFile.Status in ( "Failed", "Waiting" ) ]
+    if failedFiles:
+      self.operation.Error = "failed to remove %d files" % len( failedFiles )
 
     return S_OK()
 
@@ -162,7 +93,7 @@ class RemoveFile( BaseOperation ):
     :param dict toRemoveDict: { lfn: opFile, ... }
     :return: S_ERROR or S_OK( { lfn: opFile, ... } ) -- dict with files still waiting to be removed
     """
-    bulkRemoval = self.replicaManager().removeFile( toRemoveDict.keys() )
+    bulkRemoval = self.replicaManager().removeFile( toRemoveDict.keys(), force = True )
     if not bulkRemoval["OK"]:
       self.log.error( "unable to remove files: %s" % bulkRemoval["Message"] )
       self.operation.Error = bulkRemoval["Message"]
@@ -184,17 +115,45 @@ class RemoveFile( BaseOperation ):
     return S_OK( toRemoveDict )
 
   def singleRemoval( self, opFile ):
-    """ remove single file """
+    """ remove single file
 
-    pass
+    :param opFile: File instance
+    """
+    # # try to remove with owner proxy
+    if "Write access not permitted for this credential" in opFile.Error:
+      if "DataManager" not in self.shifter:
+        opFile.Status = "Failed"
+      else:
+        # #  you're a data manager - get proxy for LFN and retry
+        saveProxy = os.environ["X509_USER_PROXY"]
+        try:
+          fileProxy = self.getProxyForLFN( opFile.LFN )
+          if not fileProxy["OK"]:
+            opFile.Error = fileProxy["Message"]
+          else:
+            removeFile = self.replicaManager().removeFile( opFile.LFN, force = True )
+            if not removeFile["OK"]:
+              opFile.Error = removeFile["Message"]
+            else:
+              removeFile = removeFile["Value"]
+              if opFile.LFN in removeFile["Failed"]:
+                opFile.Error = removeFile["Failed"][opFile.LFN]
+              else:
+                opFile.Status = "Done"
+        finally:
+          # # put back request owner proxy to env
+          os.environ["X509_USER_PROXY"] = saveProxy
+    # # file removed? update its status to 'Done'
+    if opFile.Status == "Done":
+      return S_OK()
+    return S_ERROR( opFile.Error )
 
-def withProxyForLFN( self, lfn ):
-    """ get proxy for LFN
+def getProxyForLFN( self, lfn ):
+    """ get proxy for LFN and put it into the env
 
     :param self: self reference
     :param str lfn: LFN
     """
-
     dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
     if not dirMeta["OK"]:
       return dirMeta
@@ -213,7 +172,7 @@ def withProxyForLFN( self, lfn ):
                                                                                       vomsProxy["Message"] ) )
         continue
       ownerProxy = vomsProxy["Value"]
-      self.debug( "getProxyForLFN: got proxy for %s@%s [%s]" % ( ownerDN, ownerGroup, ownerRole ) )
+      self.log.debug( "getProxyForLFN: got proxy for %s@%s [%s]" % ( ownerDN, ownerGroup, ownerRole ) )
       break
 
     if not ownerProxy:
@@ -221,7 +180,7 @@ def withProxyForLFN( self, lfn ):
 
     dumpToFile = ownerProxy.dumpAllToFile()
     if not dumpToFile["OK"]:
-      self.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
+      self.log.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
       return dumpToFile
     dumpToFile = dumpToFile["Value"]
     os.environ["X509_USER_PROXY"] = dumpToFile

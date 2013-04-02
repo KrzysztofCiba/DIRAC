@@ -218,8 +218,10 @@ class RequestTask( object ):
   def __call__( self ):
     """ request processing """
 
+    self.log.info( "about to execute request" )
     gMonitor.addMark( "RequestAtt", 1 )
 
+    # # setup proxy for request owner
     setupProxy = self.setupProxy()
     if not setupProxy["OK"]:
       self.log.error( setupProxy["Message"] )
@@ -247,7 +249,7 @@ class RequestTask( object ):
         break
       handler = handler["Value"]
 
-      # # set shifter property in handler
+      # # set shifters list in the handler
       handler.shifter = shifter
 
       # # and execute
@@ -278,7 +280,7 @@ class RequestTask( object ):
 
     # # request done?
     if self.request.Status == "Done":
-      self.log.always( "request done" )
+      self.log.info( "request done" )
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
@@ -287,6 +289,8 @@ class RequestTask( object ):
           self.log.error( "unable to finalize request %s: %s" % ( self.request.RequestName,
                                                                   finalizeRequest["Message"] ) )
           return finalizeRequest
+        else:
+          self.log.info( "request finalized" )
 
     # # update request to the RequestDB
     return self.updateRequest()
