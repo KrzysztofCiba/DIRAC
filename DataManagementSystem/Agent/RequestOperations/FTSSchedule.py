@@ -5,42 +5,56 @@
 # Date: 2013/03/28 09:31:13
 ########################################################################
 
-""" :mod: FTSSchedule 
-    =======================
- 
+""" :mod: FTSSchedule
+    =================
+
     .. module: FTSSchedule
     :synopsis: FTS schedule operation handler
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     FTS schedule operation handler
+
+
+    This one should be executed outside of ProcessPool.
 """
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file FTSSchedule.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/28 09:31:23
 # @brief Definition of FTSSchedule class.
 
-## imports 
+# # imports
 from DIRAC import S_OK, S_ERROR, gMonitor, gConfig
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
+from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler
 
 ########################################################################
-class FTSSchedule(BaseOperation):
+class FTSSchedule( BaseOperation ):
   """
   .. class:: FTSSchedule
-  
+
+  this is special operation that has be executed NOT in task
   """
 
-  def __init__( self, operation=None ):
+  def __init__( self, operation = None ):
     """c'tor
 
     :param self: self reference
     """
     BaseOperation.__init__( self, operation )
-    
+    # # gMonitor stuff
+    gMonitor.registerActivity( "FileScheduleAtt", "Files schedule attempted",
+                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FileScheduleOK", "File schedule successful",
+                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FileScheduleFail", "File schedule failed",
+                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
+
+
+
   def __call__( self ):
     """ execute """
     self.log.always( "called " % self.__class__.__name__ )
