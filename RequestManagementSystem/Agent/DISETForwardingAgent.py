@@ -1,6 +1,9 @@
 # $HeadURL$
 
 """  DISET Forwarding sends DISET requests to their intended destination
+
+Depreciated
+
 """
 
 __RCSID__ = "$Id$"
