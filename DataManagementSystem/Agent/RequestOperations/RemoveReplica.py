@@ -63,6 +63,27 @@ class RemoveReplica( BaseOperation ):
     self.log.info( "found %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )
 
+    # # check targetSEs for removal
+    bannedTargets = []
+    for targetSE in targetSEs:
+      removeStatus = self.rssSEStatus( targetSE, "Remove" )
+      if not removeStatus["OK"]:
+        self.log.error( removeStatus["Message"] )
+        for opFile in self.operation:
+          opFile.Error = "unknown targetSE: %s" % targetSE
+          opFile.Status = "Failed"
+        self.operation.Error = "unknown targetSE: %s" % targetSE
+        return S_ERROR( self.operation.Error )
+
+      removeStatus = removeStatus["Value"]
+      if not removeStatus:
+        self.log.error( "%s in banned for remove right now" % targetSE )
+        bannedTargets.append( targetSE )
+        self.operation.Error += "banned targetSE: %s;" % targetSE 
+    # # some targets are banned? return
+    if bannedTargets:
+      return S_ERROR( "targets %s are banned for removal" % ",".join( bannedTargets ) )
+
     # # keep status for each targetSE
     removalStatus = dict.fromkeys( toRemoveDict.keys(), None )
     for lfn in removalStatus:
@@ -71,21 +92,21 @@ class RemoveReplica( BaseOperation ):
     for targetSE in targetSEs:
 
       self.log.info( "removing replicas at %s" % targetSE )
-      
+
       # # 1st step - bulk removal
       bulkRemoval = self.bulkRemoval( toRemoveDict, targetSE )
       if not bulkRemoval["OK"]:
         self.log.error( bulkRemoval["Message"] )
         continue
       bulkRemoval = bulkRemoval["Value"]
-      
+
       # # update removal status for successful files
       removalOK = [ opFile for opFile in bulkRemoval.values() if not opFile.Error ]
       for opFile in removalOK:
         removalStatus[lfn][targetSE] = ""
       gMonitor.addMark( "RemoveReplicaOK", len( removalOK ) )
-      
-      # # 2nd step - process the rest again 
+
+      # # 2nd step - process the rest again
       toRetry = dict( [ ( lfn, opFile ) for lfn, opFile in bulkRemoval.items() if opFile.Error ] )
       for lfn, opFile in toRetry.items():
         self.singleRemoval( opFile, targetSE )
@@ -100,7 +121,6 @@ class RemoveReplica( BaseOperation ):
     failed = 0
     for opFile in self.operation:
       if opFile.Status == "Waiting":
-
         errors = [ error for error in removalStatus[lfn].values() if error ]
         if errors:
           failed += 1
@@ -109,7 +129,7 @@ class RemoveReplica( BaseOperation ):
             opFile.Status = "Failed"
             continue
         opFile.Status = "Done"
-        
+
     if failed:
       self.operation.Error = "failed to remove %s replicas" % failed
 
@@ -140,6 +160,7 @@ class RemoveReplica( BaseOperation ):
     :param File opFile: File instance
     :param str targetSE: target SE name
     """
+    proxyFile = None
     if "Write access not permitted for this credential" in opFile.Error:
       # # not a DataManger? set status to failed and return
       if "DataManager" not in self.shifter:
@@ -148,10 +169,11 @@ class RemoveReplica( BaseOperation ):
         # #  you're a data manager - save current proxy and get a new one for LFN and retry
         saveProxy = os.environ["X509_USER_PROXY"]
         try:
-          fileProxy = self.getProxyForLFN( opFile.LFN )
-          if not fileProxy["OK"]:
-            opFile.Error = fileProxy["Message"]
+          proxyFile = self.getProxyForLFN( opFile.LFN )
+          if not proxyFile["OK"]:
+            opFile.Error = proxyFile["Message"]
           else:
+            proxyFile = proxyFile["Value"]
             removeReplica = self.replicaManager().removeReplica( targetSE, opFile.LFN )
             if not removeReplica["OK"]:
               opFile.Error = removeReplica["Message"]
@@ -163,46 +185,8 @@ class RemoveReplica( BaseOperation ):
                 # # reset error - replica has been removed this time
                 opFile.Error = ""
         finally:
+          if proxyFile:
+            os.unlink( proxyFile )
           # # put back request owner proxy to env
           os.environ["X509_USER_PROXY"] = saveProxy
-          
     return S_OK( opFile )
-
-def getProxyForLFN( self, lfn ):
-    """ get proxy for LFN and put it into the env
-
-    :param self: self reference
-    :param str lfn: LFN
-    """
-    dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
-    if not dirMeta["OK"]:
-      return dirMeta
-    dirMeta = dirMeta["Value"]
-
-    ownerRole = "/%s" % dirMeta["OwnerRole"] if not dirMeta["OwnerRole"].startswith( "/" ) else dirMeta["OwnerRole"]
-    ownerDN = dirMeta["OwnerDN"]
-
-    ownerProxy = None
-    for ownerGroup in getGroupsWithVOMSAttribute( ownerRole ):
-      vomsProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup, limited = True,
-                                                   requiredVOMSAttribute = ownerRole )
-      if not vomsProxy["OK"]:
-        self.debug( "getProxyForLFN: failed to get VOMS proxy for %s role=%s: %s" % ( ownerDN,
-                                                                                      ownerRole,
-                                                                                      vomsProxy["Message"] ) )
-        continue
-      ownerProxy = vomsProxy["Value"]
-      self.log.debug( "getProxyForLFN: got proxy for %s@%s [%s]" % ( ownerDN, ownerGroup, ownerRole ) )
-      break
-
-    if not ownerProxy:
-      return S_ERROR( "Unable to get owner proxy" )
-
-    dumpToFile = ownerProxy.dumpAllToFile()
-    if not dumpToFile["OK"]:
-      self.log.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
-      return dumpToFile
-    dumpToFile = dumpToFile["Value"]
-    os.environ["X509_USER_PROXY"] = dumpToFile
-
-    return S_OK()

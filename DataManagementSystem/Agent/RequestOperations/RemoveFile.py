@@ -120,6 +120,7 @@ class RemoveFile( BaseOperation ):
     :param opFile: File instance
     """
     # # try to remove with owner proxy
+    proxyFile = None
     if "Write access not permitted for this credential" in opFile.Error:
       if "DataManager" not in self.shifter:
         opFile.Status = "Failed"
@@ -131,6 +132,7 @@ class RemoveFile( BaseOperation ):
           if not fileProxy["OK"]:
             opFile.Error = fileProxy["Message"]
           else:
+            proxyFile = saveProxy["Value"]
             removeFile = self.replicaManager().removeFile( opFile.LFN, force = True )
             if not removeFile["OK"]:
               opFile.Error = removeFile["Message"]
@@ -141,48 +143,11 @@ class RemoveFile( BaseOperation ):
               else:
                 opFile.Status = "Done"
         finally:
+          if proxyFile:
+            os.unlink( proxyFile )
           # # put back request owner proxy to env
           os.environ["X509_USER_PROXY"] = saveProxy
     # # file removed? update its status to 'Done'
     if opFile.Status == "Done":
       return S_OK()
     return S_ERROR( opFile.Error )
-
-def getProxyForLFN( self, lfn ):
-    """ get proxy for LFN and put it into the env
-
-    :param self: self reference
-    :param str lfn: LFN
-    """
-    dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
-    if not dirMeta["OK"]:
-      return dirMeta
-    dirMeta = dirMeta["Value"]
-
-    ownerRole = "/%s" % dirMeta["OwnerRole"] if not dirMeta["OwnerRole"].startswith( "/" ) else dirMeta["OwnerRole"]
-    ownerDN = dirMeta["OwnerDN"]
-
-    ownerProxy = None
-    for ownerGroup in getGroupsWithVOMSAttribute( ownerRole ):
-      vomsProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup, limited = True,
-                                                   requiredVOMSAttribute = ownerRole )
-      if not vomsProxy["OK"]:
-        self.debug( "getProxyForLFN: failed to get VOMS proxy for %s role=%s: %s" % ( ownerDN,
-                                                                                      ownerRole,
-                                                                                      vomsProxy["Message"] ) )
-        continue
-      ownerProxy = vomsProxy["Value"]
-      self.log.debug( "getProxyForLFN: got proxy for %s@%s [%s]" % ( ownerDN, ownerGroup, ownerRole ) )
-      break
-
-    if not ownerProxy:
-      return S_ERROR( "Unable to get owner proxy" )
-
-    dumpToFile = ownerProxy.dumpAllToFile()
-    if not dumpToFile["OK"]:
-      self.log.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
-      return dumpToFile
-    dumpToFile = dumpToFile["Value"]
-    os.environ["X509_USER_PROXY"] = dumpToFile
-
-    return S_OK()

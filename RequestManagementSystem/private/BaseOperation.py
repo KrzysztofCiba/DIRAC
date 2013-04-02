@@ -105,8 +105,12 @@ class BaseOperation( object ):
       cls.__rssClient = ResourceStatusClient()
     return cls.__rssClient
 
-  def withProxyForLFN( self, lfn ):
-    """ get proxy for lfn """
+  def getProxyForLFN( self, lfn ):
+    """ get proxy for lfn
+
+    :param str lfn: LFN
+    :return: S_ERROR or S_OK( "/path/to/proxy/file" )
+    """
     dirMeta = self.replicaManager().getCatalogDirectoryMetadata( lfn, singleFile = True )
     if not dirMeta["OK"]:
       return dirMeta
@@ -137,19 +141,8 @@ class BaseOperation( object ):
       return dumpToFile
     dumpToFile = dumpToFile["Value"]
     os.environ["X509_USER_PROXY"] = dumpToFile
+    return dumpToFile
 
-  def withProxy( self, ownerDN, ownerGroup ):
-    """ proxy wrapper """
-    ownerProxy = gProxyManager.downloadVOMSProxy( str( ownerDN ), str( ownerGroup ) )
-    if not ownerProxy["OK"] or not ownerProxy["Value"]:
-      reason = ownerProxy["Message"] if "Message" in ownerProxy else "No valid proxy found in ProxyManager."
-      return S_ERROR( "Error when getting proxy for '%s'@'%s': %s" % ( ownerDN, ownerGroup, reason ) )
-    ownerProxyFile = ownerProxy["Value"].dumpAllToFile()
-    if not ownerProxyFile["OK"]:
-      return S_ERROR( ownerProxyFile["Message"] )
-    ownerProxyFile = ownerProxyFile["Value"]
-    os.environ["X509_USER_PROXY"] = ownerProxyFile
-    return S_OK( ownerProxyFile )
 
   def rssSEStatus( self, se, status ):
     """ check SE :se: for status :status:
