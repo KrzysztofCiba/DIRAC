@@ -23,7 +23,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSFile class.
 
 # # imports
-
+import datetime
 
 ########################################################################
 class FTSFile( object ):
@@ -32,13 +32,21 @@ class FTSFile( object ):
 
   """
 
-  def __init__( self ):
+  def __init__( self, fromDict = None ):
     """c'tor
 
     :param self: self reference
     """
-    pass
-  
+    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+    self.__data__["Status"] = "Waiting"
+    self.__data__["FTSFileID"] = 0
+    fromDict = fromDict if fromDict else {}
+    for key, value in fromDict.items():
+      if key not in self.__data__:
+        raise AttributeError( "Unknown FTSFile attribute '%s'" % key )
+      if value:
+        setattr( self, key, value )
+
   @staticmethod
   def tabelDesc():
     """ get table desc """
@@ -63,3 +71,22 @@ class FTSFile( object ):
       object.__setattr__( self, name, value )
     except AttributeError, error:
       print name, value, error
+
+  def toSQL( self ):
+    """ prepare SQL INSERT or UPDATE statement """
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
+                for column, value in self.__data__.items()
+                if value and column not in  ( "FTSFileID", "LastUpdate" ) ]
+    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+    query = []
+    if self.FTSFileIDID:
+      query.append( "UPDATE `FTSFile` SET " )
+      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+      query.append( " WHERE `FTSFileID`=%d;\n" % self.RequestID )
+    else:
+      query.append( "INSERT INTO `FTSFile` " )
+      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
+      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+      query.append( columns )
+      query.append( " VALUES %s;" % values )
+    return "".join( query )
