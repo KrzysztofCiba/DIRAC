@@ -250,7 +250,7 @@ class GraphTests( unittest.TestCase ):
 
     global clock
 
-    def topologicalSort( graph ):
+    def topoA( graph ):
       """ topological sort """
       global clock
       nodes = graph.nodes()
@@ -265,7 +265,7 @@ class GraphTests( unittest.TestCase ):
       nodes.sort( key = lambda node: node.clockA )
       return nodes
 
-    def topoSort( graph ):
+    def topoB( graph ):
       """ topological sort """
       global clock
       nodes = graph.nodes()
@@ -284,7 +284,7 @@ class GraphTests( unittest.TestCase ):
     clock = 0
     gr = Graph( "testGraph", self.nodes, self.edges )
     gr.addNode( self.aloneNode )
-    nodesSorted = topologicalSort( gr )
+    nodesSorted = topoA( gr )
     nodes = gr.nodes()
     nodes.sort( key = lambda node: node.clockA, reverse = True )
     self.assertEqual( nodes, nodesSorted, "topoA sort failed" )
@@ -293,12 +293,10 @@ class GraphTests( unittest.TestCase ):
     gr = Graph( "testGraph", self.nodes, self.edges )
     gr.addNode( self.aloneNode )
     gr.reset()
-
-    nodesSorted = topoSort( gr )
+    nodesSorted = topoB( gr )
     nodes = gr.nodes()
     nodes.sort( key = lambda node: node.clockB, reverse = True )
     self.assertEqual( nodes, nodesSorted, "topoB sort failed" )
-
 
   def testBFS( self ):
     """ bfs walk """
