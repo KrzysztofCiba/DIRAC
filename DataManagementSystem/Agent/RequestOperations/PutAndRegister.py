@@ -60,8 +60,9 @@ class PutAndRegister( BaseOperation ):
   def __call__( self ):
     """ PutAndRegister operation processing """
     # # list of targetSEs
-    targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
-                             if targetSE.strip() ] ) )
+
+    targetSEs = self.operation.targetSEList
+
     if len( targetSEs ) != 1:
       self.log.error( "wrong value for TargetSE list = %s, should contain only one target!" % targetSEs )
       self.operation.Error = "Wrong parameters: TargetSE should contain only one targetSE"

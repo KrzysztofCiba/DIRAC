@@ -53,10 +53,10 @@ class ReTransfer( BaseOperation ):
   def __call__( self ):
     """ reTransfer operation execution """
     # # list of targetSEs
-    targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
-                             if targetSE.strip() ] ) )
+    targetSEs = self.operation.targetSEList
     # # get waiting files
     toRetransfer = dict( [ ( opFile.PFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
+
     gMonitor.addMark( "FileReTransferAtt", len( toRetransfer ) )
 
     if len( targetSEs ) != 1:
@@ -69,7 +69,7 @@ class ReTransfer( BaseOperation ):
       return S_ERROR( error )
 
     # # check targetSEs for removal
-    targetSE = targetSE[0]
+    targetSE = targetSEs[0]
     writeStatus = self.rssSEStatus( targetSE, "Write" )
     if not writeStatus["OK"]:
       self.log.error( writeStatus["Message"] )

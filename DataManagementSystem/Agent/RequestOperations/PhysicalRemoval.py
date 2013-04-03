@@ -53,8 +53,8 @@ class PhysicalRemoval( BaseOperation ):
 
   def __call__( self ):
     """ perform physical removal operation """
-    targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
-                           if targetSE.strip() ] ) )
+    # # prepare targetSE list
+    targetSEs = self.operation.targetSEList
     # # check targetSEs for removal
     bannedTargets = []
     for targetSE in targetSEs:

@@ -57,13 +57,9 @@ class ReplicateAndRegister( BaseOperation ):
 
   def __call__( self ):
     """ call me maybe """
-
-    # # list of targetSEs
-    targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
-                             if targetSE.strip() ] ) )
     # # source SE
     sourceSE = self.operation.SourceSE
-
+    # # check source se for read
     sourceRead = self.rssSEStatus( sourceSE, "Read" )
     if not sourceRead["OK"]:
       self.log.error( sourceRead["Message"] )
@@ -80,6 +76,8 @@ class ReplicateAndRegister( BaseOperation ):
       self.log.error( self.operation.Error )
       return S_ERROR( self.operation.Error )
 
+    # # list of targetSEs
+    targetSEs = self.operation.targetSEList
     # # check targetSEs for removal
     bannedTargets = []
     for targetSE in targetSEs:

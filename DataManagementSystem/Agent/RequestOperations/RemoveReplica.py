@@ -54,8 +54,8 @@ class RemoveReplica( BaseOperation ):
   def __call__( self ):
     """ remove replicas """
     # # prepare list of targetSEs
-    targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
-                            if targetSE.strip() ] ) )
+    targetSEs = self.operation.targetSEList
+    # # and dict of files
     toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
 
     self.log.info( "found %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )

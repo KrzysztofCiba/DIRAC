@@ -52,8 +52,7 @@ class RegisterFile( BaseOperation ):
   def __call__( self ):
     """ call me maybe """
     # # list of targetSE
-    targetSEs = list( set( [ targetSE.strip() for targetSE in self.operation.TargetSE.split( "," )
-                             if targetSE.strip() ] ) )
+    targetSEs = self.operation.targetSEList
     if len( targetSEs ) != 1:
       self.log.error( "wrong TargetSE attribute, expecting one entry, got %s" % len( targetSEs ) )
       self.operation.Error = "Wrongly formatted TargetSE"
@@ -73,8 +72,8 @@ class RegisterFile( BaseOperation ):
     targetSE = targetSEs[0]
     # # counter for failed files
     failedFiles = 0
-    # # catalogue to use
-    catalogue = self.operation.Catalogue
+    # # catalog to use
+    catalog = self.operation.Catalogue
     # # loop over files
     for opFile in self.operation:
       # # skip non-waiting
@@ -88,7 +87,7 @@ class RegisterFile( BaseOperation ):
       # # and others
       fileTuple = ( lfn , opFile.PFN, opFile.Size, targetSE, opFile.GUID, opFile.Checksum )
       # # call ReplicaManager
-      registerFile = self.replicaManager().registerFile( fileTuple, catalogue )
+      registerFile = self.replicaManager().registerFile( fileTuple, catalog )
       # # check results
       if not registerFile["OK"] or lfn in registerFile["Value"]["Failed"]:
 
