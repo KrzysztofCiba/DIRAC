@@ -39,17 +39,17 @@ class Request( object ):
   """
   .. class:: Request
 
-  :param int requestID: requestID
-  :param str name: request' name
-  :param str ownerDN: request's owner DN
-  :param str ownerGroup: request owner group
-  :param str setup: DIRAC setup
-  :param str sourceComponent: whatever
-  :param int jobID: jobID
-  :param datetime.datetime creationTime: UTC datetime
-  :param datetime.datetime submissionTime: UTC datetime
-  :param datetime.datetime lastUpdate: UTC datetime
-  :param str status: request's status
+  :param int RequestID: requestID
+  :param str Name: request' name
+  :param str OwnerDN: request's owner DN
+  :param str OwnerGroup: request owner group
+  :param str Setup: DIRAC setup
+  :param str SourceComponent: whatever
+  :param int JobID: jobID
+  :param datetime.datetime CreationTime: UTC datetime
+  :param datetime.datetime SubmissionTime: UTC datetime
+  :param datetime.datetime LastUpdate: UTC datetime
+  :param str Status: request's status
   :param TypedList operations: list of operations
   """
 
@@ -293,7 +293,7 @@ class Request( object ):
 
   @property
   def CreationTime( self ):
-    """ creattion time getter """
+    """ creation time getter """
     return self.__data__["CreationTime"]
 
   @CreationTime.setter

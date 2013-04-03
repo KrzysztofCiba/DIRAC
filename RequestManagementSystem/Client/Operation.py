@@ -210,7 +210,12 @@ class Operation(object):
   def SourceSE( self, value ):
     """ source SE setter """
     self.__data__["SourceSE"] = str(value)[:255] if value else ""
-    
+
+  @property
+  def sourceSEList( self ):
+    """ helper property returning source SEs as a list"""
+    return list( set ( [ sourceSE for sourceSE in self.SourceSE.split( "," ) if sourceSE.strip() ] ) )
+
   @property
   def TargetSE( self ):
     """ target SE prop """
@@ -220,6 +225,11 @@ class Operation(object):
   def TargetSE( self, value ):
     """ target SE setter """
     self.__data__["TargetSE"] = value[:255] if value else ""
+
+  @property
+  def targetSEList( self ):
+    """ helper property returning target SEs as a list"""
+    return list( set ( [ targetSE for targetSE in self.TargetSE.split( "," ) if targetSE.strip() ] ) )
   
   @property
   def Catalogue( self ):
