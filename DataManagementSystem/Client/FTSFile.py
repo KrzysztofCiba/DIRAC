@@ -22,9 +22,6 @@ __RCSID__ = "$Id $"
 # @date 2013/04/02 14:03:54
 # @brief Definition of FTSFile class.
 
-# # imports
-import datetime
-
 ########################################################################
 class FTSFile( object ):
   """
@@ -48,7 +45,7 @@ class FTSFile( object ):
         setattr( self, key, value )
 
   @staticmethod
-  def tabelDesc():
+  def tableDesc():
     """ get table desc """
     return { "Fields" :
               { "FTSFileID" : "INTEGER NOT NULL AUTO_INCREMENT",
@@ -74,10 +71,9 @@ class FTSFile( object ):
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) == str else str( value ) )
                 for column, value in self.__data__.items()
-                if value and column not in  ( "FTSFileID", "LastUpdate" ) ]
-    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+                if value and column != "FTSFileID" ]
     query = []
     if self.FTSFileIDID:
       query.append( "UPDATE `FTSFile` SET " )
