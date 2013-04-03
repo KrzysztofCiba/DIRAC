@@ -27,7 +27,7 @@ class DynamicProps( type ):
 
   metaclass allowing to create properties on the fly
   """
-  def __new__( mcs, name, bases, classdict ):
+  def __new__( cls, name, bases, classdict ):
     """ new operator """
 
     def makeProperty( self, name, value, readOnly = False ):
@@ -55,7 +55,7 @@ class DynamicProps( type ):
     classdict["makeProperty"] = makeProperty
     classdict["_setProperty"] = _setProperty
     classdict["_getProperty"] = _getProperty
-    return type.__new__( mcs, name, bases, classdict )
+    return type.__new__( cls, name, bases, classdict )
 
 class Node( object ):
   """
@@ -335,39 +335,68 @@ class Graph( object ):
     return "\n".join( out )
 
 
-  def dfs( self, preOrder = None, postOrder = None ):
-    """ dfs walk """
+  def explore( self, node, preVisit = None, postVisit = None ):
+    """ explore node """
+    node.visited = True
+    if callable( preVisit ):
+      preVisit( node )
+    for edge in node.edges():
+      if not edge.toNode.visited:
+        self.explore( edge.toNode, preVisit, postVisit )
+    if callable( postVisit ):
+      postVisit( node )
+
+  def dfs( self, preVisit = None, postVisit = None ):
+    """ dfs recursive walk """
     self.reset()
     nodes = list( self.nodes() )
     nodes.sort( key = lambda node: len( node.edges() ), reverse = True )
-
-    def explore( node, preOrder = None, postOrder = None ):
-      node.visited = True
-      if callable( preOrder ):
-        preOrder( node )
-      for edge in node.edges():
-        if not edge.toNode.visited:
-          explore( edge.toNode, preOrder, postOrder )
-      if callable( postOrder ):
-        postOrder( node )
-
     for node in nodes:
       if not node.visited:
-        explore( node, preOrder, postOrder )
+        self.explore( node, preVisit, postVisit )
 
+  def bfs( self, preVisit = None, postVisit = None ):
+    """ bfs walk """
+    self.reset()
+    nodes = list( self.nodes() )
+    nodes.sort( key = lambda node: len( node.edges() ), reverse = True )
+    queue = [ nodes[0] ]
+    while queue:
+      node = queue.pop( 0 )
+      if callable( preVisit ):
+        preVisit( node )
+      node.visited = True
+      for edge in node.edges():
+        if not edge.toNode.visited:
+          queue.append( edge.toNode )
+      if callable( postVisit ):
+        postVisit( node )
+    return nodes
 
-clock = 0
-def topologicalSort( graph ):
-  """ topological sort """
-  global clock
-  def postOrder( node ):
-    global clock
-    node.makeProperty( "clock", 0 )
-    node.clock = clock
-    clock += 1
-  graph.dfs( postOrder = postOrder )
-  nodes = graph.nodes()
-  nodes.sort( key = lambda node: node.clock )
-  return nodes
-
-
+  def dfsIter( self, preVisit = None, postVisit = None ):
+    """ iterative dfs - no recursion """
+    nodes = list( self.nodes() )
+    nodes.sort( key = lambda node: len( node.edges() ), reverse = True )
+    for node in nodes:
+      if not hasattr( node, "explored" ):
+        node.makeProperty( "explored", False, False )
+      if not hasattr( node, "discovered " ):
+        node.makeProperty( "discovered", False, False )
+    stack = []
+    for node in nodes:
+      if not node.discovered:
+        node.discovered = True
+        stack.append( node )
+      while stack:
+        node = stack[-1]
+        if callable( preVisit ):
+          preVisit( node )
+        for edge in node.edges():
+          if not edge.toNode.discovered:
+            edge.toNode.discovered = True
+            stack.append( edge.toNode )
+        if not node.explored:
+          node.explored = True
+        if callable( postVisit ):
+          postVisit( node )
+          stack.pop()

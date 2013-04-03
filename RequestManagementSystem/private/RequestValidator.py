@@ -67,9 +67,10 @@ class RequestValidator( object ):
   This class validates newly created requests (before saving them in RequestDB) for
   required attributes.
   """
-
+  # # one to rule them all
   __metaclass__ = DIRACSingleton
 
+  # # dict with required attrs
   reqAttrs = { "ForwardDISET" : { "Operation": [ "Arguments" ], "Files" : [] },
                "PutAndRegister" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN", "PFN" ] },
                "ReplicateAndRegister" : { "Operation" : [ "TargetSE" ], "Files" : [ "LFN" ] },
@@ -84,7 +85,7 @@ class RequestValidator( object ):
   def __init__( self ):
     """ c'tor
 
-    just setting order of validators
+    just setting validation order
     """
     self.validator = ( self._hasRequestName,
                        self._hasOwner,
@@ -129,7 +130,7 @@ class RequestValidator( object ):
       isValid = validator( request )
       if not isValid["OK"]:
         return isValid
-    # # if we're here request is probably valid
+    # # if we're here request is more or less valid
     return S_OK()
 
   @staticmethod
@@ -213,5 +214,5 @@ class RequestValidator( object ):
                           ( request.indexOf( operation ), opFile.Checksum, opFile.ChecksumType ) )
     return S_OK()
 
-# # request validator global instance
+# # global instance
 gRequestValidator = RequestValidator()
