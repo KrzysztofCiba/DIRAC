@@ -23,11 +23,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSFile class.
 
 # # imports
-try:
-  import xml.etree.cElementTree as ElementTree
-except ImportError:
-  import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
+
 
 ########################################################################
 class FTSFile( object ):
@@ -42,4 +38,28 @@ class FTSFile( object ):
     :param self: self reference
     """
     pass
+  
+  @staticmethod
+  def tabelDesc():
+    """ get table desc """
+    return { "Fields" :
+              { "FTSFileID" : "INTEGER NOT NULL AUTO_INCREMENT",
+                "FTSReqID" : "INTEGER NOT NULL",
+                "LFN" : "VARCHAR(255)",
+                "SourceSURL" : "VARCHAR(255)",
+                "TargetSURL" : "VARCHAR(255)",
+                "Checksum" : "VARCHAR(64)",
+                "ChecksumType" : "VARCHAR(32)",
+                "Status" : "ENUM( 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ) DEFAULT 'Submitted'",
+                "Error" : "VARCHAR(255)",
+               "PrimaryKey" : [ "FTSFileID" ],
+             "Indexes" : { "FTSFileID" : [ "FTSFileID" ] } } }
 
+  def __setattr__( self, name, value ):
+    """ bweare of tpyos!!! """
+    if not name.startswith( "_" ) and name not in dir( self ):
+      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
+    try:
+      object.__setattr__( self, name, value )
+    except AttributeError, error:
+      print name, value, error

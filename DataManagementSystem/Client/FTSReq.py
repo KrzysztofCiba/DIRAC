@@ -24,11 +24,6 @@ __RCSID__ = "$Id $"
 
 # # imports
 import datetime
-try:
-  import xml.etree.cElementTree as ElementTree
-except ImportError:
-  import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
@@ -76,6 +71,15 @@ class FTSReq( object ):
                "LastUpdate" : "DATETIME"  },
              "PrimaryKey" : [ "FTSReqID" ],
              "Indexes" : { "FTSReqID" : [ "FTSReqID" ] } }
+
+  def __setattr__( self, name, value ):
+    """ bweare of tpyos!!! """
+    if not name.startswith( "_" ) and name not in dir( self ):
+      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
+    try:
+      object.__setattr__( self, name, value )
+    except AttributeError, error:
+      print name, value, error
 
   @property
   def FTSReqID( self ):
@@ -178,3 +182,22 @@ class FTSReq( object ):
   def SourceSE( self, sourceSE ):
     """ source SE setter """
     self.__data__["SourceSE"] = sourceSE
+
+  def toSQL( self ):
+    """ prepare SQL INSERT or UPDATE statement """
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
+                for column, value in self.__data__.items()
+                if value and column not in  ( "FTSReqID", "LastUpdate" ) ]
+    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+    query = []
+    if self.FTSReqID:
+      query.append( "UPDATE `FTSReq` SET " )
+      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+      query.append( " WHERE `FTSReqID`=%d;\n" % self.RequestID )
+    else:
+      query.append( "INSERT INTO `FTSReq` " )
+      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
+      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+      query.append( columns )
+      query.append( " VALUES %s;" % values )
+    return "".join( query )
