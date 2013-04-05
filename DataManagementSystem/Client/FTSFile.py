@@ -22,6 +22,9 @@ __RCSID__ = "$Id $"
 # @date 2013/04/02 14:03:54
 # @brief Definition of FTSFile class.
 
+# # imports
+import os
+
 ########################################################################
 class FTSFile( object ):
   """
@@ -51,14 +54,13 @@ class FTSFile( object ):
               { "FTSFileID" : "INTEGER NOT NULL AUTO_INCREMENT",
                 "FTSReqID" : "INTEGER NOT NULL",
                 "LFN" : "VARCHAR(255)",
-                "SourceSURL" : "VARCHAR(255)",
-                "TargetSURL" : "VARCHAR(255)",
+                "TargetSE" : "VARCHAR9255)",
                 "Checksum" : "VARCHAR(64)",
                 "ChecksumType" : "VARCHAR(32)",
                 "Status" : "ENUM( 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ) DEFAULT 'Submitted'",
                 "Error" : "VARCHAR(255)",
                "PrimaryKey" : [ "FTSFileID" ],
-             "Indexes" : { "FTSFileID" : [ "FTSFileID" ] } } }
+             "Indexes" : { "FTSFileID" : [ "FTSFileID" ], "LFN" : [ "LFN" ] } } }
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -68,6 +70,78 @@ class FTSFile( object ):
       object.__setattr__( self, name, value )
     except AttributeError, error:
       print name, value, error
+
+  @property
+  def FTSFileID( self ):
+    """ FTSFileID getter """
+    return self.__data__["FTSFileID"]
+
+  @FTSFileID.setter
+  def FTSFileID( self, value ):
+    """ FTSFileID setter """
+    self.__data__["FTSFileID"] = long( value ) if value else 0
+
+  @property
+  def LFN( self ):
+    """ LFN prop """
+    return self.__data__["LFN"]
+
+  @LFN.setter
+  def LFN( self, value ):
+    """ lfn setter """
+    if type( value ) != str:
+      raise TypeError( "LFN has to be a string!" )
+    if not os.path.isabs( value ):
+      raise ValueError( "LFN should be an absolute path!" )
+    self.__data__["LFN"] = value
+
+  @property
+  def ChecksumType( self ):
+    """ checksum type prop """
+    return self.__data__["ChecksumType"]
+
+  @ChecksumType.setter
+  def ChecksumType( self, value ):
+    """ checksum type setter """
+    if str( value ).upper() not in ( "ADLER32", "MD5", "SHA1", "NONE" ):
+      raise ValueError( "unknown checksum type: %s" % value )
+    self.__data__["ChecksumType"] = str( value ).upper() if value else None
+
+  @property
+  def Checksum( self ):
+    """ checksum prop """
+    return self.__data__["Checksum"]
+
+  @Checksum.setter
+  def Checksum( self, value ):
+    """ checksum setter """
+    self.__data__["Checksum"] = str( value )
+
+  @property
+  def Error( self ):
+    """ error prop """
+    return self.__data__["Error"]
+
+  @Error.setter
+  def Error( self, value ):
+    """ error setter """
+    if type( value ) != str:
+      raise TypeError( "Error has to be a string!" )
+    self.__data__["Error"] = value[255:]
+
+  @property
+  def Status( self ):
+    """ status prop """
+    if not self.__data__["Status"]:
+      self.__data__["Status"] = "Waiting"
+    return self.__data__["Status"]
+
+  @Status.setter
+  def Status( self, value ):
+    """ status setter """
+    if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
+      raise ValueError( "Unknown Status: %s!" % str( value ) )
+    self.__data__["Status"] = value
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
