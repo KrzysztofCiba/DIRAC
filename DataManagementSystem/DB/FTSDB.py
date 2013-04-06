@@ -59,5 +59,17 @@ class FTSDB( DB ):
                    for classDef in ( FTSReq, FTSFile ) ] )
 
   def _checkTables( self, force = False ):
-    """ create tables if not exisiting """
+    """ create tables if not exisiting 
+    
+    :param bool force: flag to trigger recreation of db schema 
+    """
     return self._createTables( self.getTableMeta(), force = force )
+
+  
+  def addFile( self, opFile ):
+    """ add operation file to fts """
+    pass
+
+  def delFile( self, opFile ):
+    pass
+
