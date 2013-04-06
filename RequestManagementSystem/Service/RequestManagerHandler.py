@@ -24,7 +24,6 @@ gRequestDB = None
 def initializeRequestManagerHandler(serviceInfo):
   """ initialise handler """
   global gRequestDB
-  #csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
   from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
   gRequestDB = RequestDB()
   return S_OK()
@@ -103,12 +102,11 @@ class RequestManagerHandler(RequestHandler):
     """ Get a request of given type from the database """
     gLogger.info("RequestHandler.getRequest: Attempting to get request")
     try:
-      ret = gRequestDB.getRequest( requestName )
+      getRequest = gRequestDB.getRequest( requestName )
       if not ret["OK"]:
         gLogger.error("RequestHandler.getRequest: %s" % ret["Message"] )
-      ret = ret["Value"]
-      if ret:
-        return ret.toXML()
+        return getRequest
+      return S_OK( getRequest["Value"].toXML() ) if getRequest["Value"] else getRequest 
     except Exception, error:
       errStr = "RequestManagerHandler.getRequest: Exception while getting request."
       gLogger.exception( errStr, lException=error )
@@ -124,7 +122,13 @@ class RequestManagerHandler(RequestHandler):
     :param int startItem: start item
     :param int maxItems: max items
     """
-    return gRequestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
+    gLogger.info("RequestManagerHandler.getRequestSummeryWeb called")
+    try:
+      return gRequestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
+    except Exception, error:
+      errStr = "RequestManagerHandler.getRequestSummaryWeb: Exception while getting request."
+      gLogger.exception( errStr, lException=error )
+      return S_ERROR(errStr)
    
   types_deleteRequest = [ StringTypes ]
   @staticmethod
