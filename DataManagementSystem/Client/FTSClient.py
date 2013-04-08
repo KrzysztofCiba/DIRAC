@@ -41,6 +41,7 @@ class FTSClient( Client ):
   """
   .. class:: FTSClient
 
+  DISET client for FTS
   """
   # # placeholder for FTSValidator
   __ftsValidator = None

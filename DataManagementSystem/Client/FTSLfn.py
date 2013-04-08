@@ -37,8 +37,6 @@ class FTSLfn( object ):
   """
   .. class:: FTSLfn
 
-
-
   """
 
   def __init__( self, fromDict = None ):
@@ -60,17 +58,18 @@ class FTSLfn( object ):
   def tableDesc():
     """ get table desc """
     return { "Fields" :
-              { "FTSLfnID" : "INTEGER NOT NULL AUTO_INCREMENT",
-                "FileID" : "INTEGER NOT NULL",
-                "LFN" : "VARCHAR(255)",
-                "TargetSE" : "VARCHAR(255)",
-                "Checksum" : "VARCHAR(64)",
-                "ChecksumType" : "VARCHAR(32)",
-                "Size" : "INTEGER NOT NULL",
-                "Status" : "ENUM ('Waiting', 'Failed', 'Done', 'Scheduled') DEFAULT 'Waiting'",
-                "Error" : "VARCHAR(255)",
-               "PrimaryKey" : [ "FTSLfnID" ],
-             "Indexes" : { "FTSLfnID" : [ "FTSLfnID" ], "LFN" : [ "LFN" ], "FileID" : ["FileID"] } } }
+              { "FTSLfnID": "INTEGER NOT NULL AUTO_INCREMENT",
+                "OperationID": "INTEGER NOT NULL",
+                "FileID": "INTEGER NOT NULL",
+                "LFN": "VARCHAR(255)",
+                "TargetSE": "VARCHAR(255)",
+                "Checksum": "VARCHAR(64)",
+                "ChecksumType": "VARCHAR(32)",
+                "Size": "INTEGER NOT NULL",
+                "Status": "ENUM ('Waiting', 'Failed', 'Done', 'Scheduled') DEFAULT 'Waiting'",
+                "Error": "VARCHAR(255)",
+               "PrimaryKey": [ "FTSLfnID" ],
+             "Indexes": { "FTSLfnID": [ "FTSLfnID" ], "LFN": [ "LFN" ], "FileID": ["FileID"] } } }
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -90,6 +89,17 @@ class FTSLfn( object ):
   def FTSLfnID( self, value ):
     """ FTSLfnID setter """
     self.__data__["FTSLfnID"] = long( value ) if value else 0
+
+  @property
+  def OperationID( self ):
+    """ OperationID getter """
+    return self.__data__["OperationID"]
+
+  @OperationID.setter
+  def OperationID( self, value ):
+    """ OperationID setter """
+    value = long( value ) if value else None
+    self.__data__["OperationID"] = value
 
   @property
   def FileID( self ):

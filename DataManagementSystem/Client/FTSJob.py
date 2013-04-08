@@ -11,7 +11,7 @@
     :synopsis: class representing FTS job
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    class representing FTS request
+    class representing single FTS request
 """
 
 __RCSID__ = "$Id $"
@@ -299,6 +299,14 @@ class FTSJob( object ):
     if not returnCode:
       return S_ERROR( errStr )
     return S_OK( outputStr )
+
+  def submitFTS3( self ):
+    """ placeholder for FTS3 """
+    pass
+
+  def monitorFTS3( self ):
+    """ placeholder for FTS3 """
+    pass
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
