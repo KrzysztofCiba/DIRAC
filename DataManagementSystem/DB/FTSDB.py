@@ -82,5 +82,12 @@ class FTSDB( DB ):
   def delFTSJob( self, ftsJob ):
     pass
 
+  def selectFilesToSubmit( self, sourceSE, targetSE ):
+    """ """
+    pass
+
+
+
+
 
 

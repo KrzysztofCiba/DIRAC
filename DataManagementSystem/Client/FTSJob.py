@@ -26,10 +26,16 @@ __RCSID__ = "$Id $"
 import os
 import datetime
 import tempfile
+try:
+  import xml.etree.cElementTree as ElementTree
+except ImportError:
+  import xml.etree.ElementTree as ElementTree
+from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import checkGuid
+# from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
 
@@ -101,13 +107,18 @@ class FTSJob( object ):
 
   @property
   def GUID( self ):
-    """ GUID getter """
+    """ GUID prop """
     return self.__data__["GUID"]
 
   @GUID.setter
   def GUID( self, value ):
     """ GUID setter """
-    self.__data__["GUID"] = long( value ) if value else 0
+    if value:
+      if type( value ) not in ( str, unicode ):
+        raise TypeError( "GUID should be a string!" )
+      if not checkGuid( value ):
+        raise ValueError( "'%s' is not a valid GUID!" % str( value ) )
+    self.__data__["GUID"] = value
 
   @property
   def FTSServer( self ):
@@ -247,13 +258,14 @@ class FTSJob( object ):
     """ create and return SURL pair file """
     surls = []
     for ftsFile in self:
-      surls.append( "%s %s %s" % ( ftsFile.SourceSURL, ftsFile.TargetSURL, "%s:%s" % ( ftsFile.ChecksumType, ftsFile.Checksum ) ) )
+      checksum = "%s:%s" % ( ftsFile.ChecksumType, ftsFile.Checksum )
+      if len( checksum ) == 1:
+        checksum = ""
+      surls.append( "%s %s %s" % ( ftsFile.SourceSURL, ftsFile.TargetSURL, checksum ) )
     return "\n".join( surls )
 
   def submitFTS2( self ):
-    """ submit fts job using FTS2 client
-
-    """
+    """ submit fts job using FTS2 client """
     if self.GUID:
       return S_ERROR( "FTSJob already has been submitted" )
     surls = self._surlPairs()
@@ -264,7 +276,7 @@ class FTSJob( object ):
     surlFile.write( surls )
     surlFile.close()
     submitCommand = [ "glite-transfer-submit", "-s", self.FTSServer, "-f", fileName, "-o", "--compare-checksums" ]
-    submit = executeGridCommand( '', submitCommand )
+    submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
     if not submit["OK"]:
       return submit
@@ -306,3 +318,44 @@ class FTSJob( object ):
       query.append( columns )
       query.append( " VALUES %s;" % values )
     return "".join( query )
+
+  @classmethod
+  def fromXML( cls, xmlString ):
+    """ create Request object from xmlString or xml.ElementTree.Element """
+    try:
+      root = ElementTree.fromstring( xmlString )
+    except ExpatError, error:
+      return S_ERROR( "unable to de-serialize FTSJob from xml: %s" % str( error ) )
+    if root.tag != "ftsjob":
+      return S_ERROR( "unable to de-serialize FTSJob, xml root element is not a 'ftsjob'" )
+    ftsJob = FTSJob( root.attrib )
+    for ftsJobFile in root.findall( "ftsjobfile" ):
+      ftsJob.addFile( FTSJobFile.fromXML( element = ftsJobFile ) )
+    return S_OK( ftsJob )
+
+  def toXML( self ):
+    """ dump request to XML
+
+    :param self: self reference
+    :return: S_OK( xmlString )
+    """
+    root = ElementTree.Element( "ftsjob" )
+    # # attributes
+    root.attrib["FTSJobID"] = str( self.FTSJobID ) if self.FTSJobID else ""
+    root.attrib["Error"] = str( self.Error ) if self.Error else ""
+    root.attrib["GUID"] = str( self.GUID ) if self.GUID else ""
+    root.attrib["FTSServer"] = str( self.FTSServer ) if self.FTSServer else ""
+    root.attrib["SourceSE"] = self.SourceSE
+    root.attrib["TargetSE"] = self.TargetSE
+    root.attrib["Size"] = str( self.Size )
+    # # always calculate status, never set
+    root.attrib["Status"] = str( self.Status )
+    # # datetime up to seconds
+    root.attrib["CreationTime"] = self.CreationTime.isoformat( " " ).split( "." )[0] if self.CreationTime else ""
+    root.attrib["SubmitTime"] = self.SubmitTime.isoformat( " " ).split( "." )[0] if self.SubmitTime else ""
+    root.attrib["LastUpdate"] = self.LastUpdate.isoformat( " " ).split( "." )[0] if self.LastUpdate else ""
+    # # trigger xml dump of a whole operations and their files tree
+    for ftsFile in self.__files__:
+      root.append( ftsFile.toXML() )
+    xmlStr = ElementTree.tostring( root )
+    return S_OK( xmlStr )

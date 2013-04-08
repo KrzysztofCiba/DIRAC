@@ -24,13 +24,17 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSJobFile class.
 
 # # imports
-
+try:
+  import xml.etree.cElementTree as ElementTree
+except ImportError:
+  import xml.etree.ElementTree as ElementTree
 
 ########################################################################
 class FTSJobFile( object ):
   """
   .. class:: FTSJobFile
 
+  class representing a single file in the FTS job
   """
 
   def __init__( self, fromDict = None ):
@@ -54,7 +58,7 @@ class FTSJobFile( object ):
     return { "Fields" :
              { "FTSJobFileID": "INTEGER NOT NULL AUTO_INCREMENT",
                "FTSLfnID":  "INTEGER NOT NULL",
-               "FTSJobID":  "INTEGER NOT NULL",
+               "FTSJobID":  "INTEGER",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum" : "VARCHAR(64)",
                "ChecksumType" : "VARCHAR(32)",
@@ -216,3 +220,33 @@ class FTSJobFile( object ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     self.__data__["Status"] = value
 
+  def toXML( self ):
+    """ serialize file to XML """
+    attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
+    return ElementTree.Element( "ftsjobfile", attrs )
+
+  @classmethod
+  def fromXML( cls, element ):
+    """ build File form ElementTree.Element :element: """
+    if element.tag != "ftsjobfile":
+      raise ValueError( "wrong tag, expected 'ftsjobfile', got %s" % element.tag )
+    fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
+    return FTSJobFile( fromDict )
+
+  def toSQL( self ):
+    """ prepare SQL INSERT or UPDATE statement """
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) == str else str( value ) )
+                for column, value in self.__data__.items()
+                if value and column != "FTSJobFileID" ]
+    query = []
+    if self.FTSJobFileID:
+      query.append( "UPDATE `FTSJobFile` SET " )
+      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+      query.append( " WHERE `FTSJobFileID`=%d;\n" % self.RequestID )
+    else:
+      query.append( "INSERT INTO `FTSJobFile` " )
+      columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
+      values = "(%s)" % ",".join( [ value for column, value in colVals ] )
+      query.append( columns )
+      query.append( " VALUES %s;" % values )
+    return "".join( query )

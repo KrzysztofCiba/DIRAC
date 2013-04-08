@@ -24,11 +24,20 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
+try:
+  import xml.etree.cElementTree as ElementTree
+except ImportError:
+  import xml.etree.ElementTree as ElementTree
+from xml.parsers.expat import ExpatError
+# # from DIRAC
+from DIRAC import S_OK, S_ERROR
 
 ########################################################################
 class FTSLfn( object ):
   """
   .. class:: FTSLfn
+
+
 
   """
 
@@ -164,6 +173,29 @@ class FTSLfn( object ):
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     self.__data__["Status"] = value
+
+  @classmethod
+  def fromXML( cls, xmlString ):
+    """ create FTSLfn object from xmlString or xml.ElementTree.Element """
+    try:
+      root = ElementTree.fromstring( xmlString )
+    except ExpatError, error:
+      return S_ERROR( "unable to de-serialize FTSLfn from xml: %s" % str( error ) )
+    if root.tag != "ftslfn":
+      return S_ERROR( "unable to de-serialize FTSLfn, xml root element is not a 'ftslfn' " )
+    ftsLfn = FTSLfn( root.attrib )
+    return S_OK( ftsLfn )
+
+  def toXML( self ):
+    """ dump request to XML
+
+    :param self: self reference
+    :return: S_OK( xmlString )
+    """
+    root = ElementTree.Element( "ftslfn" )
+    root.attrib = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
+    xmlStr = ElementTree.tostring( root )
+    return S_OK( xmlStr )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
