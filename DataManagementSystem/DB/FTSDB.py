@@ -36,6 +36,7 @@ class FTSDB( DB ):
   """
   .. class:: FTSDB
 
+  database holding FTS jobs and their files
   """
 
   def __init__( self, systemInstance = "Default", maxQueueSize = 10 ):
@@ -66,18 +67,23 @@ class FTSDB( DB ):
     """
     return self._createTables( self.getTableMeta(), force = force )
 
-  def addLFN( self, lfnFile ):
-    """ add operation file to fts """
+  def addFTSLfn( self, lfnFile ):
+    """ add operation file to fts db """
+    pass
+
+  def delFTSLfn( self, lfnFile ):
+    pass
+
+
+  def setFTSJob( self, ftsJob ):
     pass
 
   def delLFN( self, lfnFile ):
     pass
 
-  def getFTSJob( self ):
+  def getFTSJob( self, status = "Submitted" ):
     pass
 
-  def setFTSJob( self, ftsJob ):
-    pass
 
   def delFTSJob( self, ftsJob ):
     pass
