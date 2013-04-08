@@ -60,18 +60,27 @@ class FTSDB( DB ):
                    for classDef in ( FTSLfn, FTSJob, FTSJobFile ) ] )
 
   def _checkTables( self, force = False ):
-    """ create tables if not exisiting 
-    
-    :param bool force: flag to trigger recreation of db schema 
+    """ create tables if not exisiting
+
+    :param bool force: flag to trigger recreation of db schema
     """
     return self._createTables( self.getTableMeta(), force = force )
 
-  
-  def addLFN( self, opFile ):
+  def addLFN( self, lfnFile ):
     """ add operation file to fts """
     pass
 
-  def delLFN( self, opFile ):
+  def delLFN( self, lfnFile ):
     pass
+
+  def getFTSJob( self ):
+    pass
+
+  def setFTSJob( self, ftsJob ):
+    pass
+
+  def delFTSJob( self, ftsJob ):
+    pass
+
 
 

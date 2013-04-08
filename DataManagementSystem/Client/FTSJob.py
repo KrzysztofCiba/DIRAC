@@ -23,8 +23,13 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSJob class.
 
 # # imports
+import os
 import datetime
+import tempfile
 # # from DIRAC
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC.Core.Utilities.File import checkGuid
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
 
@@ -33,21 +38,23 @@ class FTSJob( object ):
   """
   .. class:: FTSJob
 
+  class describing one FTS job
   """
 
   def __init__( self, fromDict = None ):
     """c'tor
 
     :param self: self reference
+    :param dict fromDict: data dict
     """
     self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
-    self.__data__["Status"] = "Waiting"
+    self.__data__["Status"] = "Submitted"
     self.__data__["FTSJobID"] = 0
-    self.__ftsFiles__ = TypedList( allowedTypes = FTSJobFile )
+    self.__files__ = TypedList( allowedTypes = FTSJobFile )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if key not in self.__data__:
@@ -64,6 +71,7 @@ class FTSJob( object ):
                "SourceSE" : "VARCHAR(128)",
                "TargerSE" : "VARCHAR(128)",
                "FTSServer" : "VARCHAR(255)",
+               "Size": "INTEGER",
                "Status" : "ENUM( 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
@@ -120,6 +128,21 @@ class FTSJob( object ):
   def Error( self, error ):
     """ error setter """
     self.__data__["Error"] = str( error )[255:]
+
+  @property
+  def Size( self ):
+    """ size getter """
+    if not self.__data__["Size"]:
+      self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
+    return self.__data__["Size"]
+
+  @Size.setter
+  def Size( self, value ):
+    """ size setter """
+    if value:
+      self.__data__["Size"] = value
+    else:
+      self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
 
   @property
   def CreationTime( self ):
@@ -182,6 +205,88 @@ class FTSJob( object ):
   def SourceSE( self, sourceSE ):
     """ source SE setter """
     self.__data__["SourceSE"] = sourceSE
+
+  # # FTSJobFiles aritmetics
+  def __contains__( self, subFile ):
+    """ in operator """
+    return subFile in self.__files__
+
+  def __iadd__( self, subFile ):
+    """ += operator """
+    if subFile not in self:
+      self.__files__.append( subFile )
+      subFile._parent = self
+    return self
+
+  def __add__( self, ftsFile ):
+    """ + operator """
+    self +=ftsFile
+
+  def addFile( self, ftsFile ):
+    """ add :ftsFile: to FTS job """
+    self +=ftsFile
+
+  # # helpers for looping
+  def __iter__( self ):
+    """ files iterator """
+    return self.__files__.__iter__()
+
+  def __getitem__( self, i ):
+    """ [] op for files """
+    return self.__files__.__getitem__( i )
+
+  def fileStatusList( self ):
+    """ get list of files statuses """
+    return [ ftsFile.Status for ftsFile in self ]
+
+  def __len__( self ):
+    """ nb of subFiles """
+    return len( self.__files__ )
+
+  def _surlPairs( self ):
+    """ create and return SURL pair file """
+    surls = []
+    for ftsFile in self:
+      surls.append( "%s %s %s" % ( ftsFile.SourceSURL, ftsFile.TargetSURL, "%s:%s" % ( ftsFile.ChecksumType, ftsFile.Checksum ) ) )
+    return "\n".join( surls )
+
+  def submitFTS2( self ):
+    """ submit fts job using FTS2 client
+
+    """
+    if self.GUID:
+      return S_ERROR( "FTSJob already has been submitted" )
+    surls = self._surlPairs()
+    if not surls:
+      return S_ERROR( "No files to submit" )
+    fd, fileName = tempfile.mkstemp()
+    surlFile = os.fdopen( fd, 'w' )
+    surlFile.write( surls )
+    surlFile.close()
+    submitCommand = [ "glite-transfer-submit", "-s", self.FTSServer, "-f", fileName, "-o", "--compare-checksums" ]
+    submit = executeGridCommand( '', submitCommand )
+    os.remove( fileName )
+    if not submit["OK"]:
+      return submit
+    returnCode, output, errStr = submit["Value"]
+    if not returnCode == 0:
+      return S_ERROR( errStr )
+    self.GUID = output.replace( "\n", "" )
+    return S_OK()
+
+  def monitorFTS2( self ):
+    """ monitor fts job """
+    if not self.GUID:
+      return S_ERROR( "GUID not set, FTS job not submitted?" )
+    monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.GUID, "-l" ]
+    monitor = executeGridCommand( "", monitorCommand )
+    if not monitor['OK']:
+      return monitor
+    returnCode, outputStr, errStr = monitor["Value"]
+    # Returns a non zero status if error
+    if not returnCode:
+      return S_ERROR( errStr )
+    return S_OK( outputStr )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
