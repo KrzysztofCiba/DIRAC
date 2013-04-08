@@ -5,41 +5,40 @@
 # Date: 2012/07/24 12:12:05
 ########################################################################
 
-""" :mod: Operation 
+""" :mod: Operation
     =======================
- 
+
     .. module: Operation
     :synopsis: Operation implementation
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     Operation implementation
 """
-# for properties 
-# pylint: disable=E0211,W0612,W0142,E1101,E0102 
+# for properties
+# pylint: disable=E0211,W0612,W0142,E1101,E0102
 __RCSID__ = "$Id$"
-##
+# #
 # @file Operation.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/07/24 12:12:18
 # @brief Definition of Operation class.
-## imports 
+# # imports
 try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
-  import xml.etree.ElementTree
-from xml.parsers.expat import ExpatError
+  import xml.etree.ElementTree as ElementTree
 import datetime
-## from DIRAC
+# # from DIRAC
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
-class Operation(object):
+class Operation( object ):
   """
   .. class:: Operation
- 
+
   :param long OperationID: OperationID as read from DB backend
-  :param long RequestID: parent RequestID 
+  :param long RequestID: parent RequestID
   :param str Status: execution status
   :param str Type: operation to perform
   :param str Arguments: additional arguments
@@ -49,37 +48,37 @@ class Operation(object):
   :param str Error: error string if any
   :param Request parent: parent Request instance
   """
- 
-  def __init__( self, fromDict=None ):
+
+  def __init__( self, fromDict = None ):
     """ c'tor
 
     :param self: self reference
     :param dict fromDict: attributes dictionary
     """
     self._parent = None
-    ## sub-request attributes
+    # # sub-request attributes
     self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
-    now = datetime.datetime.utcnow().replace( microsecond=0 )
+    now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
     self.__data__["CreationTime"] = now
     self.__data__["OperationID"] = 0
     self.__data__["RequestID"] = 0
     self.__data__["Status"] = "Queued"
-    ## operation files
+    # # operation files
     self.__files__ = TypedList( allowedTypes = File )
-    ## init from dict
+    # # init from dict
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if key not in self.__data__:
-        raise AttributeError("Unknown Operation attribute '%s'" % key )
+        raise AttributeError( "Unknown Operation attribute '%s'" % key )
       if key != "Order":
         setattr( self, key, value )
-        
+
   @staticmethod
   def tableDesc():
     """ get table desc """
-    return { "Fields" : 
+    return { "Fields" :
              { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
                "RequestID" : "INTEGER NOT NULL",
                "Type" : "VARCHAR(64) NOT NULL",
@@ -94,17 +93,17 @@ class Operation(object):
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME" },
              "PrimaryKey" : "OperationID" }
-  
+
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
-    if not name.startswith("_") and name not in dir(self):
-      raise AttributeError("'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
+    if not name.startswith( "_" ) and name not in dir( self ):
+      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
     try:
       object.__setattr__( self, name, value )
     except AttributeError, error:
       print name, value, error
 
-  ## protected methods for parent only
+  # # protected methods for parent only
   def _notify( self ):
     """ notify self about file status change """
     if "Scheduled" not in self.fileStatusList() and "Waiting" not in self.fileStatusList():
@@ -116,13 +115,13 @@ class Operation(object):
     """ don't touch """
     if caller == self._parent:
       self.__data__["Status"] = "Queued"
-    
+
   def _setWaiting( self, caller ):
     """ don't touch as well """
     if caller == self._parent:
       self.__data__["Status"] = "Waiting"
 
-  ## Files aritmetics 
+  # # Files aritmetics
   def __contains__( self, subFile ):
     """ in operator """
     return subFile in self.__files__
@@ -131,19 +130,19 @@ class Operation(object):
     """ += operator """
     if subFile not in self:
       self.__files__.append( subFile )
-      subFile._parent = self 
+      subFile._parent = self
       self._notify()
     return self
 
   def __add__( self, subFile ):
     """ + operator """
-    self += subFile
-      
+    self +=subFile
+
   def addFile( self, subFile ):
     """ add :subFile: to subrequest """
-    self += subFile
+    self +=subFile
 
-  ## helpers for looping
+  # # helpers for looping
   def __iter__( self ):
     """ subrequest files iterator """
     return self.__files__.__iter__()
@@ -154,13 +153,13 @@ class Operation(object):
 
   def fileStatusList( self ):
     """ get list of files statuses """
-    return [ subFile.Status for subFile in self ] 
+    return [ subFile.Status for subFile in self ]
 
   def __len__( self ):
     """ nb of subFiles """
     return len( self.__files__ )
 
-  ## properties  
+  # # properties
   @property
   def RequestID( self ):
     """ RequestID getter (RO) """
@@ -170,16 +169,16 @@ class Operation(object):
   def RequestID( self, value ):
     """ can't set RequestID by hand """
     self.__data__["RequestID"] = self._parent.RequestID if self._parent else -1
- 
-  @property 
+
+  @property
   def OperationID( self ):
     """ OperationID getter """
     return self.__data__["OperationID"]
-  
+
   @OperationID.setter
   def OperationID( self, value ):
     """ OperationID setter """
-    self.__data__["OperationID"] = long(value) if value else 0
+    self.__data__["OperationID"] = long( value ) if value else 0
 
   @property
   def Type( self ):
@@ -189,10 +188,10 @@ class Operation(object):
   @Type.setter
   def Type( self, value ):
     """ operation type setter """
-    self.__data__["Type"] = str(value)
-          
+    self.__data__["Type"] = str( value )
+
   @property
-  def Arguments( self):
+  def Arguments( self ):
     """ arguments getter """
     return self.__data__["Arguments"]
 
@@ -200,16 +199,16 @@ class Operation(object):
   def Arguments( self, value ):
     """ arguments setter """
     self.__data__["Arguments"] = value if value else ""
-  
+
   @property
   def SourceSE( self ):
     """ source SE prop """
-    return self.__data__["SourceSE"] if self.__data__["SourceSE"] else "" 
+    return self.__data__["SourceSE"] if self.__data__["SourceSE"] else ""
 
   @SourceSE.setter
   def SourceSE( self, value ):
     """ source SE setter """
-    self.__data__["SourceSE"] = str(value)[:255] if value else ""
+    self.__data__["SourceSE"] = str( value )[:255] if value else ""
 
   @property
   def sourceSEList( self ):
@@ -230,12 +229,12 @@ class Operation(object):
   def targetSEList( self ):
     """ helper property returning target SEs as a list"""
     return list( set ( [ targetSE for targetSE in self.TargetSE.split( "," ) if targetSE.strip() ] ) )
-  
+
   @property
   def Catalogue( self ):
     """ catalogue prop """
     return self.__data__["Catalogue"]
-  
+
   @Catalogue.setter
   def Catalogue( self, value ):
     """ catalogue setter """
@@ -249,7 +248,7 @@ class Operation(object):
   @Error.setter
   def Error( self, value ):
     """ error setter """
-    self.__data__["Error"] = str(value)[:255] if value else ""
+    self.__data__["Error"] = str( value )[:255] if value else ""
 
   @property
   def Status( self ):
@@ -260,16 +259,16 @@ class Operation(object):
   def Status( self, value ):
     """ Status setter """
     if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done", "Scheduled" ):
-      raise ValueError("unknown Status '%s'" % str(value) )
+      raise ValueError( "unknown Status '%s'" % str( value ) )
     if value in ( "Failed", "Done" ) and self.__files__:
       if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():
-        return 
-    ## update? notify parent
+        return
+    # # update? notify parent
     old = self.__data__["Status"]
     self.__data__["Status"] = value
-    if value != old and self._parent:       
+    if value != old and self._parent:
       self._parent._notify()
-    
+
   @property
   def Order( self ):
     """ order prop """
@@ -285,10 +284,10 @@ class Operation(object):
   @CreationTime.setter
   def CreationTime( self, value = None ):
     """ creation time setter """
-    if type(value) not in ( datetime.datetime, str ):
-      raise TypeError("CreationTime should be a datetime.datetime!")
-    if type(value) == str:
-      value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+    if type( value ) not in ( datetime.datetime, str ):
+      raise TypeError( "CreationTime should be a datetime.datetime!" )
+    if type( value ) == str:
+      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["CreationTime"] = value
 
   @property
@@ -299,48 +298,48 @@ class Operation(object):
   @SubmitTime.setter
   def SubmitTime( self, value = None ):
     """ submit time setter """
-    if type(value) not in ( datetime.datetime, str ):
-      raise TypeError("SubmitTime should be a datetime.datetime!")
-    if type(value) == str:
-      value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+    if type( value ) not in ( datetime.datetime, str ):
+      raise TypeError( "SubmitTime should be a datetime.datetime!" )
+    if type( value ) == str:
+      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["SubmitTime"] = value
- 
+
   @property
   def LastUpdate( self ):
     """ last update prop """
     return self.__data__["LastUpdate"]
-  
+
   @LastUpdate.setter
   def LastUpdate( self, value = None ):
     """ last update setter """
     if type( value ) not in ( datetime.datetime, str ):
-      raise TypeError("LastUpdate should be a datetime.datetime!")
-    if type(value) == str:
-      value = datetime.datetime.strptime( value.split(".")[0], '%Y-%m-%d %H:%M:%S' )
+      raise TypeError( "LastUpdate should be a datetime.datetime!" )
+    if type( value ) == str:
+      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["LastUpdate"] = value
 
   def toXML( self ):
     """ dump subrequest to XML """
-    data = dict( [ ( key, str(getattr(self, key)) if getattr(self, key) != None else "" ) for key in self.__data__ ] )
+    data = dict( [ ( key, str( getattr( self, key ) ) if getattr( self, key ) != None else "" ) for key in self.__data__ ] )
     for key, value in data.items():
       if isinstance( value, datetime.datetime ):
-        data[key] = str(value)
-    element = ElementTree.Element( "operation", data ) 
+        data[key] = str( value )
+    element = ElementTree.Element( "operation", data )
     for opFile in self.__files__:
       element.append( opFile.toXML() )
     return element
-  
+
   @classmethod
   def fromXML( cls, element ):
-    """ generate Operation instance from :element: 
-    
+    """ generate Operation instance from :element:
+
     :param ElementTree.Element element: operation element
     """
-    if not isinstance( element, type(ElementTree.Element("operation")) ):
+    if not isinstance( element, type( ElementTree.Element( "operation" ) ) ):
       raise TypeError( "wrong argument type %s, expected ElementTree.Element" % type( element ) )
     if element.tag != "operation":
-      raise ValueError("wrong tag <%s>, expected <operation>!" % element.tag )
-    fromDict = dict( [ (key, value) for key, value in element.attrib.items() if value ] ) 
+      raise ValueError( "wrong tag <%s>, expected <operation>!" % element.tag )
+    fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
     operation = Operation( fromDict )
     for fileElement in element.findall( "file" ):
       operation += File.fromXML( fileElement )
@@ -354,13 +353,13 @@ class Operation(object):
     """ get SQL INSERT or UPDATE statement """
     if not getattr( self, "RequestID" ):
       raise AttributeError( "RequestID not set" )
-    colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column ) 
-                  if type(getattr(self, column)) in ( str, datetime.datetime ) else str( getattr(self, column) ) ) 
+    colVals = [ ( "`%s`" % column, "'%s'" % getattr( self, column )
+                  if type( getattr( self, column ) ) in ( str, datetime.datetime ) else str( getattr( self, column ) ) )
                 for column in self.__data__
-                if getattr(self, column) and column not in ( "OperationID", "LastUpdate", "Order" ) ] 
-    colVals.append( ("`LastUpdate`", "UTC_TIMESTAMP()" ) )
-    colVals.append( ( "`Order`", str(self.Order) ) )
-    #colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
+                if getattr( self, column ) and column not in ( "OperationID", "LastUpdate", "Order" ) ]
+    colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
+    colVals.append( ( "`Order`", str( self.Order ) ) )
+    # colVals.append( ( "`Status`", "'%s'" % str(self.Status) ) )
 
     query = []
     if self.OperationID:
@@ -372,13 +371,13 @@ class Operation(object):
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
-      query.append(" VALUES %s;\n" % values )
+      query.append( " VALUES %s;\n" % values )
     return "".join( query )
 
   def toJSON( self ):
     """ get digest """
     digest = dict( zip( self.__data__.keys(),
-                        [ str(val) if val else "" for val in self.__data__.values() ] ) )
+                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["RequestID"] = str( self.RequestID )
     digest["Order"] = str( self.Order )
     digest["Files"] = []
