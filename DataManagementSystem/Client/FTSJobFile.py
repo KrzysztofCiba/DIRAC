@@ -45,8 +45,11 @@ class FTSJobFile(object):
     """ get table desc """
     return { "Fields" :
              { "FTSJobFileID" : "INTEGER NOT NULL AUTO_INCREMENT",
-               "FTSLfnID" :  "INTEGER NOT NULL",
+              "FTSLfnID" :  "INTEGER NOT NULL",
                "FTSJobID" :  "INTEGER NOT NULL",
+                "Checksum" : "VARCHAR(64)",
+                "ChecksumType" : "VARCHAR(32)",
+                "Size" : "INTEGER",
                "SourceSE" : "VARCHAR(128)",
                "SourceSURL" : "VARCHAR(255)",
                "TargerSE" : "VARCHAR(128)",

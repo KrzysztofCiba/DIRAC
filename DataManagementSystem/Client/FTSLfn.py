@@ -57,6 +57,7 @@ class FTSLfn( object ):
                 "TargetSE" : "VARCHAR(255)",
                 "Checksum" : "VARCHAR(64)",
                 "ChecksumType" : "VARCHAR(32)",
+                "Size" : "INTEGER NOT NULL",
                 "Status" : "ENUM ('Waiting', 'Failed', 'Done', 'Scheduled') DEFAULT 'Waiting'",
                 "Error" : "VARCHAR(255)",
                "PrimaryKey" : [ "FTSLfnID" ],
