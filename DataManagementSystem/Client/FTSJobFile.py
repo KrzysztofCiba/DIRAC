@@ -6,13 +6,13 @@
 ########################################################################
 
 """ :mod: FTSJobFile 
-    =======================
+    ================
  
     .. module: FTSJobFile
-    :synopsis: class represeting a single file in the FTS job
+    :synopsis: class representing a single file in the FTS job
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    class represeting a single file in the FTS job
+    class representing a single file in the FTS job
 """
 
 __RCSID__ = "$Id $"
@@ -40,3 +40,27 @@ class FTSJobFile(object):
     """
     pass
 
+  @staticmethod
+  def tableDesc():
+    """ get table desc """
+    return { "Fields" :
+             { "FTSJobFileID" : "INTEGER NOT NULL AUTO_INCREMENT",
+               "FTSLfnID" :  "INTEGER NOT NULL",
+               "FTSJobID" :  "INTEGER NOT NULL",
+               "SourceSE" : "VARCHAR(128)",
+               "SourceSURL" : "VARCHAR(255)",
+               "TargerSE" : "VARCHAR(128)",
+               "TargetSURL" : "VARCHAR(255)",
+               "Status" : "ENUM( 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ) DEFAULT 'Submitted'",
+               "Error" : "VARCHAR(255)"  },
+             "PrimaryKey" : [ "FTSJobFileID" ],
+             "Indexes" : { "FTSJobID" : [ "FTSJobID" ], "FTSJobFileID" : [ "FTSJobFileID"] } }
+
+  def __setattr__( self, name, value ):
+    """ bweare of tpyos!!! """
+    if not name.startswith( "_" ) and name not in dir( self ):
+      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
+    try:
+      object.__setattr__( self, name, value )
+    except AttributeError, error:
+      print name, value, error

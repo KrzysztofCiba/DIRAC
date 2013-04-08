@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 import datetime
 # # from DIRAC
 from DIRAC.Core.Utilities.TypedList import TypedList
-from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
 
 ########################################################################
 class FTSJob( object ):
@@ -47,7 +47,7 @@ class FTSJob( object ):
     self.__data__["LastUpdate"] = now
     self.__data__["Status"] = "Waiting"
     self.__data__["FTSJobID"] = 0
-    self.__ftsFiles__ = TypedList( allowedTypes = FTSFile )
+    self.__ftsFiles__ = TypedList( allowedTypes = FTSJobFile )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if key not in self.__data__:

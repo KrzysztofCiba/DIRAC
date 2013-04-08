@@ -27,8 +27,9 @@ __RCSID__ = "$Id $"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
+from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
 
 ########################################################################
 class FTSDB( DB ):
@@ -56,7 +57,7 @@ class FTSDB( DB ):
   def getTableMeta():
     """ get db schema in a dict format """
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
-                   for classDef in ( FTSJob, FTSLfn ) ] )
+                   for classDef in ( FTSLfn, FTSJob, FTSJobFile ) ] )
 
   def _checkTables( self, force = False ):
     """ create tables if not exisiting 
@@ -66,10 +67,11 @@ class FTSDB( DB ):
     return self._createTables( self.getTableMeta(), force = force )
 
   
-  def addFile( self, opFile ):
+  def addLFN( self, opFile ):
     """ add operation file to fts """
     pass
 
-  def delFile( self, opFile ):
+  def delLFN( self, opFile ):
     pass
+
 
