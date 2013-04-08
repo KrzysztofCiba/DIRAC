@@ -1,34 +1,34 @@
 ########################################################################
 # $HeadURL $
-# File: FTSFile.py
+# File: FTSLfn.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 14:03:37
 ########################################################################
-""" :mod: FTSFile
+""" :mod: FTSLfn
     =============
 
-    .. module: FTSFile
-    :synopsis: class representing a single file in the FTS request
+    .. module: FTSLfn
+    :synopsis: class representing a single file in the FTS
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    class representing a single file in the FTS request
+    class representing a single file in the FTS
 """
 
 __RCSID__ = "$Id $"
 
 # #
-# @file FTSFile.py
+# @file FTSLfn.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/02 14:03:54
-# @brief Definition of FTSFile class.
+# @brief Definition of FTSLfn class.
 
 # # imports
 import os
 
 ########################################################################
-class FTSFile( object ):
+class FTSLfn( object ):
   """
-  .. class:: FTSFile
+  .. class:: FTSLfn
 
   """
 
@@ -39,11 +39,11 @@ class FTSFile( object ):
     """
     self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     self.__data__["Status"] = "Waiting"
-    self.__data__["FTSFileID"] = 0
+    self.__data__["FTSLfnID"] = 0
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if key not in self.__data__:
-        raise AttributeError( "Unknown FTSFile attribute '%s'" % key )
+        raise AttributeError( "Unknown FTSLfn attribute '%s'" % key )
       if value:
         setattr( self, key, value )
 
@@ -51,16 +51,16 @@ class FTSFile( object ):
   def tableDesc():
     """ get table desc """
     return { "Fields" :
-              { "FTSFileID" : "INTEGER NOT NULL AUTO_INCREMENT",
-                "FTSReqID" : "INTEGER NOT NULL",
+              { "FTSLfnID" : "INTEGER NOT NULL AUTO_INCREMENT",
+                "FileID" : "INTEGER NOT NULL",
                 "LFN" : "VARCHAR(255)",
-                "TargetSE" : "VARCHAR9255)",
+                "TargetSE" : "VARCHAR(255)",
                 "Checksum" : "VARCHAR(64)",
                 "ChecksumType" : "VARCHAR(32)",
-                "Status" : "ENUM( 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ) DEFAULT 'Submitted'",
+                "Status" : "ENUM ('Waiting', 'Failed', 'Done', 'Scheduled') DEFAULT 'Waiting'",
                 "Error" : "VARCHAR(255)",
-               "PrimaryKey" : [ "FTSFileID" ],
-             "Indexes" : { "FTSFileID" : [ "FTSFileID" ], "LFN" : [ "LFN" ] } } }
+               "PrimaryKey" : [ "FTSLfnID" ],
+             "Indexes" : { "FTSLfnID" : [ "FTSLfnID" ], "LFN" : [ "LFN" ], "FileID" : ["FileID"] } } }
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -72,14 +72,25 @@ class FTSFile( object ):
       print name, value, error
 
   @property
-  def FTSFileID( self ):
-    """ FTSFileID getter """
-    return self.__data__["FTSFileID"]
+  def FTSLfnID( self ):
+    """ FTSLfnID getter """
+    return self.__data__["FTSLfnID"]
 
-  @FTSFileID.setter
-  def FTSFileID( self, value ):
-    """ FTSFileID setter """
-    self.__data__["FTSFileID"] = long( value ) if value else 0
+  @FTSLfnID.setter
+  def FTSLfnID( self, value ):
+    """ FTSLfnID setter """
+    self.__data__["FTSLfnID"] = long( value ) if value else 0
+
+  @property
+  def FileID( self ):
+    """ FileID getter """
+    return self.__data__["FileID"]
+
+  @FileID.setter
+  def FileID( self, value ):
+    """ FileID setter """
+    value = long( value ) if value else None
+    self.__data__["FileID"] = value
 
   @property
   def LFN( self ):
@@ -94,6 +105,16 @@ class FTSFile( object ):
     if not os.path.isabs( value ):
       raise ValueError( "LFN should be an absolute path!" )
     self.__data__["LFN"] = value
+
+  @property
+  def TargetSE( self ):
+    """ target SE prop """
+    return self.__data__["TargetSE"] if self.__data__["TargetSE"] else ""
+
+  @TargetSE.setter
+  def TargetSE( self, value ):
+    """ target SE setter """
+    self.__data__["TargetSE"] = value[:255] if value else ""
 
   @property
   def ChecksumType( self ):
@@ -147,14 +168,14 @@ class FTSFile( object ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) == str else str( value ) )
                 for column, value in self.__data__.items()
-                if value and column != "FTSFileID" ]
+                if value and column != "FTSLfnID" ]
     query = []
-    if self.FTSFileIDID:
-      query.append( "UPDATE `FTSFile` SET " )
+    if self.FTSLfnIDID:
+      query.append( "UPDATE `FTSLfn` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `FTSFileID`=%d;\n" % self.RequestID )
+      query.append( " WHERE `FTSLfnID`=%d;\n" % self.RequestID )
     else:
-      query.append( "INSERT INTO `FTSFile` " )
+      query.append( "INSERT INTO `FTSLfn` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )

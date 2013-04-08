@@ -1,14 +1,14 @@
 ########################################################################
 # $HeadURL $
-# File: FTSReq.py
+# File: FTSJob.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 13:41:20
 ########################################################################
-""" :mod: FTSReq
+""" :mod: FTSJob
     ============
 
-    .. module: FTSReq
-    :synopsis: class representing FTS request record
+    .. module: FTSJob
+    :synopsis: class representing FTS job
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     class representing FTS request
@@ -17,10 +17,10 @@
 __RCSID__ = "$Id $"
 
 # #
-# @file FTSReq.py
+# @file FTSJob.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/02 13:41:37
-# @brief Definition of FTSReq class.
+# @brief Definition of FTSJob class.
 
 # # imports
 import datetime
@@ -29,9 +29,9 @@ from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 
 ########################################################################
-class FTSReq( object ):
+class FTSJob( object ):
   """
-  .. class:: FTSReq
+  .. class:: FTSJob
 
   """
 
@@ -46,12 +46,12 @@ class FTSReq( object ):
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
     self.__data__["Status"] = "Waiting"
-    self.__data__["FTSReqID"] = 0
+    self.__data__["FTSJobID"] = 0
     self.__ftsFiles__ = TypedList( allowedTypes = FTSFile )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if key not in self.__data__:
-        raise AttributeError( "Unknown FTSReq attribute '%s'" % key )
+        raise AttributeError( "Unknown FTSJob attribute '%s'" % key )
       if value:
         setattr( self, key, value )
 
@@ -59,7 +59,7 @@ class FTSReq( object ):
   def tableDesc():
     """ get table desc """
     return { "Fields" :
-             { "FTSReqID" : "INTEGER NOT NULL AUTO_INCREMENT",
+             { "FTSJobID" : "INTEGER NOT NULL AUTO_INCREMENT",
                "GUID" :  "VARCHAR(64)",
                "SourceSE" : "VARCHAR(128)",
                "TargerSE" : "VARCHAR(128)",
@@ -69,8 +69,8 @@ class FTSReq( object ):
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME"  },
-             "PrimaryKey" : [ "FTSReqID" ],
-             "Indexes" : { "FTSReqID" : [ "FTSReqID" ] } }
+             "PrimaryKey" : [ "FTSJobID" ],
+             "Indexes" : { "FTSJobID" : [ "FTSJobID" ] } }
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -82,14 +82,14 @@ class FTSReq( object ):
       print name, value, error
 
   @property
-  def FTSReqID( self ):
-    """ FTSReqID getter """
-    return self.__data__["FTSReqID"]
+  def FTSJobID( self ):
+    """ FTSJobID getter """
+    return self.__data__["FTSJobID"]
 
-  @FTSReqID.setter
-  def FTSReqID( self, value ):
-    """ FTSReqID setter """
-    self.__data__["FTSReqID"] = long( value ) if value else 0
+  @FTSJobID.setter
+  def FTSJobID( self, value ):
+    """ FTSJobID setter """
+    self.__data__["FTSJobID"] = long( value ) if value else 0
 
   @property
   def GUID( self ):
@@ -187,15 +187,15 @@ class FTSReq( object ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
                 for column, value in self.__data__.items()
-                if value and column not in  ( "FTSReqID", "LastUpdate" ) ]
+                if value and column not in  ( "FTSJobID", "LastUpdate" ) ]
     colVals.append( ( "`LastUpdate`", "UTC_TIMESTAMP()" ) )
     query = []
-    if self.FTSReqID:
-      query.append( "UPDATE `FTSReq` SET " )
+    if self.FTSJobID:
+      query.append( "UPDATE `FTSJob` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `FTSReqID`=%d;\n" % self.RequestID )
+      query.append( " WHERE `FTSJobID`=%d;\n" % self.RequestID )
     else:
-      query.append( "INSERT INTO `FTSReq` " )
+      query.append( "INSERT INTO `FTSJob` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
