@@ -123,7 +123,7 @@ class RequestDB(DB):
       self.log.error("putRequest: %s" % exists["Message"] )
       return exists
 
-    ## save connection for furhter use
+    # # save connection for further use
     connection = exists["connection"]
     exists = exists["Value"]
 
@@ -267,17 +267,17 @@ class RequestDB(DB):
   def _getRequestProperties( self, requestName, columnNames ):
     """ select :columnNames: from Request table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
-    query = "SELECT %s FROM `Request` WHERE RequestName = `%s`;" % ( columnNames, requestName )
+    return "SELECT %s FROM `Request` WHERE `RequestName` = `%s`;" % ( columnNames, requestName )
     
   def _getOperationProperties( self, operationID, columnNames ):
     """ select :columnNames: from Operation table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
-    query = "SELECT %s FROM `Operation` WHERE OperationID = %s;" % ( columnNames, int(operationID) )
+    return "SELECT %s FROM `Operation` WHERE `OperationID` = %s;" % ( columnNames, int( operationID ) )
 
   def _getFileProperties( self, fileID, columnNames ):
     """ select :columnNames: from File table  """
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
-    query = "SELECT %s FROM `File` WHERE FileID = %s;" % ( columnNames, int(fileID) )
+    return "SELECT %s FROM `File` WHERE `FileID` = %s;" % ( columnNames, int( fileID ) )
 
   def getDBSummary( self ):
     """ get db summary """

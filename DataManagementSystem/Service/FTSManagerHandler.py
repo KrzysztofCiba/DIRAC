@@ -51,11 +51,13 @@ class FTSManagerHandler(RequestHandler):
   .. class:: FTSManagerHandler
   
   """
+  __ftsValidator = None
 
-  def __init__( self ):
-    """c'tor
+  @classmethod
+  def ftsValidator( cls ):
+    """ FTSValidator instance getter """
+    if not cls.__ftsValidator:
+      cls.__ftsValidator = FTSValidator()
+    return cls.__ftsValidator
 
-    :param self: self reference
-    """
-    pass
 

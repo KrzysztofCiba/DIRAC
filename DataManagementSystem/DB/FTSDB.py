@@ -23,8 +23,10 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSDB class.
 
 # # imports
+import MySQLdb.cursors
+from MySQLdb import Error as MySQLdbError
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
@@ -47,6 +49,7 @@ class FTSDB( DB ):
     :param int maxQueueSize: size of queries queue
     """
     DB.__init__( self, "FTSDB", "DataManagement/FTSDB", maxQueueSize )
+    self.log = gLogger.getSubLogger( "DataManagement/FTSDB" )
     # # private lock
     self.getIdLock = LockRing.getLock()
     # # max attmprt for reschedule
@@ -67,33 +70,96 @@ class FTSDB( DB ):
     """
     return self._createTables( self.getTableMeta(), force = force )
 
-  def addFTSLfn( self, lfnFile ):
-    """ add operation file to fts db """
+  def dictCursor( self, conn = None ):
+    """ get dict cursor for connection :conn:
+
+    :return: S_OK( { "cursor": MySQLdb.cursors.DictCursor, "connection" : connection  } ) or S_ERROR
+    """
+    if not conn:
+      retDict = self._getConnection()
+      if not retDict["OK"]:
+        return retDict
+      conn = retDict["Value"]
+    cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
+    return S_OK( { "cursor" : cursor, "connection" : conn  } )
+
+  def _transaction( self, queries, connection = None ):
+    """ execute transaction """
+    queries = [ queries ] if type( queries ) == str else queries
+    # # get cursor and connection
+    getCursorAndConnection = self.dictCursor( connection )
+    if not getCursorAndConnection["OK"]:
+      return getCursorAndConnection
+    cursor = getCursorAndConnection["Value"]["cursor"]
+    connection = getCursorAndConnection["Value"]["connection"]
+
+    # # this iwll be returned as query result
+    ret = { "OK" : True,
+            "connection" : connection }
+    queryRes = { }
+    # # switch off autocommit
+    connection.autocommit( False )
+    try:
+      # # execute queries
+      for query in queries:
+        cursor.execute( query )
+        queryRes[query] = list( cursor.fetchall() )
+      # # commit
+      connection.commit()
+      # # save last row ID
+      lastrowid = cursor.lastrowid
+      # # close cursor
+      cursor.close()
+      ret["Value"] = queryRes
+      ret["lastrowid"] = lastrowid
+      return ret
+    except MySQLdbError, error:
+      self.log.exception( error )
+      # # roll back
+      connection.rollback()
+      # # revert auto commit
+      connection.autocommit( True )
+      # # close cursor
+      cursor.close()
+      return S_ERROR( str( error ) )
+
+
+
+  def putFTSLfn( self, lfnFile ):
+    """ put FTSLfn to fts db """
+    addFTSLfn = self._query( lfnFile.toSQL() )
+    if not addFTSLfn["OK"]:
+      self.log.error( addFTSLfn["Message"] )
+    return addFTSLfn
+
+  def getFTSLfn( self, fileID = None, lfn = None ):
+    """ read FTSLfn from db """
     pass
 
-  def delFTSLfn( self, lfnFile ):
-    pass
+  def putFTSJob( self, ftsJob ):
 
-
-  def setFTSJob( self, ftsJob ):
-    pass
-
-  def delLFN( self, lfnFile ):
     pass
 
   def getFTSJob( self, status = "Submitted" ):
     pass
 
+  def selectFTSFiles( self, status = "Waiting" ):
+    """ select FTSJobFiles for submit """
+    selectFiles = "SELECT * FROM `FTSJobFiles` WHERE `Status` = '%s'" % status;
 
-  def delFTSJob( self, ftsJob ):
-    pass
+def _getFTSLfnProperties( self, ftsLfnID, columnNames ):
+  """ select :columnNames: from FTSLfn table  """
+  columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
+  return "SELECT %s FROM `FTSLfn` WHERE `FTSLfnID` = %s;" % ( columnNames, int( ftsLfnID ) )
 
-  def selectFilesToSubmit( self, sourceSE, targetSE ):
-    """ """
-    pass
+def _getFTSJobProperties( self, ftsJobID, columnNames ):
+  """ select :columnNames: from FTSJob table  """
+  columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
+  return "SELECT %s FROM `FTSJob` WHERE `FTSJobID` = %s;" % ( columnNames, int( ftsJobID ) )
 
-
-
-
+def _getFTSJobFileProperties( self, ftsJobFileID, columnNames ):
+  """ select :columnNames: from FTSJobFile table  """
+  columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
+  return "SELECT %s FROM `FTSJobFile` WHERE `FTSJobFileID` = %s;" % ( columnNames, int( ftsJobFileID ) )
 
 
