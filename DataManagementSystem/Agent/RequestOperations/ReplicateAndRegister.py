@@ -116,11 +116,11 @@ class ReplicateAndRegister( BaseOperation ):
         self.operation.Error = reason
         continue
 
+      # # get waiting files
+      waitingFiles = self.getWaitingFilesList()
+
       # # loop over files
-      for opFile in self.operation:
-        # # skip non-waiting files
-        if opFile.Status != "Waiting":
-          continue
+      for opFile in waitingFiles:
 
         gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
         lfn = opFile.LFN

@@ -55,8 +55,10 @@ class RemoveReplica( BaseOperation ):
     """ remove replicas """
     # # prepare list of targetSEs
     targetSEs = self.operation.targetSEList
-    # # and dict of files
-    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
+    # # get waiting files
+    waitingFiles = self.getWaitingFilesList()
+    # # and prepare dict
+    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
 
     self.log.info( "found %s replicas to delete from %s sites" % ( len( toRemoveDict ), len( targetSEs ) ) )
     gMonitor.addMark( "RemoveReplicaAtt", len( toRemoveDict ) * len( targetSEs ) )

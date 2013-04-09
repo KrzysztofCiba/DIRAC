@@ -123,8 +123,6 @@ class FTSDB( DB ):
       cursor.close()
       return S_ERROR( str( error ) )
 
-
-
   def putFTSLfn( self, lfnFile ):
     """ put FTSLfn to fts db """
     addFTSLfn = self._query( lfnFile.toSQL() )
@@ -137,29 +135,35 @@ class FTSDB( DB ):
     pass
 
   def putFTSJob( self, ftsJob ):
-
+    """ put FTSJob to the db """
     pass
 
   def getFTSJob( self, status = "Submitted" ):
+
     pass
 
-  def selectFTSFiles( self, status = "Waiting" ):
+  def selectFTSJobFiles( self, status = "Waiting" ):
     """ select FTSJobFiles for submit """
     selectFiles = "SELECT * FROM `FTSJobFiles` WHERE `Status` = '%s'" % status;
+    selectFiles = self._query( selectFiles )
+    if not selectFiles["OK"]:
+      self.log.error( selectFiles["Message"] )
+      return selectFiles
 
-def _getFTSLfnProperties( self, ftsLfnID, columnNames ):
-  """ select :columnNames: from FTSLfn table  """
-  columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-  return "SELECT %s FROM `FTSLfn` WHERE `FTSLfnID` = %s;" % ( columnNames, int( ftsLfnID ) )
+  def _getFTSLfnProperties( self, ftsLfnID, columnNames = None ):
+    """ select :columnNames: from FTSLfn table  """
+    columnNames = columnNames if columnNames else [ col for col in FTSLfn.tableDesc()["Fields"] if col != "FTSLfnID" ]
+    columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
+    return "SELECT %s FROM `FTSLfn` WHERE `FTSLfnID` = %s;" % ( columnNames, int( ftsLfnID ) )
 
-def _getFTSJobProperties( self, ftsJobID, columnNames ):
-  """ select :columnNames: from FTSJob table  """
-  columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-  return "SELECT %s FROM `FTSJob` WHERE `FTSJobID` = %s;" % ( columnNames, int( ftsJobID ) )
+  def _getFTSJobProperties( self, ftsJobID, columnNames = None ):
+    """ select :columnNames: from FTSJob table  """
+    columnNames = columnNames if columnNames else [ col for col in FTSJob.tableDesc()["Fields"] if col != "FTSJobID" ]
+    columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
+    return "SELECT %s FROM `FTSJob` WHERE `FTSJobID` = %s;" % ( columnNames, int( ftsJobID ) )
 
-def _getFTSJobFileProperties( self, ftsJobFileID, columnNames ):
-  """ select :columnNames: from FTSJobFile table  """
-  columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-  return "SELECT %s FROM `FTSJobFile` WHERE `FTSJobFileID` = %s;" % ( columnNames, int( ftsJobFileID ) )
-
-
+  def _getFTSJobFileProperties( self, ftsJobFileID, columnNames = None ):
+    """ select :columnNames: from FTSJobFile table  """
+    columnNames = columnNames if columnNames else [ col for col in FTSJobFile.tableDesc()["Fields"] if col != "FTSJobFileID" ]
+    columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
+    return "SELECT %s FROM `FTSJobFile` WHERE `FTSJobFileID` = %s;" % ( columnNames, int( ftsJobFileID ) )

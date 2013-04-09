@@ -92,16 +92,14 @@ class PutAndRegister( BaseOperation ):
 
     catalog = self.operation.Catalogue
 
+    # # get waiting files
+    waitingFiles = self.getWaitingFilesList()
+
     # # loop over files
-    for opFile in self.operation:
+    for opFile in waitingFiles:
       # # get LFN
       lfn = opFile.LFN
-
       self.log.info( "processing file %s" % lfn )
-      if opFile.Status != "Waiting":
-        self.log.info( "skipping file %s, status is %s" % ( lfn, opFile.Status ) )
-        continue
-
       gMonitor.addMark( "PutAtt", 1 )
 
       pfn = opFile.PFN

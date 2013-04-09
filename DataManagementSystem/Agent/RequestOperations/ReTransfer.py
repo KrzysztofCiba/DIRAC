@@ -55,7 +55,9 @@ class ReTransfer( BaseOperation ):
     # # list of targetSEs
     targetSEs = self.operation.targetSEList
     # # get waiting files
-    toRetransfer = dict( [ ( opFile.PFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
+    waitingFiles = self.getWaitingFilesList()
+    # # prepare waiting files
+    toRetransfer = dict( [ ( opFile.PFN, opFile ) for opFile in waitingFiles ] )
 
     gMonitor.addMark( "FileReTransferAtt", len( toRetransfer ) )
 

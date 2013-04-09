@@ -74,11 +74,10 @@ class RegisterFile( BaseOperation ):
     failedFiles = 0
     # # catalog to use
     catalog = self.operation.Catalogue
+    # # get waiting files
+    waitingFiles = self.getWaitingFilesList()
     # # loop over files
-    for opFile in self.operation:
-      # # skip non-waiting
-      if opFile.Status != "Waiting":
-        continue
+    for opFile in waitingFiles:
 
       gMonitor.addMark( "RegisterAtt", 1 )
 

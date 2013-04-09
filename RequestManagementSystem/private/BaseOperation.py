@@ -48,6 +48,8 @@ class BaseOperation( object ):
   __rssClient = None
   # # shifter list
   __shifterList = []
+  # # max attempt counter
+  __maxAttempt = 100
 
   def __init__( self, operation = None ):
     """c'tor
@@ -143,6 +145,15 @@ class BaseOperation( object ):
     os.environ["X509_USER_PROXY"] = dumpToFile
     return dumpToFile
 
+  def getWaitingFilesList( self ):
+    """ prepare waiting files list, update Attempt, filter out MaxAttempt """
+    waitingFiles = [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
+    for opFile in waitingFiles:
+      opFile.Attempt += 1
+      if opFile.Attempt > self.__maxAttempts:
+        opFile.Status = "Failed"
+        opFile.Error = "Max attempt count reached"
+    return [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
 
   def rssSEStatus( self, se, status ):
     """ check SE :se: for status :status:

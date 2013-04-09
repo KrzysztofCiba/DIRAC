@@ -75,8 +75,10 @@ class PhysicalRemoval( BaseOperation ):
     if bannedTargets:
       return S_ERROR( "targets %s are banned for removal" % ",".join( bannedTargets ) )
 
+    # # get waiting files
+    waitingFiles = self.getWaitingFilesList()
     # # prepare pfn dict
-    toRemoveDict = dict( [ ( opFile.PFN, opFile ) for opFile in self.operation in opFile.Status == "Waiting" ] )
+    toRemoveDict = dict( [ ( opFile.PFN, opFile ) for opFile in waitingFiles ] )
 
     gMonitor.addMark( "PhysicalRemovalAtt", len( toRemoveDict ) * len( targetSEs ) )
 

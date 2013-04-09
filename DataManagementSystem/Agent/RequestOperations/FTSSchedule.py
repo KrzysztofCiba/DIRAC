@@ -38,7 +38,6 @@ class FTSSchedule( BaseOperation ):
   """
   .. class:: FTSSchedule
 
-  this is special operation that has be executed NOT in task
   """
 
   def __init__( self, operation = None ):
@@ -58,7 +57,6 @@ class FTSSchedule( BaseOperation ):
   def __call__( self ):
     """ execute """
     self.log.always( "called " % self.__class__.__name__ )
-
 
     return S_OK()
 

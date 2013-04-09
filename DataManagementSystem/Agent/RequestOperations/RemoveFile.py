@@ -54,8 +54,10 @@ class RemoveFile( BaseOperation ):
 
   def __call__( self ):
     """ action for 'removeFile' operation  """
-    # #get waiting files
-    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation if opFile.Status == "Waiting" ] )
+    # # get waiting files
+    waitingFiles = self.getWaitingFilesList()
+    # # prepare waiting file dict
+    toRemoveDict = dict( [ ( opFile.LFN, opFile ) for opFile in waitingFiles ] )
     gMonitor.addMark( "RemoveFileAtt", len( toRemoveDict ) )
 
     # # 1st step - bulk removal
