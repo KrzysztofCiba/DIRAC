@@ -12,7 +12,7 @@
     :synopsis: handler for FTSDB using DISET
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    handler for FTSDB using DISET
+    service handler for FTSDB using DISET
 """
 
 __RCSID__ = "$Id $"

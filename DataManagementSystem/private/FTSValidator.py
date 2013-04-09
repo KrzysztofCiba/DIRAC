@@ -5,10 +5,11 @@
 # Date: 2013/04/08 14:28:29
 ########################################################################
 """ :mod: FTSValidator 
-    =======================
+    ==================
  
     .. module: FTSValidator
-    :synopsis: making sure all information is in place
+    :synopsis: making sure that all required bits and pieces are in place for FTSLfn, FTSJob
+               and FTSJobFile
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     A general and simple fts validator checking for required attributes and logic.
@@ -26,7 +27,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSValidator class.
 
 ## imports 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
@@ -42,15 +43,12 @@ class FTSValidator(object):
   # # required attributes in FTSLfn, FTSJob and FTSJobFile
   __reqAttrs = { FTSLfn: { "attrs": [ "OperationID", "FileID", "LFN",
                                           "TargetSE", "Checksum", "ChecksumType", "Size" ] },
-                    FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size" ] },
-                    FTSJobFile: { "attrs": [ "FTSLfnID", "Checksum", "ChecksumType", "Size",
+                 FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size" ] },
+                 FTSJobFile: { "attrs": [ "FTSLfnID", "Checksum", "ChecksumType", "Size",
                                              "SourceSE", "SourceSURL", "TargetSE", "TargetSURL" ] } }
 
   def __init__( self ):
-    """c'tor
-
-    :param self: self reference
-    """
+    """ c'tor """
     # # order of validators
     self.validators = [ self.hasReqAttrs, self.hasFTSJobFiles ]
 
