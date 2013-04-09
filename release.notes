@@ -1,4 +1,4 @@
-[v6r7-pre1]
+[v7r0-pre2]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -77,6 +77,14 @@ FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg
 *WMS
 FIX: JobManifest - take all the SubmitPools defined in the TaskQueueAgent 
 NEW: StalledJobAgent - declare jobs stuck in Completed status as Failed
+
+[v6r8p1]
+
+*Core
+FIX: dirac-deploy-scripts - restored regression w.r.t. support of scripts starting with "d"
+
+*DMS
+BUGFIX: LcgFileCatalogClient - two typos fixed
 
 [v6r8]
 
