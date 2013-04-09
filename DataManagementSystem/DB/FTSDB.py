@@ -142,6 +142,7 @@ class FTSDB( DB ):
 
     pass
 
+
   def selectFTSJobFiles( self, status = "Waiting" ):
     """ select FTSJobFiles for submit """
     selectFiles = "SELECT * FROM `FTSJobFiles` WHERE `Status` = '%s'" % status;

@@ -64,6 +64,8 @@ class RequestExecutingAgent( AgentModule ):
   __requestClient = None
   # # FTS scheduling flag
   __FTSMode = False
+  # # max attempts for calling operations for waiting files
+  __maxAttempts = 256
 
   def __init__( self, *args, **kwargs ):
     """ c'tor """
@@ -71,7 +73,9 @@ class RequestExecutingAgent( AgentModule ):
     AgentModule.__init__( self, *args, **kwargs )
     # # ProcessPool related stuff
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", self.__requestsPerCycle )
-    self.log.info( "requests/cycle = %d" % self.__requestsPerCycle )
+    self.log.info( "Requests/cycle = %d" % self.__requestsPerCycle )
+    self.__maxAttempts = self.am_getOption( "MaxAttempts", self.__maxAttempts )
+    self.log.info( "MaxAttempts = %d" % self.__maxAttepmts )
     self.__minProcess = self.am_getOption( "MinProcess", self.__minProcess )
     self.log.info( "ProcessPool min process = %d" % self.__minProcess )
     self.__maxProcess = self.am_getOption( "MaxProcess", 4 )
@@ -109,7 +113,7 @@ class RequestExecutingAgent( AgentModule ):
     self.__requestCache = dict()
 
   def processPool( self ):
-    """ facede for ProcessPool """
+    """ facade for ProcessPool """
     if not self.__processPool:
       minProcess = max( 1, self.__minProcess )
       maxProcess = max( self.__minProcess, self.__maxProcess )
@@ -190,7 +194,7 @@ class RequestExecutingAgent( AgentModule ):
   def execute( self ):
     """ read requests from RequestClient and enqueue them into ProcessPool """
     gMonitor.addMark( "Iteration", 1 )
-
+    # # requests (and so tasks) counter
     taskCounter = 0
     while taskCounter < self.__requestsPerCycle:
       self.log.info( "execute: " )
@@ -218,7 +222,8 @@ class RequestExecutingAgent( AgentModule ):
           self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
           enqueue = self.processPool().createAndQueueTask( self.__requestTask,
                                                            kwargs = { "requestXML" : request.toXML()["Value"],
-                                                                      "handlersDict" : self.handlersDict },
+                                                                      "handlersDict" : self.handlersDict,
+                                                                      "cs" : {} },
                                                            taskID = taskID,
                                                            blocking = True,
                                                            usePoolCallbacks = True,
