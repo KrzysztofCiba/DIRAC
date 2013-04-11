@@ -28,7 +28,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 # # from DIRAC
-from DIRAC import gLogger, gMonitor, S_ERROR, S_OK
+from DIRAC import gLogger, gMonitor, S_ERROR, S_OK, gConfig
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
@@ -51,16 +51,21 @@ class BaseOperation( object ):
   # # max attempt counter
   __maxAttempt = 100
 
-  def __init__( self, operation = None ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param Operation operation: Operation instance
+    :param str csPath: config path in CS
     """
     # # placeholders for operation and request
     self.operation = None
     self.request = None
+
+    self.csPath = csPath if csPath else ""
+
     name = self.__class__.__name__
     self.log = gLogger.getSubLogger( name, True )
+
     # # setup proxies
     self.__setupManagerProxies()
     # # setup operation
@@ -69,6 +74,13 @@ class BaseOperation( object ):
     # # std monitor
     for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
       gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
+    # # initilize at least
+    self.initalize()
+
+  def initilize( self ):
+    """ placeholder for initialization """
+    pass
+
 
   def setOperation( self, operation ):
       """ operation and request setter

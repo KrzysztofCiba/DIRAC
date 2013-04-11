@@ -26,14 +26,18 @@ __RCSID__ = "$Id $"
 # # imports
 import time
 # # from DIRAC
-from DIRAC import gMonitor, S_OK, S_ERROR
+from DIRAC import gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
+
+class MisconfigError( Exception ):
+  pass
 
 ########################################################################
 class RequestExecutingAgent( AgentModule ):
@@ -90,15 +94,28 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "ProcessTask timeout = %d seconds" % self.__taskTimeout )
     # #  RequestTask class def
     self.__requestTask = RequestTask
-    # # operation handlers
-    self.operationHandlers = self.am_getOption( "Operations",
-                                                [ "DIRAC/DataManagementSystem/Agent/RequestOperations/ReplicateAndRegister",
-                                                  "DIRAC/DataManagementSystem/Agent/RequestOperations/FTSScheduler",
-                                                  "DIRAC/DataManagementSystem/Agent/RequestOperations/PutAndRegister",
-                                                  "DIRAC/DataManagemnetSystem/Agent/RequestOperations/RemoveReplica",
-                                                  "DIRAC/DataManagemnetSystem/Agent/RequestOperations/RemoveFile",
-                                                  "DIRAC/DataManagemnetSystem/Agent/RequestOperations/RegisterFile",
-                                                  "DIRAC/RequestManagementSystem/Agent/RequestOperations/ForwardDISET" ] )
+
+    # # keep config path
+    agentName = self.am_getModuleParam( "fullName" )
+    self.__configPath = PathFinder.getAgentSection( agentName )
+
+    # # operation handlers over here
+    opHandlersPath = "%s/%s" % ( self.__configPath, "OperationHandlers" )
+    opHandlers = gConfig.getSections( opHandlersPath )
+    if not opHandlers["OK"]:
+      self.log.error( opHandlers["Message" ] )
+      raise MisconfigError()
+    opHandlers = opHandlers["Value"]
+
+    self.operationHandlers = []
+    for opHandler in opHandlers:
+      opHandlerPath = "%s/%s/Location" % ( opHandlersPath, opHandler )
+      opLocation = gConfig.getValue( opHandlerPath, "" )
+      if not opLocation:
+        self.log.error( "%s not set for %s operation handler" % ( opHandlerPath, opHandler ) )
+        continue
+      self.operationHandlers.append( opLocation )
+
     self.log.info( "Operation handlers: %s" % ",".join( self.operationHandlers ) )
     # # handlers dict
     self.handlersDict = dict()
@@ -223,7 +240,7 @@ class RequestExecutingAgent( AgentModule ):
           enqueue = self.processPool().createAndQueueTask( self.__requestTask,
                                                            kwargs = { "requestXML" : request.toXML()["Value"],
                                                                       "handlersDict" : self.handlersDict,
-                                                                      "cs" : {} },
+                                                                      "csPath" : self.__configPath },
                                                            taskID = taskID,
                                                            blocking = True,
                                                            usePoolCallbacks = True,

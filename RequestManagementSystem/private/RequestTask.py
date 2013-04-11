@@ -43,7 +43,7 @@ class RequestTask( object ):
   # # request client
   __requestClient = None
 
-  def __init__( self, requestXML, handlersDict ):
+  def __init__( self, requestXML, handlersDict, csPath ):
     """c'tor
 
     :param self: self reference
@@ -192,6 +192,7 @@ class RequestTask( object ):
       try:
         handlerCls = self.loadHandler( self.handlersDict[operation.Type] )
         self.handlers[operation.Type] = handlerCls()
+        # # TODO
         handler = self.handlers[ operation.Type ]
       except ( ImportError, TypeError ), error:
         self.log.exception( "getHandler: %s" % str( error ), lException = error )

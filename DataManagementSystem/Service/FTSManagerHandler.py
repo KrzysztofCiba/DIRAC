@@ -27,7 +27,7 @@ __RCSID__ = "$Id $"
 ## imports
 from types import DictType, IntType, ListType, StringTypes
 ## from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 ## from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
