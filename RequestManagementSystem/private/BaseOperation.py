@@ -64,6 +64,9 @@ class BaseOperation( object ):
     self.csPath = csPath if csPath else ""
 
     name = self.__class__.__name__
+
+    self.optionsDict = gConfig.getOptionsDict( "%s/OperationHandlers/%s" % ( self.csPath, name ) )
+
     self.log = gLogger.getSubLogger( name, True )
 
     # # setup proxies
@@ -74,8 +77,9 @@ class BaseOperation( object ):
     # # std monitor
     for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
       gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
-    # # initilize at least
-    self.initalize()
+    # # initialize at least
+    self.initialize()
+
 
   def initilize( self ):
     """ placeholder for initialization """

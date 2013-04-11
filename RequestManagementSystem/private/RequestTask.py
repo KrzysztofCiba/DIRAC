@@ -51,6 +51,8 @@ class RequestTask( object ):
     :param dict opHandlers: operation handlers
     """
     self.request = Request.fromXML( requestXML )["Value"]
+    # # csPath
+    self.csPath = csPath
     # # handlers dict
     self.handlersDict = handlersDict
     # # handlers class def
@@ -191,8 +193,7 @@ class RequestTask( object ):
     if not handler:
       try:
         handlerCls = self.loadHandler( self.handlersDict[operation.Type] )
-        self.handlers[operation.Type] = handlerCls()
-        # # TODO
+        self.handlers[operation.Type] = handlerCls( csPath = self.csPath )
         handler = self.handlers[ operation.Type ]
       except ( ImportError, TypeError ), error:
         self.log.exception( "getHandler: %s" % str( error ), lException = error )
