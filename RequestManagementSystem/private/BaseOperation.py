@@ -11,11 +11,35 @@
     :synopsis: request operation handler base class
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    request operation handler base class
+    RMS Operation handler base class.
 
-    this should be a functor getting Operation as ctor argument
-    __call__ should return S_OK/S_ERROR
+    This should be a functor getting Operation as ctor argument and calling it (executing __call__)
+    should return S_OK/S_ERROR.
 
+    Helper functions and tools:
+
+    * self.replicaManager() -- returns ReplicaManager
+    * self.dataLoggingClient() -- returns DataLoggingClient
+    * self.rssClient() -- returns RSSClient
+    * self.getProxyForLFN( LFN ) -- sets X509_USER_PROXY environment variable to LFN owner proxy
+    * self.rssSEStatus( SE, status ) returns S_OK(True/False) depending of RSS :status:
+
+    Properties:
+
+    * self.shifter -- list of shifters matching request owner
+    * each CS option stored under "RequestExecutingAgent/OperationHandlers/Foo" is exported as read-only property too
+    * self.initialize() -- overwrite it to perform additional initialization
+    * self.log -- own sub logger
+    * self.request, self.operation -- reference to Operation and Request itself
+
+    In all inherited class one should overwrite __call__ and initialize, when appropriate.
+
+
+    For monitoring purpose each of operation handler has got defined at this level three
+    :gMonitor: activities to be used together with given operation.Type, namely
+    operation.Type + "Att", operation.Type + "Succ" and operation.Type + "Fail", i.e. for
+    operation.Type = "Foo", they are "FooAtt", "FooSucc", "FooFail". Treating of those is done
+    automatically, but if you need to monitor more, DIY.
 
 """
 __RCSID__ = "$Id $"
@@ -28,7 +52,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 # # from DIRAC
-from DIRAC import gLogger, gMonitor, S_ERROR, S_OK, gConfig
+from DIRAC import gLogger, gMonitor, gConfig, S_ERROR, S_OK
 from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -68,11 +92,11 @@ class BaseOperation( object ):
     csOptionsDict = gConfig.getOptionsDict( self.csPath )
     for option, value in csOptionsDict.iteritems():
       self.makeProperty( option, value, True )
-
+    # # pre setup logger
     self.log = gLogger.getSubLogger( name, True )
     # # set log level
     self.log.setLevel( { True: getattr( self, "LogLevel" ), False : "INFO" }[hasattr( self, "LogLevel" )] )
-
+    # # list properties
     for option in csOptionsDict:
       self.log.info( "%s = %s" % ( option, getattr( self, option ) ) )
 
@@ -83,14 +107,8 @@ class BaseOperation( object ):
     for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
       gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
     # # initialize at least
-    self.initalize( csOptionsDict )
-
-  def initalize( self, csOptionsDict = None ):
-    """ perform additional initialization here
-
-    :param dict csOptionDict: options dict as read from gConfig at :csPath:
-    """
-    return S_OK()
+    if hasattr( self, "initialize" ) and callable( getattr( self, "initialize" ) ):
+      getattr( self, "initialize" )()
 
   def setOperation( self, operation ):
       """ operation and request setter
@@ -169,6 +187,9 @@ class BaseOperation( object ):
 
   def getWaitingFilesList( self ):
     """ prepare waiting files list, update Attempt, filter out MaxAttempt """
+    if not self.operation:
+      self.log.warning( "getWaitingFilesList: operation not set, returning empty list" )
+      return []
     waitingFiles = [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
     for opFile in waitingFiles:
       opFile.Attempt += 1
@@ -200,7 +221,7 @@ class BaseOperation( object ):
     self.__shifterList = shifterList
 
   def __call__( self ):
-    """ this one should be implemented in the inherited classes
+    """ this one should be implemented in the inherited class
 
     should return S_OK/S_ERROR
     """
