@@ -193,7 +193,7 @@ class RequestTask( object ):
     if not handler:
       try:
         handlerCls = self.loadHandler( self.handlersDict[operation.Type] )
-        self.handlers[operation.Type] = handlerCls( csPath = self.csPath )
+        self.handlers[operation.Type] = handlerCls( csPath = "%s/OperationHandlers/%s" % ( self.csPath, operation.Type ) )
         handler = self.handlers[ operation.Type ]
       except ( ImportError, TypeError ), error:
         self.log.exception( "getHandler: %s" % str( error ), lException = error )

@@ -29,6 +29,7 @@ __RCSID__ = "$Id $"
 import os
 # # from DIRAC
 from DIRAC import gLogger, gMonitor, S_ERROR, S_OK, gConfig
+from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
@@ -40,6 +41,7 @@ class BaseOperation( object ):
 
   request operation handler base class
   """
+  __metaclass__ = DynamicProps
   # # private replica manager
   __replicaManager = None
   # # private data logging client
@@ -48,29 +50,32 @@ class BaseOperation( object ):
   __rssClient = None
   # # shifter list
   __shifterList = []
-  # # max attempt counter
-  __maxAttempt = 100
 
   def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param Operation operation: Operation instance
-    :param str csPath: config path in CS
+    :param str csPath: config path in CS for this operation
     """
     # # placeholders for operation and request
     self.operation = None
     self.request = None
 
     self.csPath = csPath if csPath else ""
-
+    # # get name
     name = self.__class__.__name__
-
-    self.optionsDict = gConfig.getOptionsDict( "%s/OperationHandlers/%s" % ( self.csPath, name ) )
+    # # all options are r/o properties now
+    csOptionsDict = gConfig.getOptionsDict( self.csPath )
+    for option, value in csOptionsDict.iteritems():
+      self.makeProperty( option, value, True )
 
     self.log = gLogger.getSubLogger( name, True )
+    # # set log level
+    self.log.setLevel( { True: getattr( self, "LogLevel" ), False : "INFO" }[hasattr( self, "LogLevel" )] )
 
-    # # setup proxies
-    self.__setupManagerProxies()
+    for option in csOptionsDict:
+      self.log.info( "%s = %s" % ( option, getattr( self, option ) ) )
+
     # # setup operation
     if operation:
       self.setOperation( operation )
@@ -78,13 +83,14 @@ class BaseOperation( object ):
     for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
       gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
     # # initialize at least
-    self.initialize()
+    self.initalize( csOptionsDict )
 
+  def initalize( self, csOptionsDict = None ):
+    """ perform additional initialization here
 
-  def initilize( self ):
-    """ placeholder for initialization """
-    pass
-
+    :param dict csOptionDict: options dict as read from gConfig at :csPath:
+    """
+    return S_OK()
 
   def setOperation( self, operation ):
       """ operation and request setter
@@ -166,9 +172,10 @@ class BaseOperation( object ):
     waitingFiles = [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
     for opFile in waitingFiles:
       opFile.Attempt += 1
-      if opFile.Attempt > self.__maxAttempts:
+      maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( "MaxAttempts" ) else 256
+      if opFile.Attempt > maxAttempts:
         opFile.Status = "Failed"
-        opFile.Error = "Max attempt count reached"
+        opFile.Error = "Max attempts limit reached"
     return [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
 
   def rssSEStatus( self, se, status ):
