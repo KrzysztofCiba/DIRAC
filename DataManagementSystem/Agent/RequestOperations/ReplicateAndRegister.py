@@ -54,7 +54,6 @@ class ReplicateAndRegister( BaseOperation ):
     gMonitor.registerActivity( "RegisterFail", "Registrations failed",
                                 name, "Files/min", gMonitor.OP_SUM )
 
-
   def __call__( self ):
     """ call me maybe """
     # # source SE

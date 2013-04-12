@@ -57,7 +57,6 @@ class FTSManagerHandler(RequestHandler):
   # # fts scheduler
   __ftsScheduler = None
 
-
   @classmethod
   def ftsValidator( cls ):
     """ FTSValidator instance getter """
@@ -65,8 +64,43 @@ class FTSManagerHandler(RequestHandler):
       cls.__ftsValidator = FTSValidator()
     return cls.__ftsValidator
 
-  types_fstSchedule = [ StringTypes, ListType, StringTypes ]
+  types_ftsSchedule = [ StringTypes, ListType, StringTypes ]
   def export_ftsSchedule( self, LFN, targetSEs, strategy = None ):
-    """ """
+    """ call FTS scheduler
+
+    :param str LFN: lfn
+    :param list targetSEs: target SEs
+    :param str strategy: strategy to use
+    """
     pass
+
+  types_putFTSLfn = [ StringTypes ]
+  @staticmethod
+  def export_putFTSLfn( ftsLfnXML ):
+    """ put FTSLfn into FTSDB """
+    ftsLfn = FTSLfn.fromXML()
+    if not ftsLfn["OK"]:
+      gLogger.error( ftsLfn["Message"] )
+      return ftsLfn
+    try:
+      return gFTSDB.putFTSLfn( ftsLfn["Value"] )
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+    
+  types_putFTSJob = [ StringTypes ]
+  @staticmethod
+  def export_putFTSJob( ftsJobXML ):
+    """ put FTSLfn into FTSDB """
+    ftsJob = FTSJob.fromXML()
+    if not ftsJob["OK"]:
+      gLogger.error( ftsJob["Message"] )
+      return ftsJob
+    try:
+      return gFTSDB.putFTSJob( ftsJob["Value"] )
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+
+
 

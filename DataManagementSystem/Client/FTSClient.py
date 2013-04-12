@@ -84,3 +84,42 @@ class FTSClient( Client ):
       cls.__requestClient = RequestClient()
     return cls.__requestClient
 
+  def putFTSLfn( self, ftsLfn ):
+    """ put FTSLfn into FTSDB
+
+    :param FTSLfn ftsLfn: FTSLfn instance
+    """
+    isValid = self.ftsValidator().validate( ftsLfn )
+    if not isValid["OK"]:
+      self.log.error( isValid["Message"] )
+      return isValid
+    ftsLfnXML = ftsLfn.toXML()
+    if not ftsLfnXML["OK"]:
+      self.log.error( ftsLfnXML["Message"] )
+      return ftsLfnXML
+    return self.ftsManager().putFTSLfn( ftsLfnXML )
+
+  def putFTSJob( self, ftsJob ):
+    """ put FTSJob into FTSDB
+
+    :param FTSJob ftsJob: FTSJob instance
+    """
+    isValid = self.ftsValidator().validate( ftsJob )
+    if not isValid["OK"]:
+      self.log.error( isValid["Message"] )
+      return isValid
+    ftsJobXML = ftsJob.toXML()
+    if not ftsJobXML["OK"]:
+      self.log.error( ftsJobXML["Message"] )
+      return ftsJobXML
+    return self.ftsManager().putFTSJob( ftsJobXML )
+
+  def ftsSchedule( self, lfn, targetSEs, strategy = None ):
+    """ schedule lfn for FTS job
+
+    :param str lfn: LFN
+    :param list targetSEs: list of target SEs
+    :param str strategy: strategy to use
+    """
+    return self.ftsManager().ftsSchedule( lfn, targetSEs, strategy )
+

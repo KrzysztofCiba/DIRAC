@@ -16,6 +16,8 @@
 
 
     This one should be executed outside of ProcessPool.
+
+    TODO: remove
 """
 
 __RCSID__ = "$Id $"
