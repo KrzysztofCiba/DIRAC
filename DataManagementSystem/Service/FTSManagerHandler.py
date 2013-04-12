@@ -33,6 +33,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
 from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
+from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
 ## global instance of FTSDB
@@ -51,7 +52,11 @@ class FTSManagerHandler(RequestHandler):
   .. class:: FTSManagerHandler
   
   """
+  # # fts validator
   __ftsValidator = None
+  # # fts scheduler
+  __ftsScheduler = None
+
 
   @classmethod
   def ftsValidator( cls ):
@@ -60,4 +65,8 @@ class FTSManagerHandler(RequestHandler):
       cls.__ftsValidator = FTSValidator()
     return cls.__ftsValidator
 
+  types_fstSchedule = [ StringTypes, ListType, StringTypes ]
+  def export_ftsSchedule( self, LFN, targetSEs, strategy = None ):
+    """ """
+    pass
 

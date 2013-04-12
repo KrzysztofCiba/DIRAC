@@ -77,6 +77,8 @@ class FTSJob( object ):
                "SourceSE" : "VARCHAR(128)",
                "TargerSE" : "VARCHAR(128)",
                "FTSServer" : "VARCHAR(255)",
+               "TargetToken": "VARCHAR(255)",
+               "SourceToken": "VARCHAR(255)",
                "Size": "INTEGER",
                "Status" : "ENUM( 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
@@ -216,6 +218,26 @@ class FTSJob( object ):
   def SourceSE( self, sourceSE ):
     """ source SE setter """
     self.__data__["SourceSE"] = sourceSE
+
+  @property
+  def SourceToken( self ):
+    """ source token getter """
+    return self.__data__["SourceToken"]
+
+  @SourceToken.setter
+  def SourceToken( self, sourceToken ):
+    """ source SE setter """
+    self.__data__["SourceToken"] = sourceToken
+
+  @property
+  def TargetToken( self ):
+    """ target token getter """
+    return self.__data__["TargetToken"]
+
+  @TargetToken.setter
+  def TargetToken( self, targetToken ):
+    """ target SE setter """
+    self.__data__["TargetToken"] = targetToken
 
   # # FTSJobFiles aritmetics
   def __contains__( self, subFile ):

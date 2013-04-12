@@ -36,8 +36,16 @@ from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
 
-class MisconfigError( Exception ):
-  pass
+class AgentConfigError( Exception ):
+  """ misconfiguration error """
+  def __init__( self, msg ):
+    """ ctor
+    :param str msg: error string
+    """
+    self.msg = msg
+  def __str__( self ):
+    """ str op """
+    return self.msg
 
 ########################################################################
 class RequestExecutingAgent( AgentModule ):
@@ -104,7 +112,7 @@ class RequestExecutingAgent( AgentModule ):
     opHandlers = gConfig.getSections( opHandlersPath )
     if not opHandlers["OK"]:
       self.log.error( opHandlers["Message" ] )
-      raise MisconfigError()
+      raise AgentConfigError( "OperationHandlers section not found in CS under %s" % self.__configPath )
     opHandlers = opHandlers["Value"]
 
     self.operationHandlers = []
@@ -116,7 +124,10 @@ class RequestExecutingAgent( AgentModule ):
         continue
       self.operationHandlers.append( opLocation )
 
-    self.log.info( "Operation handlers: %s" % ",".join( self.operationHandlers ) )
+    self.log.info( "Operation handlers:" )
+    for itemTuple in enumerate ( self.operationHandlers ):
+      self.log.info( "[%s] %s" % itemTuple )
+
     # # handlers dict
     self.handlersDict = dict()
     # # common monitor activity

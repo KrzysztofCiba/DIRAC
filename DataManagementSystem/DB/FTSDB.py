@@ -132,16 +132,23 @@ class FTSDB( DB ):
 
   def getFTSLfn( self, fileID = None, lfn = None ):
     """ read FTSLfn from db """
-    pass
+    if not any( fileID, lfn ):
+      return S_ERROR( "Missing fileID of lfn argument" )
 
   def putFTSJob( self, ftsJob ):
-    """ put FTSJob to the db """
-    pass
+    """ put FTSJob to the db
+
+    :param FTSJob ftsJob: FTSJob instance
+    """
+    putJob = [ ftsJob.toSQL() ] + [ ftsFile.toSQL() for ftsFile in ftsJob ]
+    putJob = self._transaction( putJob )
+    if not putJob["OK"]:
+      self.log.error( putJob["Message"] )
+    return putJob
 
   def getFTSJob( self, status = "Submitted" ):
 
     pass
-
 
   def selectFTSJobFiles( self, status = "Waiting" ):
     """ select FTSJobFiles for submit """
