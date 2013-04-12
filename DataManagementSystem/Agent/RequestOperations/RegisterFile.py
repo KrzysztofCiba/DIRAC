@@ -34,13 +34,14 @@ class RegisterFile( BaseOperation ):
   RegisterFile operation handler
   """
 
-  def __init__( self, operation = None ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param self: self reference
     :param Operation operation: Operation instance
+    :param str csPath: CS path for this handler
     """
-    BaseOperation.__init__( self, operation )
+    BaseOperation.__init__( self, operation, csPath )
     # # RegisterFile specific monitor info
     gMonitor.registerActivity( "RegisterAtt", "Attempted file registrations",
                                self.__class__.__name__, "Files/min", gMonitor.OP_SUM )

@@ -37,14 +37,15 @@ class PutAndRegister( BaseOperation ):
   PutAndRegister operation handler
   """
 
-  def __init__( self, operation = None ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param self: self reference
     :param Operation operation: Operation instance
+    :param str csPath: CS path for this handler
     """
     # # base class ctor
-    BaseOperation.__init__( self, operation )
+    BaseOperation.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PutAtt", "File put attempts",
                                self.__class__.__name__, "Files/min", gMonitor.OP_SUM )

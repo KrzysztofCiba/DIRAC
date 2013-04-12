@@ -36,13 +36,15 @@ class RemoveReplica( BaseOperation ):
 
   """
 
-  def __init__( self, operation ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param self: self reference
+    :param Operation operation: operation to execute
+    :param str csPath: CS path for this handler
     """
     # # base class ctor
-    BaseOperation.__init__( self, operation )
+    BaseOperation.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
                                "RemoveReplica", "Files/min", gMonitor.OP_SUM )

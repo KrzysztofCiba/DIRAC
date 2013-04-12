@@ -331,7 +331,10 @@ class FTSJob( object ):
     pass
 
   def toSQL( self ):
-    """ prepare SQL INSERT or UPDATE statement """
+    """ prepare SQL INSERT or UPDATE statement
+
+    :return: str with SQL fragment
+    """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
                 for column, value in self.__data__.items()
                 if value and column not in  ( "FTSJobID", "LastUpdate" ) ]
@@ -351,7 +354,11 @@ class FTSJob( object ):
 
   @classmethod
   def fromXML( cls, xmlString ):
-    """ create Request object from xmlString or xml.ElementTree.Element """
+    """ create FTSJob object from xmlString or xml.ElementTree.Element
+
+    :param str xmlString: XML fragment
+    :return: S_OK(FTSJob)/S_ERROR
+    """
     try:
       root = ElementTree.fromstring( xmlString )
     except ExpatError, error:
@@ -367,7 +374,7 @@ class FTSJob( object ):
     """ dump request to XML
 
     :param self: self reference
-    :return: S_OK( xmlString )
+    :return: S_OK( xmlString )/S_ERROR
     """
     root = ElementTree.Element( "ftsjob" )
     # # attributes

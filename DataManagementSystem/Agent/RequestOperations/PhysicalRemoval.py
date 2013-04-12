@@ -35,12 +35,12 @@ class PhysicalRemoval( BaseOperation ):
 
   """
 
-  def __init__( self, operation = None ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param self: self reference
     """
-    BaseOperation.__init__( self, operation )
+    BaseOperation.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical file removals attempted",
                                "PhysicalRemoval", "Files/min", gMonitor.OP_SUM )

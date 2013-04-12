@@ -5,9 +5,9 @@
 # Date: 2013/04/08 14:24:08
 ########################################################################
 
-""" :mod: FTSManagerHandler 
+""" :mod: FTSManagerHandler
     =======================
- 
+
     .. module: FTSManagerHandler
     :synopsis: handler for FTSDB using DISET
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -17,26 +17,26 @@
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file FTSManagerHandler.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/08 14:24:30
 # @brief Definition of FTSManagerHandler class.
 
-## imports 
-## imports
+# # imports
+# # imports
 from types import DictType, IntType, ListType, StringTypes
-## from DIRAC
+# # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-## from DMS
+# # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
 from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
 from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
-## global instance of FTSDB
+# # global instance of FTSDB
 gFTSDB = None
 
 def initializeRequestManagerHandler( serviceInfo ):
@@ -47,10 +47,10 @@ def initializeRequestManagerHandler( serviceInfo ):
   return S_OK()
 
 ########################################################################
-class FTSManagerHandler(RequestHandler):
+class FTSManagerHandler( RequestHandler ):
   """
   .. class:: FTSManagerHandler
-  
+
   """
   # # fts validator
   __ftsValidator = None
@@ -75,32 +75,40 @@ class FTSManagerHandler(RequestHandler):
     pass
 
   types_putFTSLfn = [ StringTypes ]
-  @staticmethod
-  def export_putFTSLfn( ftsLfnXML ):
+  @classmethod
+  def export_putFTSLfn( cls, ftsLfnXML ):
     """ put FTSLfn into FTSDB """
     ftsLfn = FTSLfn.fromXML()
     if not ftsLfn["OK"]:
       gLogger.error( ftsLfn["Message"] )
       return ftsLfn
+    ftsLfn = ftsLfn["Value"]
+    isValid = cls.ftsValdator().validate( ftsLfn )
+    if not isValid["OK"]:
+      gLogger.error( isValid["Message"] )
+      return isValid
     try:
       return gFTSDB.putFTSLfn( ftsLfn["Value"] )
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
-    
+
   types_putFTSJob = [ StringTypes ]
-  @staticmethod
-  def export_putFTSJob( ftsJobXML ):
+  @classmethod
+  def export_putFTSJob( cls, ftsJobXML ):
     """ put FTSLfn into FTSDB """
     ftsJob = FTSJob.fromXML()
     if not ftsJob["OK"]:
       gLogger.error( ftsJob["Message"] )
       return ftsJob
+    ftsJob = ftsJob["Value"]
+    isValid = cls.ftsValdator().validate( ftsJob )
+    if not isValid["OK"]:
+      gLogger.error( isValid["Message"] )
+      return isValid
     try:
-      return gFTSDB.putFTSJob( ftsJob["Value"] )
+      return gFTSDB.putFTSJob( ftsJob )
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
-
-
 

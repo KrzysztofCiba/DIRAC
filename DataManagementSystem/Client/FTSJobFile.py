@@ -227,7 +227,7 @@ class FTSJobFile( object ):
 
   @classmethod
   def fromXML( cls, element ):
-    """ build File form ElementTree.Element :element: """
+    """ build FTSJobFile form ElementTree.Element :element: """
     if element.tag != "ftsjobfile":
       raise ValueError( "wrong tag, expected 'ftsjobfile', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )

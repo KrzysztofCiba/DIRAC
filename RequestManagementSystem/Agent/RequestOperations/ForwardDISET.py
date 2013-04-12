@@ -35,13 +35,14 @@ class ForwardDISET( BaseOperation ):
 
   functor forwarding DISET operations
   """
-  def __init__( self, operation = None ):
+  def __init__( self, operation = None, csPath = None ):
     """ c'tor
 
     :param Operation operation: an Operation instance
+    :param str csPath: CS path for this handler
     """
     # # call base class c'tor
-    BaseOperation.__init__( self, operation )
+    BaseOperation.__init__( self, operation, csPath )
 
   def __call__( self ):
     """ execute RPC stub """

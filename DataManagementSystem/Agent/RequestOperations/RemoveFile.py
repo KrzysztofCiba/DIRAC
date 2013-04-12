@@ -37,13 +37,15 @@ class RemoveFile( BaseOperation ):
   remove file operation handler
   """
 
-  def __init__( self, operation ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param self: self reference
+    :param Operation operation: Operation to execute
+    :param str csPath: CS path for this handler
     """
     # # call base class ctor
-    BaseOperation.__init__( self, operation )
+    BaseOperation.__init__( self, operation, csPath )
     # # gMOnitor stuff goes here
     gMonitor.registerActivity( "RemoveFileAtt", "File removals attempted",
                                "RemoveFile", "Files/min", gMonitor.OP_SUM )

@@ -186,7 +186,11 @@ class FTSLfn( object ):
 
   @classmethod
   def fromXML( cls, xmlString ):
-    """ create FTSLfn object from xmlString or xml.ElementTree.Element """
+    """ create FTSLfn object from xmlString or xml.ElementTree.Element
+
+    :param str xmlString: XML fragment
+    :return: S_OK( FTSLfn )/S_ERROR
+    """
     try:
       root = ElementTree.fromstring( xmlString )
     except ExpatError, error:
@@ -208,7 +212,10 @@ class FTSLfn( object ):
     return S_OK( xmlStr )
 
   def toSQL( self ):
-    """ prepare SQL INSERT or UPDATE statement """
+    """ prepare SQL INSERT or UPDATE statement
+
+    :return: SQL fragment
+    """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) == str else str( value ) )
                 for column, value in self.__data__.items()
                 if value and column != "FTSLfnID" ]

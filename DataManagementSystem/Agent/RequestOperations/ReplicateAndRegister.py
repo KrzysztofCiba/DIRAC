@@ -21,10 +21,13 @@ __RCSID__ = "$Id $"
 # @brief Definition of ReplicateAndRegister class.
 
 # # imports
+import re
+# # from DIRAC
 from DIRAC import S_OK, S_ERROR, gMonitor
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 
 ########################################################################
 class ReplicateAndRegister( BaseOperation ):
@@ -33,14 +36,16 @@ class ReplicateAndRegister( BaseOperation ):
 
   ReplicateAndRegister operation handler
   """
+  __ftsClient = None
 
-  def __init__( self, operation = None ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param self: self reference
     :param Operation operation: Operation instance
+    :param str csPath: CS path for this handler
     """
-    BaseOperation.__init__( self, operation )
+    BaseOperation.__init__( self, operation, csPath )
     # # own gMonitor stuff for files
     name = self.__class__.__name__
     gMonitor.registerActivity( "ReplicateAndRegisterAtt", "Replicate and register attempted",
@@ -54,8 +59,56 @@ class ReplicateAndRegister( BaseOperation ):
     gMonitor.registerActivity( "RegisterFail", "Registrations failed",
                                 name, "Files/min", gMonitor.OP_SUM )
 
+  @classmethod
+  def ftsClient( cls ):
+    """ facade for FTS client """
+    if not cls.__ftsClient:
+      cls.__ftsClient = FTSClient()
+    return cls.__ftsClient
+
   def __call__( self ):
     """ call me maybe """
+    # #
+    checkReplicas = self.__checkReplicas()
+    if not checkReplicas["OK"]:
+      self.log.error( checkReplicas["Message"] )
+
+
+
+  def __checkReplicas( self ):
+    """ check done replicas and update file states  """
+    waitingFiles = dict( [ ( opFile.LFN, opFile ) for opFile in self.operation
+                          if opFile.Status in ( "Waiting", "Scheduled" ) ] )
+    targetSESet = set( self.operation.targetSEList )
+
+    replicas = self.replicaManager().getCatalogReplicas( waitingFiles.keys() )
+    if not replicas["OK"]:
+      self.log.error( replicas["Message"] )
+      return replicas
+
+    reMissing = re.compile( "no such file or directory" )
+    for failedLFN, errStr in replicas["Value"]["Failed"]:
+      waitingFiles[failedLFN].Error = errStr
+      if reMissing.search( errStr.lower() ):
+        self.log.error( "file %s does not exists" % failedLFN )
+        gMonitor.addMark( "ReplicateFail", len( targetSESet ) )
+        waitingFiles[failedLFN].Status = "Failed"
+
+    for successfulLFN, reps in replicas["Value"]["Successful"]:
+      if targetSESet == set( reps ):
+        self.log.info( "file %s has been replicated to all targets" % successfulLFN )
+        waitingFiles[successfulLFN].Status = "Done"
+
+    return S_OK()
+
+  def ftsTransfer( self ):
+    """ replicate and register using FTS """
+
+    pass
+
+
+  def rmTransfer( self ):
+    """ replicate and register using ReplicaManager  """
     # # source SE
     sourceSE = self.operation.SourceSE
     # # check source se for read

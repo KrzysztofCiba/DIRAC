@@ -35,13 +35,15 @@ class ReTransfer( BaseOperation ):
   online ReTransfer operation handler
   """
 
-  def __init__( self, operation = None ):
+  def __init__( self, operation = None, csPath = None ):
     """c'tor
 
     :param self: self reference
+    :param Operation operation: operation to execute
+    :param str csPath: CS path for this handler
     """
     # # base class ctor
-    BaseOperation.__init__( self, operation )
+    BaseOperation.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "FileReTransferAtt", "File retransfers attempted",
                                "ReTransfer", "Files/min", gMonitor.OP_SUM )
