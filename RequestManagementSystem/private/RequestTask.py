@@ -175,8 +175,8 @@ class RequestTask( object ):
       pluginClassObj = globals()[pluginName]
     if not issubclass( pluginClassObj, BaseOperation ):
       raise TypeError( "operation handler '%s' isn't inherited from BaseOperation class" % pluginName )
-    for key, status in ( ( "Att", "Attempted" ), ( "OK", "Succeeded" ) , ( "Fail", "Failed" ) ):
-      gMonitor.registerActivity( "%s%s" % ( pluginName, key ), "%s %s" % ( pluginName, status ),
+    for key, status in ( ( "Att", "Attempted" ), ( "OK", "Successful" ) , ( "Fail", "Failed" ) ):
+      gMonitor.registerActivity( "%s%s" % ( pluginName, key ), "%s operations %s" % ( pluginName, status ),
                                  pluginName, "Operations/min", gMonitor.OP_SUM )
     # # return an instance
     return pluginClassObj

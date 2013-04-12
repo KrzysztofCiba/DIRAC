@@ -103,9 +103,6 @@ class BaseOperation( object ):
     # # setup operation
     if operation:
       self.setOperation( operation )
-    # # std monitor
-    for key, val in { "Att": "Attempted ", "Fail" : "Failed ", "Succ" : "Successful " }.items():
-      gMonitor.registerActivity( name + key, val + name , name, "Operations/min", gMonitor.OP_SUM )
     # # initialize at least
     if hasattr( self, "initialize" ) and callable( getattr( self, "initialize" ) ):
       getattr( self, "initialize" )()
