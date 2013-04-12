@@ -18,6 +18,9 @@
     - FTS channels between SourceSE and TargetSE is not defined 
     - there is a trouble to define correct replication tree 
     - request's owner is different from DataManager   
+
+    OBSOLETE
+
 """
 
 __RCSID__ = "$Id$"

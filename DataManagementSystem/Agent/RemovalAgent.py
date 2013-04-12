@@ -2,6 +2,8 @@
 # $HeadURL$
 ########################################################################
 """  RemovalAgent takes removal requests from the RequestDB and executes them
+
+OBSOLETE
 """
 
 __RCSID__ = "$Id$"
