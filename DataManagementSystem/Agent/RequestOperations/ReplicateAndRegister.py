@@ -58,6 +58,13 @@ class ReplicateAndRegister( BaseOperation ):
                                 name, "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterFail", "Registrations failed",
                                 name, "Files/min", gMonitor.OP_SUM )
+    # # for FTS
+    gMonitor.registerActivity( "FTSScheduleAtt", "Files schedule attempted",
+                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSScheduleOK", "File schedule successful",
+                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSScheduleFail", "File schedule failed",
+                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
 
   @classmethod
   def ftsClient( cls ):
@@ -72,7 +79,6 @@ class ReplicateAndRegister( BaseOperation ):
     checkReplicas = self.__checkReplicas()
     if not checkReplicas["OK"]:
       self.log.error( checkReplicas["Message"] )
-
 
 
   def __checkReplicas( self ):

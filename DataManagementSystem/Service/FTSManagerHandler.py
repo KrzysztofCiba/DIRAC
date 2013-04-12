@@ -25,25 +25,43 @@ __RCSID__ = "$Id $"
 
 # # imports
 # # imports
-from types import DictType, IntType, ListType, StringTypes
+from types import DictType, LongType, ListType, StringTypes
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
 from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
-from DIRAC.DataManagementSystem.private.StrategyHandler import StrategyHandler
+from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
 # # global instance of FTSDB
 gFTSDB = None
+gFTSStrategy = None
 
-def initializeRequestManagerHandler( serviceInfo ):
-  """ initialise handler """
+def initializeFTSManagerHandler( serviceInfo ):
+  """ initialize handler """
   global gFTSDB
+  global gFTSStrategy
+
+  # # create FTSDB
   from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
   gFTSDB = FTSDB()
+
+  # # create FTSStrategy when needed
+  ftsMode = FTSManagerHandler.svr_getCSOption( "FTSMode", False )
+  gLogger.info( "FTS is %s" % { True: "enabled", False: "disabled"}[ftsMode] )
+
+  if ftsMode:
+    csPath = getServiceSection( "DataManagement/FTSManager" )
+    if not csPath["OK"]:
+      gLogger.error( csPath["Message"] )
+      return csPath
+    csPath = "%s/%s" % ( csPath["Value"], "FTSStrategy" )
+    gFTSStrategy = FTSStrategy( csPath )
+
   return S_OK()
 
 ########################################################################
@@ -54,8 +72,6 @@ class FTSManagerHandler( RequestHandler ):
   """
   # # fts validator
   __ftsValidator = None
-  # # fts scheduler
-  __ftsScheduler = None
 
   @classmethod
   def ftsValidator( cls ):
@@ -64,15 +80,19 @@ class FTSManagerHandler( RequestHandler ):
       cls.__ftsValidator = FTSValidator()
     return cls.__ftsValidator
 
-  types_ftsSchedule = [ StringTypes, ListType, StringTypes ]
-  def export_ftsSchedule( self, LFN, targetSEs, strategy = None ):
+  types_ftsSchedule = [ ListType, ListType, LongType, StringTypes ]
+  def export_ftsSchedule( self, sourceSEs, targetSEs, size, strategy = None ):
     """ call FTS scheduler
 
     :param str LFN: lfn
     :param list targetSEs: target SEs
     :param str strategy: strategy to use
     """
-    pass
+    if not gFTSStrategy:
+      errMsg = "FTS mode is disabled or FTSStrategy could not be created"
+      gLogger.error( errMsg )
+      return S_ERROR( errMsg )
+    return gFTSStrategy.replicationTree( sourceSEs, targetSEs, size, strategy )
 
   types_putFTSLfn = [ StringTypes ]
   @classmethod
