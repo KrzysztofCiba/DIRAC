@@ -124,7 +124,7 @@ class FTSSite( object ):
     """
     dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
-    el = ElementTree.Element( "FTSSite", attrs )
+    el = ElementTree.Element( "ftssite", attrs )
     return { True : el, False : ElementTree.tostring( el ) }[dumpToStr]
 
   @classmethod
@@ -134,8 +134,8 @@ class FTSSite( object ):
       element = ElementTree.fromstring( xmlString )
     except ExpatError, error:
       return S_ERROR( "unable to de-serialize FTSSite from xml: %s" % str( error ) )
-    if element.tag != "FTSSite":
-      raise ValueError( "wrong tag, expected 'FTSSite', got %s" % element.tag )
+    if element.tag != "ftssite":
+      raise ValueError( "wrong tag, expected 'ftssite', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
     return S_OK( FTSSite( fromDict ) )
 

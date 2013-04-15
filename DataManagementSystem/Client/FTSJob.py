@@ -37,7 +37,7 @@ from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import checkGuid
 # from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.TypedList import TypedList
-from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
+from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 
 ########################################################################
 class FTSJob( object ):
@@ -60,7 +60,7 @@ class FTSJob( object ):
     self.__data__["LastUpdate"] = now
     self.__data__["Status"] = "Submitted"
     self.__data__["FTSJobID"] = 0
-    self.__files__ = TypedList( allowedTypes = FTSJobFile )
+    self.__files__ = TypedList( allowedTypes = FTSFile )
     fromDict = fromDict if fromDict else {}
     for key, value in fromDict.items():
       if key not in self.__data__:
@@ -378,8 +378,8 @@ class FTSJob( object ):
     if root.tag != "ftsjob":
       return S_ERROR( "unable to de-serialize FTSJob, xml root element is not a 'ftsjob'" )
     ftsJob = FTSJob( root.attrib )
-    for ftsJobFile in root.findall( "ftsjobfile" ):
-      ftsJob.addFile( FTSJobFile.fromXML( element = ftsJobFile ) )
+    for ftsJobFile in root.findall( "ftsfile" ):
+      ftsJob.addFile( FTSFile.fromXML( element = ftsJobFile ) )
     return S_OK( ftsJob )
 
   def toXML( self ):

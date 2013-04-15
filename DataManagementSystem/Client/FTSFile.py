@@ -258,14 +258,14 @@ class FTSFile( object ):
     """
     dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
-    el = ElementTree.Element( "FTSFile", attrs )
+    el = ElementTree.Element( "ftsfile", attrs )
     return { True : el, False : ElementTree.tostring( el ) }[dumpToStr]
 
   @classmethod
   def fromXML( cls, element ):
     """ build FTSFile form ElementTree.Element :element: """
-    if element.tag != "FTSFile":
-      raise ValueError( "wrong tag, expected 'FTSFile', got %s" % element.tag )
+    if element.tag != "ftsfile":
+      raise ValueError( "wrong tag, expected 'ftsfile', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
     return FTSFile( fromDict )
 
