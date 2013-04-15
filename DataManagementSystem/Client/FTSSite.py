@@ -27,6 +27,9 @@ try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
   import xml.etree.ElementTree as ElementTree
+from xml.parsers.expat import ExpatError
+# # from DIRAC
+from DIRAC import S_OK, S_ERROR
 
 
 ########################################################################
@@ -125,12 +128,16 @@ class FTSSite( object ):
     return { True : el, False : ElementTree.tostring( el ) }[dumpToStr]
 
   @classmethod
-  def fromXML( cls, element ):
-    """ build FTSSite form ElementTree.Element :element: """
+  def fromXML( cls, xmlString ):
+    """ build FTSSite from xml fragment """
+    try:
+      element = ElementTree.fromstring( xmlString )
+    except ExpatError, error:
+      return S_ERROR( "unable to de-serialize FTSSite from xml: %s" % str( error ) )
     if element.tag != "FTSSite":
       raise ValueError( "wrong tag, expected 'FTSSite', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return FTSSite( fromDict )
+    return S_OK( FTSSite( fromDict ) )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
