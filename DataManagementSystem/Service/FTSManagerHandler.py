@@ -80,19 +80,20 @@ class FTSManagerHandler( RequestHandler ):
       cls.__ftsValidator = FTSValidator()
     return cls.__ftsValidator
 
-  types_ftsSchedule = [ ListType, ListType, LongType, StringTypes ]
-  def export_ftsSchedule( self, sourceSEs, targetSEs, size, strategy = None ):
+  types_ftsSchedule = [ DictType, ListType, ListType ]
+  def export_ftsSchedule( self, fileJSON, sourceSEs, targetSEs ):
     """ call FTS scheduler
 
     :param str LFN: lfn
+    :param list sourceSEs: source SEs
     :param list targetSEs: target SEs
-    :param str strategy: strategy to use
     """
     if not gFTSStrategy:
       errMsg = "FTS mode is disabled or FTSStrategy could not be created"
       gLogger.error( errMsg )
       return S_ERROR( errMsg )
-    return gFTSStrategy.replicationTree( sourceSEs, targetSEs, size, strategy )
+    size = fileJSON.get( "Size", 0 )
+    return  gFTSStrategy.replicationTree( sourceSEs, targetSEs, size )
 
   types_putFTSLfn = [ StringTypes ]
   @classmethod

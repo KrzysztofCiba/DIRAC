@@ -30,6 +30,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.RequestManagementSystem.Client.File import File
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
@@ -114,12 +115,13 @@ class FTSClient( Client ):
       return ftsJobXML
     return self.ftsManager().putFTSJob( ftsJobXML )
 
-  def ftsSchedule( self, lfn, targetSEs, strategy = None ):
+  def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
     """ schedule lfn for FTS job
 
-    :param str lfn: LFN
+    :param  File opFile: RMS File instance
+    :param list sourceSEs: list of valid sources
     :param list targetSEs: list of target SEs
-    :param str strategy: strategy to use
     """
-    return self.ftsManager().ftsSchedule( lfn, targetSEs, strategy )
+    opFileJSON = opFile.toJSON()
+    return self.ftsManager().ftsSchedule( opFileJSON, sourceSEs, targetSEs )
 

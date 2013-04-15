@@ -28,6 +28,7 @@ from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
 class ReplicateAndRegister( BaseOperation ):
@@ -64,6 +65,8 @@ class ReplicateAndRegister( BaseOperation ):
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSScheduleFail", "File schedule failed",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
+    # # SE cache
+    seCache = {}
 
   @classmethod
   def ftsClient( cls ):
@@ -79,8 +82,10 @@ class ReplicateAndRegister( BaseOperation ):
     if not checkReplicas["OK"]:
       self.log.error( checkReplicas["Message"] )
     if self.FTSMode:
-      if self.OwnerGroup not in self.FTSBannedGroup:
-        return self.ftsTransfer()
+      if self.request.OwnerGroup in self.FTSBannedGroups:
+        self.log.info( "usage of FTS is banned for this request's owner" )
+        return self.rmTransfer()
+      return self.ftsTransfer()
     return self.rmTransfer()
 
   def __checkReplicas( self ):
@@ -109,10 +114,107 @@ class ReplicateAndRegister( BaseOperation ):
 
     return S_OK()
 
+  def _filterReplicas( self, opFile ):
+    """ filter out banned/invalid source SEs """
+
+    ret = { "Valid" : [], "Banned" : [], "Bad" : [] }
+
+    replicas = self.replicaManager().getActiveRelicas( opFile.LFN )
+    if not replicas["OK"]:
+      self.log.error( replicas["Message"] )
+    reNotExists = re.compile( "not such file or directory" )
+    replicas = replicas["Value"]
+    failed = replicas["Failed"].get( opFile.LFN , "" )
+    if reNotExists.match( failed.lower() ):
+      opFile.Status = "Failed"
+      opFile.Error = failed
+      return S_ERROR( failed )
+
+    replicas = replicas["Successful"]
+    for repSEName in replicas:
+
+      seRead = self.rssSEStatus( repSEName, "Read" )
+      if not seRead["OK"]:
+        self.log.error( seRead["Message"] )
+        ret["Banned"].append( repSEName )
+        continue
+      if not seRead["Value"]:
+        self.log.error( "StorageElement '%s' is banned for reading" % ( repSEName ) )
+
+      repSE = self.seCache.get( repSEName, None )
+      if not repSE:
+        repSE = StorageElement( repSEName, "SRM2" )
+        self.seCache[repSE] = repSE
+
+      pfn = repSE.getPfnForLfn( opFile.LFN )
+      if not pfn["OK"]:
+        self.log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
+        ret["Banned"].append( repSEName )
+        continue
+
+      pfn = pfn["Value"]
+      repSEMetadata = repSE.getFileMetadata( pfn, singleFile = True )
+      if not repSEMetadata["OK"]:
+        self.log.warn( repSEMetadata["Message"] )
+        ret["Banned"].append( repSEName )
+        continue
+      repSEMetadata = repSEMetadata["Value"]
+
+      seChecksum = repSEMetadata["Checksum"].replace( "x", "0" ).zfill( 8 ) if "Checksum" in repSEMetadata else None
+      if opFile.Checksum and opFile.Checksum != seChecksum:
+        self.log.warn( " %s checksum mismatch: %s %s:%s" % ( opFile.LFN,
+                                                             opFile.Checksum,
+                                                             repSE,
+                                                             seChecksum ) )
+        ret["Bad"].append( repSEName )
+        continue
+      # # if we're here repSE is OK
+      ret["Valid"].append( repSEName )
+
+    return S_OK( ret )
+
   def ftsTransfer( self ):
     """ replicate and register using FTS """
 
-    pass
+    targetSEs = self.operation.targetSEList
+
+    for targetSE in targetSEs:
+      writeStatus = self.rssSEStatus( targetSE, "Write" )
+      if not writeStatus["OK"]:
+        self.log.error( writeStatus["Message"] )
+        for opFile in self.operation:
+          opFile.Error = "unknown targetSE: %s" % targetSE
+          opFile.Status = "Failed"
+        self.operation.Error = "unknown targetSE: %s" % targetSE
+        return S_ERROR( self.operation.Error )
+
+    for opFile in self.getWaitingFilesList():
+      # # check replicas
+      replicas = self._filterReplicas( opFile )
+      if not replicas["OK"]:
+        continue
+      replicas = replicas["Value"]
+
+      if not replicas["Valid"] and replicas["Banned"]:
+        self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+        continue
+
+      validReplicas = replicas["Valid"]
+      bannedReplicas = replicas["Banned"]
+
+      if not validReplicas and bannedReplicas:
+        self.log.warn( "unable to schedule '%s', replicas only at banned SEs" )
+        continue
+
+      if validReplicas:
+        ftsSchedule = self.ftsClient.ftsSchedule( opFile, validReplicas, self.operation.targetSEList )
+        if not ftsSchedule["OK"]:
+          self.log.error( ftsSchedule["Message"] )
+          continue
+        # # if we're here file was scheduled
+        opFile.Status = "Scheduled"
+
+    return S_OK()
 
 
   def rmTransfer( self ):
