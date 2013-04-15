@@ -93,7 +93,29 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.error( errMsg )
       return S_ERROR( errMsg )
     size = fileJSON.get( "Size", 0 )
-    return  gFTSStrategy.replicationTree( sourceSEs, targetSEs, size )
+    tree = gFTSStrategy.replicationTree( sourceSEs, targetSEs, size )
+    if not tree["OK"]:
+      return tree
+    tree = tree["Value"]
+    # # build ftsLfn instance
+    ftsLfn = FTSLfn()
+    for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
+      setattr( ftsLfn, key, fileJSON.get( key ) )
+    ftsLfn.TargetSE = ",".join( targetSEs )
+    ftsLfn.Status = "Waiting"
+    
+    try:
+      put = gFTSDB.putFTSLfn( ftsLfn )
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( str( error ) )
+    
+    for branch in tree:
+      ftsJobFile = FTSJobFile()
+      
+
+
+
 
   types_putFTSLfn = [ StringTypes ]
   @classmethod

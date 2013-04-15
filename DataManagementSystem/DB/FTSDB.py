@@ -135,6 +135,8 @@ class FTSDB( DB ):
     if not any( fileID, lfn ):
       return S_ERROR( "Missing fileID of lfn argument" )
 
+
+
   def putFTSJob( self, ftsJob ):
     """ put FTSJob to the db
 
