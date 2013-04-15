@@ -50,7 +50,7 @@ class FTSFile( object ):
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
-        raise AttributeError( "unknown File attribute %s" % str( attrName ) )
+        raise AttributeError( "unknown FTSFile attribute %s" % str( attrName ) )
       setattr( self, attrName, attrValue )
 
   @staticmethod
@@ -59,21 +59,22 @@ class FTSFile( object ):
     return { "Fields" :
              { "FTSFileID": "INTEGER NOT NULL AUTO_INCREMENT",
                "FTSJobID":  "INTEGER",
-               "FileID" : "INTEGER",
-               "OperationID" : "INTEGER",
-               "LFN" : "VARCHAR(255) NOT NULL",
+               "FileID": "INTEGER",
+               "OperationID": "INTEGER",
+               "LFN": "VARCHAR(255) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
-               "Checksum" : "VARCHAR(64)",
-               "ChecksumType" : "VARCHAR(32)",
-               "Size" : "INTEGER",
-               "SourceSE" : "VARCHAR(128)",
-               "SourceSURL" : "VARCHAR(255)",
-               "TargerSE" : "VARCHAR(128)",
-               "TargetSURL" : "VARCHAR(255)",
-               "Status" : "VARCHAR(32) DEFAULT 'Waiting'",
-               "Error" : "VARCHAR(255)"  },
-             "PrimaryKey" : [ "FTSFileID" ],
-             "Indexes" : { "FTSJobID" : [ "FTSJobID" ], "FTSFileID" : [ "FTSFileID"] } }
+               "Checksum": "VARCHAR(64)",
+               "ChecksumType": "VARCHAR(32)",
+               "Size": "INTEGER",
+               "SourceSE": "VARCHAR(128)",
+               "SourceSURL": "VARCHAR(255)",
+               "TargerSE": "VARCHAR(128)",
+               "TargetSURL": "VARCHAR(255)",
+               "Status": "VARCHAR(32) DEFAULT 'Waiting'",
+               "Error": "VARCHAR(255)"  },
+             "PrimaryKey": [ "FTSFileID" ],
+             "Indexes": { "FTSJobID": [ "FTSJobID" ], "FTSFileID": [ "FTSFileID"],
+                          "FileID": ["FileID"], "LFN": ["LFN"]  } }
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -245,7 +246,8 @@ class FTSFile( object ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    if value not in ( "Waiting", 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ):
+    if not value.startswith( "Waiting" ) or value not in ( "Submitted", "Ready", "Staging", "Executing",
+                                                           "Finished", "FinishedDirty", "Cancelled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     self.__data__["Status"] = value
 
