@@ -4,9 +4,9 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/12 13:12:07
 ########################################################################
-""" :mod: FTSStrategy 
+""" :mod: FTSStrategy
     =================
- 
+
     .. module: FTSStrategy
     :synopsis: replication strategy for FTS transfers
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -16,13 +16,13 @@
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file FTSStrategy.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/12 13:12:20
 # @brief Definition of FTSStrategy class.
 
-## imports 
+# # imports
 # # imports
 import random
 import datetime
@@ -88,10 +88,10 @@ class FTSChannel( Edge ):
     return 0.0
 
 ########################################################################
-class FTSStrategy(object):
+class FTSStrategy( object ):
   """
   .. class:: FTSStrategy
-  
+
   """
   # # make it singleton
   __metaclass__ = DIRACSingleton
@@ -104,15 +104,15 @@ class FTSStrategy(object):
     :param self: self reference
     :param str csPath: CS path
     """
-    ### config path
+    # ## config path
     self.csPath = csPath
 
-    self.graphLock = LockRing().getLock("FTSGraphLock")
-     
+    self.graphLock = LockRing().getLock( "FTSGraphLock" )
+
     # # own sub logger
-    self.log = gLogger.getSubLogger( "FTSStrategy", child=True )
-    self.log.setLevel( gConfig.getValue( self.csPath + "/LogLevel", "DEBUG"  ) )
-    
+    self.log = gLogger.getSubLogger( "FTSStrategy", child = True )
+    self.log.setLevel( gConfig.getValue( self.csPath + "/LogLevel", "DEBUG" ) )
+
     # # CS options
     self.log.info( "Supported strategies = %s" % ", ".join( self.supportedStrategies ) )
     self.sigma = gConfig.getValue( "%s/%s" % ( self.csPath, "HopSigma" ), 0.0 )
@@ -129,74 +129,74 @@ class FTSStrategy(object):
     self.log.info( "AcceptableFailedFiles = %s" % self.acceptableFailedFiles )
     self.rwUpdatePeriod = gConfig.getValue( "%s/%s" % ( self.csPath, "RssRWUpdatePeriod" ), 600 )
     self.log.info( "RSSUpdatePeriod = %s s" % self.rwUpdatePeriod )
-    self.rwUpdatePeriod = datetime.timedelta( seconds=self.rwUpdatePeriod )
-    ## chosen strategy
+    self.rwUpdatePeriod = datetime.timedelta( seconds = self.rwUpdatePeriod )
+    # # chosen strategy
     self.chosenStrategy = 0
-    ## fts graph
+    # # fts graph
     self.ftsGraph = None
-    ## timestamp for last update
-    self.lastRssUpdate = datetime.datetime.now()    
+    # # timestamp for last update
+    self.lastRssUpdate = datetime.datetime.now()
     # dispatcher
-    self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait, 
+    self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait,
                                 "DynamicThroughput" : self.dynamicThroughput,
-                                "Simple" : self.simple, 
+                                "Simple" : self.simple,
                                 "Swarm" : self.swarm }
-    
-    ##  own RSS client
-    self.rssClient = ResourceStatusClient()    
-    ## create fts graph
-    ftsGraph = self.setup()    
-    self.log.info("%s has been constructed" % self.__class__.__name__ )
+
+    # #  own RSS client
+    self.rssClient = ResourceStatusClient()
+    # # create fts graph
+    self.setup()
+    self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
   def setup( self, channels = None, bandwithds = None, failedFiles = None ):
-    """ prepare fts graph 
+    """ prepare fts graph
 
-    :param dict channels: { channelID : { "Files" : long , Size = long, "ChannelName" : str, 
+    :param dict channels: { channelID : { "Files" : long , Size = long, "ChannelName" : str,
                                           "Source" : str, "Destination" : str , "ChannelName" : str, "Status" : str  } }
     :param dict bandwidths: { channelID { "Throughput" : float, "Fileput" : float, "SucessfulFiles" : long, "FailedFiles" : long  } }
     :param dict failedFiles: { channelID : int }
 
-    channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }  
+    channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
     """
     channels = channels if channels else {}
     bandwithds = bandwithds if bandwithds else {}
     failedFiles = failedFiles if failedFiles else {}
-    
+
     graph = FTSGraph( "sites" )
-   
+
     sitesDict = getStorageElementSiteMapping()
     if not sitesDict["OK"]:
       return sitesDict
     sitesDict = sitesDict["Value"]
 
-    ## create nodes 
+    # # create nodes
     for site, ses in sitesDict.items():
       rwDict = self.__getRWAccessForSE( ses )
       if not rwDict["OK"]:
         return rwDict
       siteName = site
       if '.' in site:
-        siteName = site.split('.')[1]  
+        siteName = site.split( '.' )[1]
       graph.addNode( LCGSite( siteName, { "SEs" : rwDict["Value"] } ) )
-    ## channels { channelID : { "Files" : long , Size = long, "ChannelName" : str, 
-    ##                          "Source" : str, "Destination" : str , 
-    ##                          "ChannelName" : str, "Status" : str  } }
-    ## bandwidths { channelID { "Throughput" : float, "Fileput" : float, 
-    ##                           "SucessfulFiles" : long, "FailedFiles" : long  } }
-    ## channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
+    # # channels { channelID : { "Files" : long , Size = long, "ChannelName" : str,
+    # #                          "Source" : str, "Destination" : str ,
+    # #                          "ChannelName" : str, "Status" : str  } }
+    # # bandwidths { channelID { "Throughput" : float, "Fileput" : float,
+    # #                           "SucessfulFiles" : long, "FailedFiles" : long  } }
+    # # channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
     for channelID, channelDict in channels.items():
       sourceName = channelDict["Source"]
       destName = channelDict["Destination"]
       fromNode = graph.getNode( sourceName )
       toNode = graph.getNode( destName )
-      if fromNode and toNode:  
-        rwAttrs = { "status" : channels[channelID]["Status"], 
+      if fromNode and toNode:
+        rwAttrs = { "status" : channels[channelID]["Status"],
                     "files" : channelDict["Files"],
                     "size" : channelDict["Size"],
-                    "successfulAttempts" : bandwithds[channelID]["SuccessfulFiles"], 
-                    "failedAttempts" : bandwithds[channelID]["FailedFiles"], 
+                    "successfulAttempts" : bandwithds[channelID]["SuccessfulFiles"],
+                    "failedAttempts" : bandwithds[channelID]["FailedFiles"],
                     "distinctFailedFiles" : failedFiles.get( channelID, 0 ),
-                    "fileput" : bandwithds[channelID]["Fileput"], 
+                    "fileput" : bandwithds[channelID]["Fileput"],
                     "throughput" : bandwithds[channelID]["Throughput"] }
         roAttrs = { "channelID" : channelID,
                     "channelName" : channelDict["ChannelName"],
@@ -204,19 +204,19 @@ class FTSStrategy(object):
                     "acceptableFailedFiles" : self.acceptableFailedFiles,
                     "schedulingType" : self.schedulingType }
         ftsChannel = FTSChannel( fromNode, toNode, rwAttrs, roAttrs )
-        graph.addEdge( ftsChannel ) 
-    self.ftsGraph = graph
+        graph.addEdge( ftsChannel )
     self.lastRssUpdate = datetime.datetime.now()
+    self.ftsGraph = graph
     return S_OK()
 
-  def updateGraph( self, rwAccess=False, replicationTree=None, size=0.0 ):
+  def updateGraph( self, rwAccess = False, replicationTree = None, size = 0.0 ):
     """ update rw access for nodes (sites) and size anf files for edges (channels) """
     replicationTree = replicationTree if replicationTree else {}
     size = size if size else 0.0
-    ## update nodes rw access for SEs
+    # # update nodes rw access for SEs
     if rwAccess:
       try:
-        self.graphLock.acquire()  
+        self.graphLock.acquire()
         for lcgSite in self.ftsGraph.nodes():
           rwDict = self.__getRWAccessForSE( lcgSite.SEs.keys() )
           if not rwDict["OK"]:
@@ -224,18 +224,18 @@ class FTSStrategy(object):
         lcgSite.SEs = rwDict["Value"]
       finally:
         self.graphLock.release()
-    ## update channels size and files
+    # # update channels size and files
     if replicationTree:
       try:
         self.graphLock.acquire()
         for channel in self.ftsGraph.edges():
           if channel.channelID in replicationTree:
-            channel.size += size 
+            channel.size += size
             channel.files += 1
       finally:
         self.graphLock.release()
     return S_OK()
-          
+
   def simple( self, sourceSEs, targetSEs ):
     """ simple strategy - one source, many targets
 
@@ -243,8 +243,8 @@ class FTSStrategy(object):
     :param list targetSEs: list with target SE names
     :param str lfn: logical file name
     """
-    ## make targetSEs list unique 
-    if len(sourceSEs) != 1:
+    # # make targetSEs list unique
+    if len( sourceSEs ) != 1:
       return S_ERROR( "simple: wrong argument supplied for sourceSEs, only one sourceSE allowed" )
     sourceSE = sourceSEs[0]
     tree = {}
@@ -258,62 +258,62 @@ class FTSStrategy(object):
       if not channel.toNode.SEs[targetSE]["write"]:
         return S_ERROR( "simple: targetSE '%s' is banned for writing right now" % targetSE )
       if channel.channelID in tree:
-        return S_ERROR( "simple: unable to create replication tree, channel '%s' cannot be used twice" %\
-                          channel.channelName )      
-      tree[channel.channelID] = { "Ancestor" : False, "SourceSE" : sourceSE, 
-                                  "TargetSE" : targetSE, "Strategy" : "Simple" } 
+        return S_ERROR( "simple: unable to create replication tree, channel '%s' cannot be used twice" % \
+                          channel.channelName )
+      tree[channel.channelID] = { "Ancestor" : False, "SourceSE" : sourceSE,
+                                  "TargetSE" : targetSE, "Strategy" : "Simple" }
 
-    return S_OK(tree)
-    
+    return S_OK( tree )
+
   def swarm( self, sourceSEs, targetSEs ):
-    """ swarm strategy - one target, many sources, pick up the fastest 
-    
-    :param list sourceSEs: list of source SE 
+    """ swarm strategy - one target, many sources, pick up the fastest
+
+    :param list sourceSEs: list of source SE
     :param str targetSEs: on element list with name of target SE
     :param str lfn: logical file name
     """
     tree = {}
     channels = []
-    if len(targetSEs) > 1:
-      return S_ERROR("swarm: wrong argument supplied for targetSEs, only one targetSE allowed")
+    if len( targetSEs ) > 1:
+      return S_ERROR( "swarm: wrong argument supplied for targetSEs, only one targetSE allowed" )
     targetSE = targetSEs[0]
-    ## find channels
+    # # find channels
     for sourceSE in sourceSEs:
       channel = self.ftsGraph.findChannel( sourceSE, targetSE )
       if not channel["OK"]:
         self.log.warn( "swarm: %s" % channel["Message"] )
         continue
-      channels.append( ( sourceSE, channel["Value"] ) )      
-    ## exit - no channels 
+      channels.append( ( sourceSE, channel["Value"] ) )
+    # # exit - no channels
     if not channels:
-      return S_ERROR("swarm: unable to find FTS channels between '%s' and '%s'" % ( ",".join(sourceSEs), targetSE ) )
-    ## filter out non active channels 
-    channels = [ ( sourceSE, channel ) for sourceSE, channel in channels 
-                 if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"] and 
-                 channel.status == "Active" and channel.timeToStart < float("inf") ]
-    ## exit - no active channels 
+      return S_ERROR( "swarm: unable to find FTS channels between '%s' and '%s'" % ( ",".join( sourceSEs ), targetSE ) )
+    # # filter out non active channels
+    channels = [ ( sourceSE, channel ) for sourceSE, channel in channels
+                 if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"] and
+                 channel.status == "Active" and channel.timeToStart < float( "inf" ) ]
+    # # exit - no active channels
     if not channels:
       return S_ERROR( "swarm: no active channels found between %s and %s" % ( sourceSEs, targetSE ) )
-    
-    ## find min timeToStart
-    minTimeToStart = float("inf")
+
+    # # find min timeToStart
+    minTimeToStart = float( "inf" )
     selSourceSE = selChannel = None
     for sourceSE, ftsChannel in channels:
       if ftsChannel.timeToStart < minTimeToStart:
         minTimeToStart = ftsChannel.timeToStart
         selSourceSE = sourceSE
         selChannel = ftsChannel
-    
+
     if not selSourceSE:
       return S_ERROR( "swarm: no active channels found between %s and %s" % ( sourceSEs, targetSE ) )
 
     tree[selChannel.channelID] = { "Ancestor" : False, "SourceSE" : selSourceSE,
-                                   "TargetSE" : targetSE, "Strategy" : "Swarm" } 
+                                   "TargetSE" : targetSE, "Strategy" : "Swarm" }
     return S_OK( tree )
-          
+
   def minimiseTotalWait( self, sourceSEs, targetSEs ):
-    """ find dag minimizing start time 
-    
+    """ find dag minimizing start time
+
     :param list sourceSEs: list of avialable source SEs
     :param list targetSEs: list of target SEs
     :param str lfn: logical file name
@@ -321,57 +321,57 @@ class FTSStrategy(object):
     tree = {}
     primarySources = sourceSEs
     while targetSEs:
-      minTimeToStart = float("inf")
+      minTimeToStart = float( "inf" )
       channels = []
       for targetSE in targetSEs:
         for sourceSE in sourceSEs:
           ftsChannel = self.ftsGraph.findChannel( sourceSE, targetSE )
           if not ftsChannel["OK"]:
             self.log.warn( "minimiseTotalWait: %s" % ftsChannel["Message"] )
-            continue 
+            continue
           ftsChannel = ftsChannel["Value"]
           channels.append( ( ftsChannel, sourceSE, targetSE ) )
       if not channels:
-        msg = "minimiseTotalWait: FTS channels between %s and %s not defined" % ( ",".join(sourceSEs), 
-                                                                                  ",".join(targetSEs) )
+        msg = "minimiseTotalWait: FTS channels between %s and %s not defined" % ( ",".join( sourceSEs ),
+                                                                                  ",".join( targetSEs ) )
         self.log.error( msg )
         return S_ERROR( msg )
-      ## filter out already used channels 
-      channels = [ (channel, sourceSE, targetSE) for channel, sourceSE, targetSE in channels 
+      # # filter out already used channels
+      channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.channelID not in tree ]
       if not channels:
-        msg = "minimiseTotalWait: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs),
-                                                                                                   ",".join(targetSEs) )
+        msg = "minimiseTotalWait: all FTS channels between %s and %s are already used in tree" % ( ",".join( sourceSEs ),
+                                                                                                   ",".join( targetSEs ) )
         self.log.error( msg )
         return S_ERROR( msg )
-      
-      self.log.debug("minimiseTotalWait: found %s candidate channels, checking activity" % len( channels) )
+
+      self.log.debug( "minimiseTotalWait: found %s candidate channels, checking activity" % len( channels ) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
-                   if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"] 
-                   and channel.status == "Active" and channel.timeToStart < float("inf") ]
-      
+                   if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"]
+                   and channel.status == "Active" and channel.timeToStart < float( "inf" ) ]
+
       if not channels:
-        self.log.error("minimiseTotalWait: no active FTS channels found" )
-        return S_ERROR("minimiseTotalWait: no active FTS channels found" )
-      
+        self.log.error( "minimiseTotalWait: no active FTS channels found" )
+        return S_ERROR( "minimiseTotalWait: no active FTS channels found" )
+
       candidates = []
       for channel, sourceSE, targetSE in channels:
         timeToStart = channel.timeToStart
         if sourceSE not in primarySources:
-          timeToStart += self.sigma        
-        ## local found 
+          timeToStart += self.sigma
+        # # local found
         if channel.fromNode == channel.toNode:
-          self.log.debug("minimiseTotalWait: found local channel '%s'" % channel.channelName )
+          self.log.debug( "minimiseTotalWait: found local channel '%s'" % channel.channelName )
           candidates = [ ( channel, sourceSE, targetSE ) ]
           break
         if timeToStart <= minTimeToStart:
           minTimeToStart = timeToStart
           candidates = [ ( channel, sourceSE, targetSE ) ]
         elif timeToStart == minTimeToStart:
-          candidates.append( (channel, sourceSE, targetSE ) )
+          candidates.append( ( channel, sourceSE, targetSE ) )
 
       if not candidates:
-        return S_ERROR("minimiseTotalWait: unable to find candidate FTS channels minimising total wait time")
+        return S_ERROR( "minimiseTotalWait: unable to find candidate FTS channels minimising total wait time" )
 
       random.shuffle( candidates )
       selChannel, selSourceSE, selTargetSE = candidates[0]
@@ -386,10 +386,10 @@ class FTSStrategy(object):
       sourceSEs.append( selTargetSE )
       targetSEs.remove( selTargetSE )
 
-    return S_OK(tree)        
+    return S_OK( tree )
 
   def dynamicThroughput( self, sourceSEs, targetSEs ):
-    """ dynamic throughput - many sources, many targets - find dag minimizing overall throughput 
+    """ dynamic throughput - many sources, many targets - find dag minimizing overall throughput
 
     :param list sourceSEs: list of available source SE names
     :param list targetSE: list of target SE names
@@ -399,50 +399,50 @@ class FTSStrategy(object):
     primarySources = sourceSEs
     timeToSite = {}
     while targetSEs:
-      minTimeToStart = float("inf")
+      minTimeToStart = float( "inf" )
       channels = []
       for targetSE in targetSEs:
         for sourceSE in sourceSEs:
           ftsChannel = self.ftsGraph.findChannel( sourceSE, targetSE )
           if not ftsChannel["OK"]:
             self.log.warn( "dynamicThroughput: %s" % ftsChannel["Message"] )
-            continue 
+            continue
           ftsChannel = ftsChannel["Value"]
           channels.append( ( ftsChannel, sourceSE, targetSE ) )
-      ## no candidate channels found
+      # # no candidate channels found
       if not channels:
-        msg = "dynamicThroughput: FTS channels between %s and %s are not defined" % ( ",".join(sourceSEs), 
-                                                                                      ",".join(targetSEs) )
+        msg = "dynamicThroughput: FTS channels between %s and %s are not defined" % ( ",".join( sourceSEs ),
+                                                                                      ",".join( targetSEs ) )
         self.log.error( msg )
         return S_ERROR( msg )
-      ## filter out already used channels
-      channels = [ (channel, sourceSE, targetSE) for channel, sourceSE, targetSE in channels 
+      # # filter out already used channels
+      channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.channelID not in tree ]
       if not channels:
-        msg = "dynamicThroughput: all FTS channels between %s and %s are already used in tree" % ( ",".join(sourceSEs), 
-                                                                                                   ",".join(targetSEs) )
+        msg = "dynamicThroughput: all FTS channels between %s and %s are already used in tree" % ( ",".join( sourceSEs ),
+                                                                                                   ",".join( targetSEs ) )
         self.log.error( msg )
         return S_ERROR( msg )
-      ## filter out non-active channels
-      self.log.debug("dynamicThroughput: found %s candidate channels, checking activity" % len(channels) )
+      # # filter out non-active channels
+      self.log.debug( "dynamicThroughput: found %s candidate channels, checking activity" % len( channels ) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
-                   if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"] 
-                   and channel.status == "Active" and channel.timeToStart < float("inf") ]
+                   if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"]
+                   and channel.status == "Active" and channel.timeToStart < float( "inf" ) ]
       if not channels:
-        self.log.info("dynamicThroughput: active candidate channels not found")
-        return S_ERROR("dynamicThroughput: no active candidate FTS channels")
-      
+        self.log.info( "dynamicThroughput: active candidate channels not found" )
+        return S_ERROR( "dynamicThroughput: no active candidate FTS channels" )
+
       candidates = []
       selTimeToStart = None
       for channel, sourceSE, targetSE in channels:
         timeToStart = channel.timeToStart
         if sourceSE not in primarySources:
-          timeToStart += self.sigma        
+          timeToStart += self.sigma
         if sourceSE in timeToSite:
           timeToStart += timeToSite[sourceSE]
-        ## local found 
+        # # local found
         if channel.fromNode == channel.toNode:
-          self.log.debug("dynamicThroughput: found local channel '%s'" % channel.channelName )
+          self.log.debug( "dynamicThroughput: found local channel '%s'" % channel.channelName )
           candidates = [ ( channel, sourceSE, targetSE ) ]
           selTimeToStart = timeToStart
           break
@@ -451,10 +451,10 @@ class FTSStrategy(object):
           minTimeToStart = timeToStart
           candidates = [ ( channel, sourceSE, targetSE ) ]
         elif timeToStart == minTimeToStart:
-          candidates.append( (channel, sourceSE, targetSE ) )
+          candidates.append( ( channel, sourceSE, targetSE ) )
 
       if not candidates:
-        return S_ERROR("dynamicThroughput: unable to find candidate FTS channels")
+        return S_ERROR( "dynamicThroughput: unable to find candidate FTS channels" )
 
       random.shuffle( candidates )
       selChannel, selSourceSE, selTargetSE = candidates[0]
@@ -466,14 +466,14 @@ class FTSStrategy(object):
                                      "SourceSE" : selSourceSE,
                                      "TargetSE" : selTargetSE,
                                      "Strategy" : "DynamicThroughput" }
-      timeToSite[selTargetSE] = selTimeToStart 
+      timeToSite[selTargetSE] = selTimeToStart
       sourceSEs.append( selTargetSE )
       targetSEs.remove( selTargetSE )
-  
+
     return S_OK( tree )
 
   def reset( self ):
-    """ reset :chosenStrategy: 
+    """ reset :chosenStrategy:
 
     :param self: self reference
     """
@@ -484,10 +484,10 @@ class FTSStrategy(object):
     """ Get supported strategies.
 
     :param self: self reference
-    """    
+    """
     return self.__supportedStrategies
 
-  def replicationTree( self, sourceSEs, targetSEs, size, strategy=None ):
+  def replicationTree( self, sourceSEs, targetSEs, size, strategy = None ):
     """ get replication tree
 
     :param str lfn: LFN
@@ -496,33 +496,33 @@ class FTSStrategy(object):
     :param long size: file size
     :param str strategy: strategy name
     """
-    ## update SEs rwAccess every rwUpdatePertion timedelta (default 300 s)
+    # # update SEs rwAccess every rwUpdatePertion timedelta (default 300 s)
     now = datetime.datetime.now()
     if now - self.lastRssUpdate > self.rwUpdatePeriod:
-      update = self.updateGraph( rwAccess=True )
+      update = self.updateGraph( rwAccess = True )
       if not update["OK"]:
-        self.log.warn("replicationTree: unable to update FTS graph: %s" % update["Message"] )
+        self.log.warn( "replicationTree: unable to update FTS graph: %s" % update["Message"] )
       else:
         self.lastRssUpdate = now
-    ## get strategy
+    # # get strategy
     strategy = strategy if strategy else self.__selectStrategy()
     if strategy not in self.getSupportedStrategies():
-      return S_ERROR("replicationTree: unsupported strategy '%s'" % strategy )
+      return S_ERROR( "replicationTree: unsupported strategy '%s'" % strategy )
 
-    self.log.info( "replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" %\
+    self.log.info( "replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" % \
                      ( strategy, sourceSEs, targetSEs, size ) )
-    ## fire action from dispatcher
+    # # fire action from dispatcher
     tree = self.strategyDispatcher[strategy]( sourceSEs, targetSEs )
     if not tree["OK"]:
       self.log.error( "replicationTree: %s" % tree["Message"] )
       return tree
-    ## update graph edges
-    update = self.updateGraph( replicationTree=tree["Value"], size=size )
+    # # update graph edges
+    update = self.updateGraph( replicationTree = tree["Value"], size = size )
     if not update["OK"]:
       self.log.error( "replicationTree: unable to update FTS graph: %s" % update["Message"] )
       return update
     return tree
-    
+
   def __selectStrategy( self ):
     """ If more than one active strategy use one after the other.
 
@@ -535,7 +535,7 @@ class FTSStrategy(object):
     return chosenStrategy
 
   def __getRWAccessForSE( self, seList ):
-    """ get RSS R/W for :seList: 
+    """ get RSS R/W for :seList:
 
     :param list seList: SE list
     """
@@ -546,18 +546,18 @@ class FTSStrategy(object):
     if not rAccess["OK"]:
       self.log.error( rAccess["Message"] )
       return rAccess["Message"]
-    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active", 
+    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active",
                                                                                                      "Degraded" ) ]
     wAccess = self.rssClient.getStorageElementStatus( seList, statusType = "WriteAccess", default = 'Unknown' )
     if not wAccess["OK"]:
       self.log.error( wAccess["Message"] )
       return wAccess["Message"]
-    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active", 
+    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active",
                                                                                                        "Degraded" ) ]
     for se in rwDict:
       rwDict[se]["read"] = se in rAccess
       rwDict[se]["write"] = se in wAccess
     return S_OK( rwDict )
- 
+
 
 

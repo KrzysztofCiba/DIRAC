@@ -32,8 +32,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
-from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
+from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 

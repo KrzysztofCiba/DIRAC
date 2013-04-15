@@ -33,7 +33,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 from DIRAC.RequestManagementSystem.Client.File import File
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
+from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
@@ -85,20 +85,20 @@ class FTSClient( Client ):
       cls.__requestClient = RequestClient()
     return cls.__requestClient
 
-  def putFTSLfn( self, ftsLfn ):
-    """ put FTSLfn into FTSDB
+  def putFTSFile( self, ftsFile ):
+    """ put FTSFile into FTSDB
 
-    :param FTSLfn ftsLfn: FTSLfn instance
+    :param FTSFile ftsFile: FTSFile instance
     """
-    isValid = self.ftsValidator().validate( ftsLfn )
+    isValid = self.ftsValidator().validate( ftsFile )
     if not isValid["OK"]:
       self.log.error( isValid["Message"] )
       return isValid
-    ftsLfnXML = ftsLfn.toXML()
-    if not ftsLfnXML["OK"]:
-      self.log.error( ftsLfnXML["Message"] )
-      return ftsLfnXML
-    return self.ftsManager().putFTSLfn( ftsLfnXML )
+    ftsFileXML = ftsFile.toXML()
+    if not ftsFileXML["OK"]:
+      self.log.error( ftsFileXML["Message"] )
+      return ftsFileXML
+    return self.ftsManager().putFTSFile( ftsFileXML )
 
   def putFTSJob( self, ftsJob ):
     """ put FTSJob into FTSDB

@@ -1,14 +1,14 @@
 ########################################################################
 # $HeadURL $
-# File: FTSJobFile.py
+# File: FTSFile.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 09:28:29
 ########################################################################
 
-""" :mod: FTSJobFile
-    ================
+""" :mod: FTSFile
+    =============
 
-    .. module: FTSJobFile
+    .. module: FTSFile
     :synopsis: class representing a single file in the FTS job
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
@@ -18,21 +18,22 @@
 __RCSID__ = "$Id $"
 
 # #
-# @file FTSJobFile.py
+# @file FTSFile.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/08 09:28:45
-# @brief Definition of FTSJobFile class.
+# @brief Definition of FTSFile class.
 
 # # imports
+import os
 try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
   import xml.etree.ElementTree as ElementTree
 
 ########################################################################
-class FTSJobFile( object ):
+class FTSFile( object ):
   """
-  .. class:: FTSJobFile
+  .. class:: FTSFile
 
   class representing a single file in the FTS job
   """
@@ -56,9 +57,11 @@ class FTSJobFile( object ):
   def tableDesc():
     """ get table desc """
     return { "Fields" :
-             { "FTSJobFileID": "INTEGER NOT NULL AUTO_INCREMENT",
-               "FTSLfnID":  "INTEGER NOT NULL",
+             { "FTSFileID": "INTEGER NOT NULL AUTO_INCREMENT",
                "FTSJobID":  "INTEGER",
+               "FileID" : "INTEGER",
+               "OperationID" : "INTEGER",
+               "LFN" : "VARCHAR(255) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum" : "VARCHAR(64)",
                "ChecksumType" : "VARCHAR(32)",
@@ -67,10 +70,10 @@ class FTSJobFile( object ):
                "SourceSURL" : "VARCHAR(255)",
                "TargerSE" : "VARCHAR(128)",
                "TargetSURL" : "VARCHAR(255)",
-               "Status" : "ENUM( 'Waiting', 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ) DEFAULT 'Waiting'",
+               "Status" : "VARCHAR(32) DEFAULT 'Waiting'",
                "Error" : "VARCHAR(255)"  },
-             "PrimaryKey" : [ "FTSJobFileID" ],
-             "Indexes" : { "FTSJobID" : [ "FTSJobID" ], "FTSJobFileID" : [ "FTSJobFileID"] } }
+             "PrimaryKey" : [ "FTSFileID" ],
+             "Indexes" : { "FTSJobID" : [ "FTSJobID" ], "FTSFileID" : [ "FTSFileID"] } }
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -82,14 +85,14 @@ class FTSJobFile( object ):
       print name, value, error
 
   @property
-  def FTSJobFileID( self ):
-    """ FTSJobFileID getter """
-    return self.__data__["FTSJobFileID"]
+  def FTSFileID( self ):
+    """ FTSFileID getter """
+    return self.__data__["FTSFileID"]
 
-  @FTSJobFileID.setter
-  def FTSJobFileID( self, value ):
-    """ FTSJobFileID setter """
-    self.__data__["FTSJobFileID"] = long( value ) if value else 0
+  @FTSFileID.setter
+  def FTSFileID( self, value ):
+    """ FTSFileID setter """
+    self.__data__["FTSFileID"] = long( value ) if value else 0
 
   @property
   def FTSJobID( self ):
@@ -102,14 +105,40 @@ class FTSJobFile( object ):
     self.__data__["FTSJobID"] = long( value ) if value else 0
 
   @property
-  def FTSLfnID( self ):
-    """ FTSLfnID getter """
-    return self.__data__["FTSLfnID"]
+  def OperationID( self ):
+    """ OperationID getter """
+    return self.__data__["OperationID"]
 
-  @FTSLfnID.setter
-  def FTSLfnID( self, value ):
-    """ FTSLfnID setter """
-    self.__data__["FTSLfnID"] = long( value ) if value else 0
+  @OperationID.setter
+  def OperationID( self, value ):
+    """ OperationID setter """
+    value = long( value ) if value else None
+    self.__data__["OperationID"] = value
+
+  @property
+  def FileID( self ):
+    """ FileID getter """
+    return self.__data__["FileID"]
+
+  @FileID.setter
+  def FileID( self, value ):
+    """ FileID setter """
+    value = long( value ) if value else None
+    self.__data__["FileID"] = value
+
+  @property
+  def LFN( self ):
+    """ LFN prop """
+    return self.__data__["LFN"]
+
+  @LFN.setter
+  def LFN( self, value ):
+    """ lfn setter """
+    if type( value ) != str:
+      raise TypeError( "LFN has to be a string!" )
+    if not os.path.isabs( value ):
+      raise ValueError( "LFN should be an absolute path!" )
+    self.__data__["LFN"] = value
 
   @property
   def Attempt( self ):
@@ -220,31 +249,36 @@ class FTSJobFile( object ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     self.__data__["Status"] = value
 
-  def toXML( self ):
-    """ serialize file to XML """
+  def toXML( self, dumpToStr = False ):
+    """ serialize file to XML
+
+    :param bool dumpToStr: dump to str
+    """
+    dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
-    return ElementTree.Element( "ftsjobfile", attrs )
+    el = ElementTree.Element( "FTSFile", attrs )
+    return { True : el, False : ElementTree.tostring( el ) }[dumpToStr]
 
   @classmethod
   def fromXML( cls, element ):
-    """ build FTSJobFile form ElementTree.Element :element: """
-    if element.tag != "ftsjobfile":
-      raise ValueError( "wrong tag, expected 'ftsjobfile', got %s" % element.tag )
+    """ build FTSFile form ElementTree.Element :element: """
+    if element.tag != "FTSFile":
+      raise ValueError( "wrong tag, expected 'FTSFile', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return FTSJobFile( fromDict )
+    return FTSFile( fromDict )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) == str else str( value ) )
                 for column, value in self.__data__.items()
-                if value and column != "FTSJobFileID" ]
+                if value and column != "FTSFileID" ]
     query = []
-    if self.FTSJobFileID:
-      query.append( "UPDATE `FTSJobFile` SET " )
+    if self.FTSFileID:
+      query.append( "UPDATE `FTSFile` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `FTSJobFileID`=%d;\n" % self.RequestID )
+      query.append( " WHERE `FTSFileID`=%d;\n" % self.FTSFileID )
     else:
-      query.append( "INSERT INTO `FTSJobFile` " )
+      query.append( "INSERT INTO `FTSFile` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )

@@ -29,9 +29,8 @@ __RCSID__ = "$Id $"
 ## imports 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
+from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 
 ########################################################################
 class FTSValidator(object):
@@ -41,11 +40,9 @@ class FTSValidator(object):
   """
   __metaclass__ = DIRACSingleton
   # # required attributes in FTSLfn, FTSJob and FTSJobFile
-  __reqAttrs = { FTSLfn: { "attrs": [ "OperationID", "FileID", "LFN",
-                                          "TargetSE", "Checksum", "ChecksumType", "Size" ] },
-                 FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size" ] },
-                 FTSJobFile: { "attrs": [ "FTSLfnID", "Checksum", "ChecksumType", "Size",
-                                             "SourceSE", "SourceSURL", "TargetSE", "TargetSURL" ] } }
+  __reqAttrs = { FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size"] },
+                 FTSFile: { "attrs": [ "FileID", "OperationID", "LFN", "Checksum", "ChecksumType", "Size",
+                                       "SourceSE", "SourceSURL", "TargetSE", "TargetSURL" ] } }
 
   def __init__( self ):
     """ c'tor """
