@@ -103,16 +103,20 @@ class FTSManagerHandler( RequestHandler ):
       setattr( ftsLfn, key, fileJSON.get( key ) )
     ftsLfn.TargetSE = ",".join( targetSEs )
     ftsLfn.Status = "Waiting"
-    
+
     try:
       put = gFTSDB.putFTSLfn( ftsLfn )
+      if not put["OK"]:
+        gLogger.error( put["Message"] )
+        return put
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( str( error ) )
-    
+
+    # # add FTSJobFiles
     for branch in tree:
       ftsJobFile = FTSJobFile()
-      
+
 
 
 
