@@ -78,6 +78,16 @@ FIX: SpaceTokenOccupancyCommand, CacheFeederAgent - add timeout when calling lcg
 FIX: JobManifest - take all the SubmitPools defined in the TaskQueueAgent 
 NEW: StalledJobAgent - declare jobs stuck in Completed status as Failed
 
+[v6r8p4]
+
+*Transformation
+FIX: The connection to the jobManager is done only at submission time
+FIX: Jenkins complaints fixes
+
+*WMS
+BUGFIX: JobDB - CPUtime -> CPUTime
+FIX: Jenkins complaints fixes
+
 [v6r8p3]
 
 *DMS
