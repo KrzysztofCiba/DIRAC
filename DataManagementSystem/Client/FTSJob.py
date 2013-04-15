@@ -80,7 +80,7 @@ class FTSJob( object ):
                "TargetToken": "VARCHAR(255)",
                "SourceToken": "VARCHAR(255)",
                "Size": "INTEGER",
-               "Status" : "ENUM( 'Submitted', 'Executing', 'Finished', 'FinishedDirty', 'Cancelled' ) DEFAULT 'Submitted'",
+               "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",

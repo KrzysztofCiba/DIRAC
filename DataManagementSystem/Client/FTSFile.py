@@ -246,8 +246,8 @@ class FTSFile( object ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    if not value.startswith( "Waiting" ) or value not in ( "Submitted", "Ready", "Staging", "Executing",
-                                                           "Finished", "FinishedDirty", "Cancelled" ):
+    if not value.startswith( "Waiting" ) or value not in ( "Submitted", "Ready", "Staging", "Canceled",
+                                                           "Active", "Failed", "Finished" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     self.__data__["Status"] = value
 
