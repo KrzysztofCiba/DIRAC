@@ -48,11 +48,11 @@ class RemoveFile( BaseOperation ):
     BaseOperation.__init__( self, operation, csPath )
     # # gMOnitor stuff goes here
     gMonitor.registerActivity( "RemoveFileAtt", "File removals attempted",
-                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RemoveFileOK", "Successful file removals",
-                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RemoveFileFail", "Failed file removals",
-                               "RemoveFile", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
   def __call__( self ):
     """ action for 'removeFile' operation  """
