@@ -44,7 +44,7 @@ class Operation( object ):
   :param str Arguments: additional arguments
   :param str SourceSE: source SE name
   :param str TargetSE: target SE names as comma separated list
-  :param str Catalogue: catalogue to use as comma separated list
+  :param str Catalog: catalog to use as comma separated list
   :param str Error: error string if any
   :param Request parent: parent Request instance
   """
@@ -88,7 +88,7 @@ class Operation( object ):
                "Order" : "INTEGER NOT NULL",
                "SourceSE" : "VARCHAR(255)",
                "TargetSE" : "VARCHAR(255)",
-               "Catalogue" : "VARCHAR(255)",
+               "Catalog" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME" },
@@ -144,7 +144,7 @@ class Operation( object ):
 
   # # helpers for looping
   def __iter__( self ):
-    """ subrequest files iterator """
+    """ files iterator """
     return self.__files__.__iter__()
 
   def __getitem__( self, i ):
@@ -231,14 +231,14 @@ class Operation( object ):
     return list( set ( [ targetSE for targetSE in self.TargetSE.split( "," ) if targetSE.strip() ] ) )
 
   @property
-  def Catalogue( self ):
+  def Catalog( self ):
     """ catalogue prop """
-    return self.__data__["Catalogue"]
+    return self.__data__["Catalog"]
 
-  @Catalogue.setter
-  def Catalogue( self, value ):
-    """ catalogue setter """
-    self.__data__["Catalogue"] = value if value else ""
+  @Catalog.setter
+  def Catalog( self, value ):
+    """ catalog setter """
+    self.__data__["Catalog"] = value if value else ""
 
   @property
   def Error( self ):

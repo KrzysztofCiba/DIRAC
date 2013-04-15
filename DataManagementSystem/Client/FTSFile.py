@@ -70,7 +70,7 @@ class FTSFile( object ):
                "SourceSURL": "VARCHAR(255)",
                "TargerSE": "VARCHAR(128)",
                "TargetSURL": "VARCHAR(255)",
-               "Status": "VARCHAR(32) DEFAULT 'Waiting'",
+               "Status": "VARCHAR(128) DEFAULT 'Waiting'",
                "Error": "VARCHAR(255)"  },
              "PrimaryKey": [ "FTSFileID" ],
              "Indexes": { "FTSJobID": [ "FTSJobID" ], "FTSFileID": [ "FTSFileID"],

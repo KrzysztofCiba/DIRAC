@@ -30,11 +30,9 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
-from DIRAC.RequestManagementSystem.Client.File import File
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
-from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
 ########################################################################
@@ -69,7 +67,7 @@ class FTSClient( Client ):
     return cls.__ftsValidator
 
   @classmethod
-  def ftsManager( cls, timeout = 120 ):
+  def ftsManager( cls, timeout = 240 ):
     """ get FTSManager instance """
     if not cls.__ftsManager:
       url = PathFinder.getServiceURL( "DataManagement/FTSManager" )
@@ -94,7 +92,7 @@ class FTSClient( Client ):
     if not isValid["OK"]:
       self.log.error( isValid["Message"] )
       return isValid
-    ftsFileXML = ftsFile.toXML()
+    ftsFileXML = ftsFile.toXML( dumpToStr = True )
     if not ftsFileXML["OK"]:
       self.log.error( ftsFileXML["Message"] )
       return ftsFileXML

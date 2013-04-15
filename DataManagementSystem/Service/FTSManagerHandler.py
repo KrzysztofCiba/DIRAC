@@ -124,8 +124,31 @@ class FTSManagerHandler( RequestHandler ):
     if not tree["OK"]:
       return tree
     tree = tree["Value"]
-    # # build ftsFiles instance
+    # # sort by ancestor
+    sortedKeys = self.ancestorSortKeys( tree, "Ancestor" )
+    if not sortedKeys["OK"]:
+      gLogger.warn( "unable to sort replication tree by Ancestor: %s"% sortedKeys["Message"] )
+      sortedKeys = tree.keys()
+    else:
+      sortedKeys = sortedKeys["Value"]
+    # # dict holding swap parent with child for same SURLs
+    ancestorSwap = {} 
+    for channelID in sortedKeys:
+      repDict = tree[channelID]
+      gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
+                                                                          repDict["SourceSE"], repDict["DestSE"] ) )
+        transferURLs = self.getTransferURL, repDict, waitingFileReplicas )
+        if not transferURLs["OK"]:
+          return transferURLs
+        sourceSURL, targetSURL, waitingFileStatus = transferURLs["Value"]
 
+        ## save ancestor to swap
+        if sourceSURL == targetSURL and waitingFileStatus.startswith( "Done" ):
+          oldAncestor = str(channelID)            
+          newAncestor = waitingFileStatus[5:]
+          ancestorSwap[ oldAncestor ] = newAncestor
+
+    
 
     ftsFile = FTSFile()
     for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
