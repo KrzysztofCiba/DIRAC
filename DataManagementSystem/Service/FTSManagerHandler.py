@@ -30,7 +30,10 @@ from types import DictType, LongType, ListType, StringTypes
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+# # from Resources
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 # # from DMS
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
@@ -71,34 +74,10 @@ class FTSManagerHandler( RequestHandler ):
   """
   # # fts validator
   __ftsValidator = None
-
-  @staticmethod
-  def _ancestorSortKeys( tree, aKey = "Ancestor" ):
-    """ sorting keys of replicationTree by its hopAncestor value
-
-    replicationTree is a dict ( channelID : { ... }, (...) }
-
-    :param self: self reference
-    :param dict tree: replication tree  to sort
-    :param str aKey: a key in value dict used to sort
-    """
-    if False in [ bool( aKey in v ) for v in tree.values() ]:
-      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" % aKey )
-    # # put parents of all parents
-    sortedKeys = [ k for k in tree if aKey in tree[k] and not tree[k][aKey] ]
-    # # get children
-    pairs = dict( [ ( k, v[aKey] ) for k, v in tree.items() if v[aKey] ] )
-    while pairs:
-      for key, ancestor in dict( pairs ).items():
-        if key not in sortedKeys and ancestor in sortedKeys:
-          sortedKeys.insert( sortedKeys.index( ancestor ), key )
-          del pairs[key]
-    # # need to reverse this one, as we're inserting child before its parent
-    sortedKeys.reverse()
-    if sorted( sortedKeys ) != sorted( tree.keys() ):
-      return S_ERROR( "ancestorSortKeys: cannot sort, some keys are missing!" )
-    return S_OK( sortedKeys )
-
+  # # storage factory
+  __storageFactory = None
+  # # replica manager
+  __replicaManager = None
 
   @classmethod
   def ftsValidator( cls ):
@@ -106,6 +85,21 @@ class FTSManagerHandler( RequestHandler ):
     if not cls.__ftsValidator:
       cls.__ftsValidator = FTSValidator()
     return cls.__ftsValidator
+
+  @classmethod
+  def storageFactory( cls ):
+    """ StorageFactory instance getter """
+    if not cls.__storageFactory:
+      cls.__storageFactory = StorageFactory()
+    return cls.__storageFactory
+
+  @classmethod
+  def replicaManager( cls ):
+    """ ReplicaManager instance getter """
+    if not cls.__replicaManager:
+      cls.__replicaManager = ReplicaManager()
+    return cls.__replicaManager
+
 
   types_ftsSchedule = [ DictType, ListType, ListType ]
   def export_ftsSchedule( self, fileJSON, sourceSEs, targetSEs ):
@@ -132,21 +126,22 @@ class FTSManagerHandler( RequestHandler ):
     else:
       sortedKeys = sortedKeys["Value"]
     # # dict holding swap parent with child for same SURLs
+    
     ancestorSwap = {} 
     for channelID in sortedKeys:
       repDict = tree[channelID]
       gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
-                                                                          repDict["SourceSE"], repDict["DestSE"] ) )
-        transferURLs = self.getTransferURL, repDict, waitingFileReplicas )
-        if not transferURLs["OK"]:
-          return transferURLs
-        sourceSURL, targetSURL, waitingFileStatus = transferURLs["Value"]
+                                                                          repDict["SourceSE"], repDict["TargetSE"] ) )
+      transferSURLs = self._getTransferURL, repDict, sourceSEs )
+      if not transferSURLs["OK"]:
+        return transferURLs
+      sourceSURL, targetSURL, fileStatus = transferURLs["Value"]
 
-        ## save ancestor to swap
-        if sourceSURL == targetSURL and waitingFileStatus.startswith( "Done" ):
-          oldAncestor = str(channelID)            
-          newAncestor = waitingFileStatus[5:]
-          ancestorSwap[ oldAncestor ] = newAncestor
+      ## save ancestor to swap
+      if sourceSURL == targetSURL and waitingFileStatus.startswith( "Done" ):
+        oldAncestor = str(channelID)            
+        newAncestor = waitingFileStatus[5:]
+        ancestorSwap[ oldAncestor ] = newAncestor
 
     
 
@@ -206,3 +201,114 @@ class FTSManagerHandler( RequestHandler ):
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
+
+
+  @staticmethod
+  def _ancestorSortKeys( tree, aKey = "Ancestor" ):
+    """ sorting keys of replicationTree by its hopAncestor value
+
+    replicationTree is a dict ( channelID : { ... }, (...) }
+
+    :param self: self reference
+    :param dict tree: replication tree  to sort
+    :param str aKey: a key in value dict used to sort
+    """
+    if False in [ bool( aKey in v ) for v in tree.values() ]:
+      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" % aKey )
+    # # put parents of all parents
+    sortedKeys = [ k for k in tree if aKey in tree[k] and not tree[k][aKey] ]
+    # # get children
+    pairs = dict( [ ( k, v[aKey] ) for k, v in tree.items() if v[aKey] ] )
+    while pairs:
+      for key, ancestor in dict( pairs ).items():
+        if key not in sortedKeys and ancestor in sortedKeys:
+          sortedKeys.insert( sortedKeys.index( ancestor ), key )
+          del pairs[key]
+    # # need to reverse this one, as we're inserting child before its parent
+    sortedKeys.reverse()
+    if sorted( sortedKeys ) != sorted( tree.keys() ):
+      return S_ERROR( "ancestorSortKeys: cannot sort, some keys are missing!" )
+    return S_OK( sortedKeys )
+
+
+  def _getSurlForLFN( self, targetSE, lfn ):
+    """ Get the targetSURL for the storage and LFN supplied.
+
+    :param self: self reference
+    :param str targetSURL: target SURL 
+    :param str lfn: LFN
+    """
+    res = self.storageFactory().getStorages( targetSE, protocolList = ["SRM2"] )
+    if not res["OK"]:
+      errStr = "getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res["Message"] )
+      gLogger.error( errStr )
+      return S_ERROR( errStr )
+    storageObjects = res["Value"]["StorageObjects"]
+    for storageObject in storageObjects:
+      res = storageObject.getCurrentURL( lfn )
+      if res["OK"]:
+        return res
+    gLogger.error( "getSurlForLFN: Failed to get SRM compliant storage.", targetSE )
+    return S_ERROR( "getSurlForLFN: Failed to get SRM compliant storage." )
+
+  def _getSurlForPFN( self, sourceSE, pfn ):
+    """Creates the targetSURL for the storage and PFN supplied.
+    
+    :param self: self reference
+    :param str sourceSE: source storage element
+    :param str pfn: physical file name
+    """
+    res = self.replicaManager().getPfnForProtocol( [pfn], sourceSE )
+    if not res["OK"]:
+      return res
+    if pfn in res["Value"]["Failed"]:
+      return S_ERROR( res["Value"]["Failed"][pfn] )
+    return S_OK( res["Value"]["Successful"][pfn] )
+
+  def _getTransferURLs( self, lfn, repDict, replicas, ancestorSwap=None ):
+    """ prepare TURLs for given LFN and replication tree
+
+    TODO: refactor!!!
+
+    :param self: self reference
+    :param str lfn: LFN
+    :param dict repDict: replication dictionary
+    :param dict replicas: LFN replicas 
+    """
+
+    hopSourceSE = repDict["SourceSE"]
+    hopDestSE = repDict["TargetSE"]
+    hopAncestor = repDict["Ancestor"]
+
+    if ancestorSwap and str(hopAncestor) in ancestorSwap:
+      self.log.debug("getTransferURLs: swapping Ancestor %s with %s" % ( hopAncestor, 
+                                                                         ancestorSwap[str(hopAncestor)] ) )
+      hopAncestor = ancestorSwap[ str(hopAncestor) ]
+    
+    ## get targetSURL
+    res = self._getSurlForLFN( hopDestSE, lfn )
+    if not res["OK"]:
+      errStr = res["Message"]
+      self.log.error( errStr )
+      return S_ERROR( errStr )
+    targetSURL = res["Value"]
+
+    # get the sourceSURL
+    if hopAncestor:
+      status = "Waiting%s" % ( hopAncestor )
+      res = self._getSurlForLFN( hopSourceSE, lfn )
+      if not res["OK"]:
+        errStr = res["Message"]
+        self.log.error( errStr )
+        return S_ERROR( errStr )
+      sourceSURL = res["Value"]
+    else:
+      status = "Waiting"
+      res = self._getSurlForPFN( hopSourceSE, replicas[hopSourceSE] )
+      if not res["OK"]:
+        sourceSURL = replicas[hopSourceSE]
+      else:
+        sourceSURL = res["Value"]
+        
+    return S_OK( ( sourceSURL, targetSURL, status ) )
+

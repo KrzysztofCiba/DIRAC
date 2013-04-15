@@ -80,6 +80,7 @@ class FTSJob( object ):
                "TargetToken": "VARCHAR(255)",
                "SourceToken": "VARCHAR(255)",
                "Size": "INTEGER",
+               "NbFiles": "INTEGER",
                "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
@@ -141,6 +142,17 @@ class FTSJob( object ):
   def Error( self, error ):
     """ error setter """
     self.__data__["Error"] = str( error )[255:]
+
+  @property
+  def NbFiles( self ):
+    """ nb files getter """
+    self.__data__["NbFiles"] = len( self )
+    return self.__data__["NbFiles"]
+
+  @NbFiles.setter
+  def NbSize( self, value ):
+    """ nb files setter """
+    self.__data__["NbFiles"] = len( self )
 
   @property
   def Size( self ):
@@ -239,7 +251,7 @@ class FTSJob( object ):
     """ target SE setter """
     self.__data__["TargetToken"] = targetToken
 
-  # # FTSJobFiles aritmetics
+  # # FTSJobFiles arithmetics
   def __contains__( self, subFile ):
     """ in operator """
     return subFile in self.__files__

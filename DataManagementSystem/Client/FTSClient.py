@@ -99,6 +99,13 @@ class FTSClient( Client ):
       return ftsFileXML
     return self.ftsManager().putFTSFile( ftsFileXML )
 
+  def getFTSFile( self, fileID = None, ftsFileID = None ):
+    """ get FTSFile
+
+    :param int fileID: FTSFileID
+    """
+    pass
+
   def putFTSJob( self, ftsJob ):
     """ put FTSJob into FTSDB
 
@@ -128,8 +135,6 @@ class FTSClient( Client ):
       self.log.error( ftsSiteXML["Message"] )
       return ftsSiteXML
     return self.ftsManager().putFTSSite( ftsSiteXML )
-
-
 
   def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
     """ schedule lfn for FTS job
