@@ -72,6 +72,34 @@ class FTSManagerHandler( RequestHandler ):
   # # fts validator
   __ftsValidator = None
 
+  @staticmethod
+  def _ancestorSortKeys( tree, aKey = "Ancestor" ):
+    """ sorting keys of replicationTree by its hopAncestor value
+
+    replicationTree is a dict ( channelID : { ... }, (...) }
+
+    :param self: self reference
+    :param dict tree: replication tree  to sort
+    :param str aKey: a key in value dict used to sort
+    """
+    if False in [ bool( aKey in v ) for v in tree.values() ]:
+      return S_ERROR( "ancestorSortKeys: %s key in not present in all values" % aKey )
+    # # put parents of all parents
+    sortedKeys = [ k for k in tree if aKey in tree[k] and not tree[k][aKey] ]
+    # # get children
+    pairs = dict( [ ( k, v[aKey] ) for k, v in tree.items() if v[aKey] ] )
+    while pairs:
+      for key, ancestor in dict( pairs ).items():
+        if key not in sortedKeys and ancestor in sortedKeys:
+          sortedKeys.insert( sortedKeys.index( ancestor ), key )
+          del pairs[key]
+    # # need to reverse this one, as we're inserting child before its parent
+    sortedKeys.reverse()
+    if sorted( sortedKeys ) != sorted( tree.keys() ):
+      return S_ERROR( "ancestorSortKeys: cannot sort, some keys are missing!" )
+    return S_OK( sortedKeys )
+
+
   @classmethod
   def ftsValidator( cls ):
     """ FTSValidator instance getter """
@@ -96,15 +124,17 @@ class FTSManagerHandler( RequestHandler ):
     if not tree["OK"]:
       return tree
     tree = tree["Value"]
-    # # build ftsLfn instance
-    ftsLfn = FTSLfn()
+    # # build ftsFiles instance
+
+
+    ftsFile = FTSFile()
     for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
-      setattr( ftsLfn, key, fileJSON.get( key ) )
-    ftsLfn.TargetSE = ",".join( targetSEs )
-    ftsLfn.Status = "Waiting"
+      setattr( ftsFile, key, fileJSON.get( key ) )
+    ftsFile.TargetSE = ",".join( targetSEs )
+    ftsFile.Status = "Waiting"
 
     try:
-      put = gFTSDB.putFTSLfn( ftsLfn )
+      put = gFTSDB.putFTSFile( ftsFile )
       if not put["OK"]:
         gLogger.error( put["Message"] )
         return put
@@ -112,29 +142,25 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-    # # add FTSJobFiles
-    for branch in tree:
-      ftsJobFile = FTSJobFile()
 
 
 
 
-
-  types_putFTSLfn = [ StringTypes ]
+  types_putFTSFile = [ StringTypes ]
   @classmethod
   def export_putFTSLfn( cls, ftsLfnXML ):
     """ put FTSLfn into FTSDB """
-    ftsLfn = FTSLfn.fromXML()
-    if not ftsLfn["OK"]:
-      gLogger.error( ftsLfn["Message"] )
-      return ftsLfn
-    ftsLfn = ftsLfn["Value"]
-    isValid = cls.ftsValdator().validate( ftsLfn )
+    ftsFile = FTSFile.fromXML( dumpToStr = True )
+    if not ftsFile["OK"]:
+      gLogger.error( ftsFile["Message"] )
+      return ftsFile
+    ftsFile = ftsFile["Value"]
+    isValid = cls.ftsValdator().validate( ftsFile )
     if not isValid["OK"]:
       gLogger.error( isValid["Message"] )
       return isValid
     try:
-      return gFTSDB.putFTSLfn( ftsLfn["Value"] )
+      return gFTSDB.putFTSFile( ftsFile )
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
@@ -157,4 +183,3 @@ class FTSManagerHandler( RequestHandler ):
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
-

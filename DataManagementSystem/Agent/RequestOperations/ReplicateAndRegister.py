@@ -66,7 +66,7 @@ class ReplicateAndRegister( BaseOperation ):
     gMonitor.registerActivity( "FTSScheduleFail", "File schedule failed",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     # # SE cache
-    seCache = {}
+    self.seCache = {}
 
   @classmethod
   def ftsClient( cls ):
