@@ -44,11 +44,11 @@ class RegisterFile( BaseOperation ):
     BaseOperation.__init__( self, operation, csPath )
     # # RegisterFile specific monitor info
     gMonitor.registerActivity( "RegisterAtt", "Attempted file registrations",
-                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterOK", "Successful file registrations",
-                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterFail", "Failed file registrations",
-                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
   def __call__( self ):
     """ call me maybe """

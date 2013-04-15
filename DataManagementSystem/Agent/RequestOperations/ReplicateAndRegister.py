@@ -47,24 +47,23 @@ class ReplicateAndRegister( BaseOperation ):
     """
     BaseOperation.__init__( self, operation, csPath )
     # # own gMonitor stuff for files
-    name = self.__class__.__name__
     gMonitor.registerActivity( "ReplicateAndRegisterAtt", "Replicate and register attempted",
-                                name, "Files/min", gMonitor.OP_SUM )
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "ReplicateOK", "Replications successful",
-                                name, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "ReplicateFail", "Replications failed",
-                                name, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterOK", "Registrations successful",
-                                name, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterFail", "Registrations failed",
-                                name, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     # # for FTS
     gMonitor.registerActivity( "FTSScheduleAtt", "Files schedule attempted",
-                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSScheduleOK", "File schedule successful",
-                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSScheduleFail", "File schedule failed",
-                               "FTSSchedule", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
   @classmethod
   def ftsClient( cls ):
@@ -79,7 +78,10 @@ class ReplicateAndRegister( BaseOperation ):
     checkReplicas = self.__checkReplicas()
     if not checkReplicas["OK"]:
       self.log.error( checkReplicas["Message"] )
-
+    if self.FTSMode:
+      if self.OwnerGroup not in self.FTSBannedGroup:
+        return self.ftsTransfer()
+    return self.rmTransfer()
 
   def __checkReplicas( self ):
     """ check done replicas and update file states  """

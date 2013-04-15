@@ -47,11 +47,11 @@ class RemoveReplica( BaseOperation ):
     BaseOperation.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
-                               "RemoveReplica", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RemoveReplicaeOK", "Successful replica removals",
-                               "RemoveReplica", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RemoveReplicaFail", "Failed replica removals",
-                               "RemoveReplica", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
   def __call__( self ):
     """ remove replicas """

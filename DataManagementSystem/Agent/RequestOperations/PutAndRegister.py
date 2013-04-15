@@ -48,15 +48,15 @@ class PutAndRegister( BaseOperation ):
     BaseOperation.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PutAtt", "File put attempts",
-                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "PutFail", "Failed file puts",
-                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "PutOK", "Successful file puts",
-                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterOK", "Successful file registrations",
-                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RegisterFail", "Failed file registrations",
-                               self.__class__.__name__, "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
   def __call__( self ):
     """ PutAndRegister operation processing """

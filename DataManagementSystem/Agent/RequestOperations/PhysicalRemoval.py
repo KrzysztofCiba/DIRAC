@@ -43,13 +43,13 @@ class PhysicalRemoval( BaseOperation ):
     BaseOperation.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical file removals attempted",
-                               "PhysicalRemoval", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "PhysicalRemovalOK", "Successful file physical removals",
-                               "PhysicalRemoval", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "PhysicalRemovalFail", "Failed file physical removals",
-                               "PhysicalRemoval", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "PhysicalRemovalSize", "Physically removed size",
-                               "PhysicalRemoval", "Bytes", gMonitor.OP_ACUM )
+                               "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM )
 
   def __call__( self ):
     """ perform physical removal operation """

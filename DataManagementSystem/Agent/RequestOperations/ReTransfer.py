@@ -46,11 +46,11 @@ class ReTransfer( BaseOperation ):
     BaseOperation.__init__( self, operation, csPath )
     # # gMonitor stuff
     gMonitor.registerActivity( "FileReTransferAtt", "File retransfers attempted",
-                               "ReTransfer", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FileReTransferOK", "File retransfers successful",
-                               "ReTransfer", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FileReTransferFail", "File retransfers failed",
-                               "ReTransfer", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
   def __call__( self ):
     """ reTransfer operation execution """
