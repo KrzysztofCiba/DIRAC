@@ -33,6 +33,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
 ########################################################################
@@ -112,6 +113,23 @@ class FTSClient( Client ):
       self.log.error( ftsJobXML["Message"] )
       return ftsJobXML
     return self.ftsManager().putFTSJob( ftsJobXML )
+
+  def putFTSSite( self, ftsSite ):
+    """ put FTSSite into FTSDB
+
+    :param FTSSite ftsSite: FTSSite instance
+    """
+    isValid = self.ftsValidator().validate( ftsSite )
+    if not isValid["OK"]:
+      self.log.error( isValid["Message"] )
+      return isValid
+    ftsSiteXML = ftsSite.toXML()
+    if not ftsSiteXML["OK"]:
+      self.log.error( ftsSiteXML["Message"] )
+      return ftsSiteXML
+    return self.ftsManager().putFTSSite( ftsSiteXML )
+
+
 
   def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
     """ schedule lfn for FTS job

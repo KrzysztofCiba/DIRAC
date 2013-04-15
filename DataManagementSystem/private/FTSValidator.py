@@ -31,6 +31,8 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
+
 
 ########################################################################
 class FTSValidator(object):
@@ -40,7 +42,8 @@ class FTSValidator(object):
   """
   __metaclass__ = DIRACSingleton
   # # required attributes in FTSLfn, FTSJob and FTSJobFile
-  __reqAttrs = { FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size"] },
+  __reqAttrs = { FTSSite: { "attrs": [ "ServerURI", "SEs" ] },
+                 FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size"] },
                  FTSFile: { "attrs": [ "FileID", "OperationID", "LFN", "Checksum", "ChecksumType", "Size",
                                        "SourceSE", "SourceSURL", "TargetSE", "TargetSURL" ] } }
 
