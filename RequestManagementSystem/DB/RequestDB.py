@@ -264,18 +264,21 @@ class RequestDB(DB):
       return delete
     return S_OK()
 
-  def _getRequestProperties( self, requestName, columnNames ):
+  def _getRequestProperties( self, requestName, columnNames = None ):
     """ select :columnNames: from Request table  """
+    columnNames = columnNames if columnNames else Request.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
     return "SELECT %s FROM `Request` WHERE `RequestName` = `%s`;" % ( columnNames, requestName )
     
-  def _getOperationProperties( self, operationID, columnNames ):
+  def _getOperationProperties( self, operationID, columnNames = None ):
     """ select :columnNames: from Operation table  """
+    columnNames = columnNames if columnNames else Operation.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
     return "SELECT %s FROM `Operation` WHERE `OperationID` = %s;" % ( columnNames, int( operationID ) )
 
-  def _getFileProperties( self, fileID, columnNames ):
+  def _getFileProperties( self, fileID, columnNames = None ):
     """ select :columnNames: from File table  """
+    columnNames = columnNames if columnNames else File.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str(columnName) for columnName in columnNames ] )
     return "SELECT %s FROM `File` WHERE `FileID` = %s;" % ( columnNames, int( fileID ) )
 

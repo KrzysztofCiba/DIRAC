@@ -29,9 +29,9 @@ from MySQLdb import Error as MySQLdbError
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.DataManagementSystem.Client.FTSLfn import FTSLfn
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.FTSJobFile import FTSJobFile
+from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 
 ########################################################################
 class FTSDB( DB ):
@@ -61,7 +61,7 @@ class FTSDB( DB ):
   def getTableMeta():
     """ get db schema in a dict format """
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
-                   for classDef in ( FTSLfn, FTSJob, FTSJobFile ) ] )
+                   for classDef in ( FTSSite, FTSJob, FTSFile ) ] )
 
   def _checkTables( self, force = False ):
     """ create tables if not exisiting
@@ -123,19 +123,33 @@ class FTSDB( DB ):
       cursor.close()
       return S_ERROR( str( error ) )
 
-  def putFTSLfn( self, lfnFile ):
-    """ put FTSLfn to fts db """
-    addFTSLfn = self._query( lfnFile.toSQL() )
-    if not addFTSLfn["OK"]:
-      self.log.error( addFTSLfn["Message"] )
-    return addFTSLfn
+  def putFTSSite( self, ftsSite ):
+    """ put FTSSite into fts db """
+    putFTSSite = self._transaction( ftsSite.toSQL() )
+    if not putFTSSite["OK"]:
+      self.log.error( putFTSSite["Message"] )
+    return putFTSSite
 
-  def getFTSLfn( self, fileID = None, lfn = None ):
-    """ read FTSLfn from db """
+  def getFTSSite( self, ftsSiteID ):
+    """ get FTSSite from fts db """
+    getFTSSite = self._transaction( self._getFTSSiteProperties( ftsSiteID ) )
+    if not getFTSSite["OK"]:
+      self.log.error( getFTSSite["Message"] )
+    getFTSSite = getFTSSite["Value"]
+    return getFTSSite
+
+  def putFTSFile( self, ftsFile ):
+    """ put FTSFile into fts db """
+    putFTSFile = self._transaction( ftsFile.toSQL() )
+    if not putFTSFile["OK"]:
+      self.log.error( putFTSFile["Message"] )
+
+    return putFTSFile
+
+  def getFTSFile( self, fileID = None, lfn = None ):
+    """ read FTSFile from db """
     if not any( fileID, lfn ):
       return S_ERROR( "Missing fileID of lfn argument" )
-
-
 
   def putFTSJob( self, ftsJob ):
     """ put FTSJob to the db
@@ -148,32 +162,39 @@ class FTSDB( DB ):
       self.log.error( putJob["Message"] )
     return putJob
 
-  def getFTSJob( self, status = "Submitted" ):
+  def getFTSJob( self, ftsJobID ):
+    """ get FTSJob given FTSJobID """
+    getFTSJob = self._transaction( self._getFTSJobProperties( ftsJobID ) )
+    if not getFTSJob["OK"]:
+      self.log.error( getFTSJob["Message"] )
+      return getFTSJob
+    getFTSJob = getFTSJob["Value"]
+    connection = getFTSJob["connection"]
 
-    pass
 
-  def selectFTSJobFiles( self, status = "Waiting" ):
+
+  def selectFTSFiles( self, status = "Waiting" ):
     """ select FTSJobFiles for submit """
-    selectFiles = "SELECT * FROM `FTSJobFiles` WHERE `Status` = '%s'" % status;
+    selectFiles = "SELECT * FROM `FTSFile` WHERE `Status` = '%s'" % status;
     selectFiles = self._query( selectFiles )
     if not selectFiles["OK"]:
       self.log.error( selectFiles["Message"] )
       return selectFiles
 
-  def _getFTSLfnProperties( self, ftsLfnID, columnNames = None ):
-    """ select :columnNames: from FTSLfn table  """
-    columnNames = columnNames if columnNames else [ col for col in FTSLfn.tableDesc()["Fields"] if col != "FTSLfnID" ]
+  def _getFTSSiteProperties( self, ftsSiteID, columnNames = None ):
+    """ select :columnNames: from FTSSite table  """
+    columnNames = columnNames if columnNames else FTSSite.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-    return "SELECT %s FROM `FTSLfn` WHERE `FTSLfnID` = %s;" % ( columnNames, int( ftsLfnID ) )
+    return "SELECT %s FROM `FTSSite` WHERE `FTSSiteID` = %s;" % ( columnNames, int( ftsSiteID ) )
 
   def _getFTSJobProperties( self, ftsJobID, columnNames = None ):
     """ select :columnNames: from FTSJob table  """
-    columnNames = columnNames if columnNames else [ col for col in FTSJob.tableDesc()["Fields"] if col != "FTSJobID" ]
+    columnNames = columnNames if columnNames else FTSJob.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
     return "SELECT %s FROM `FTSJob` WHERE `FTSJobID` = %s;" % ( columnNames, int( ftsJobID ) )
 
-  def _getFTSJobFileProperties( self, ftsJobFileID, columnNames = None ):
+  def _getFTSFileProperties( self, ftsFileID, columnNames = None ):
     """ select :columnNames: from FTSJobFile table  """
-    columnNames = columnNames if columnNames else [ col for col in FTSJobFile.tableDesc()["Fields"] if col != "FTSJobFileID" ]
+    columnNames = columnNames if columnNames else FTSFile.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-    return "SELECT %s FROM `FTSJobFile` WHERE `FTSJobFileID` = %s;" % ( columnNames, int( ftsJobFileID ) )
+    return "SELECT %s FROM `FTSFile` WHERE `FTSFileID` = %s;" % ( columnNames, int( ftsFileID ) )

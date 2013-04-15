@@ -55,7 +55,7 @@ class FTSFile( object ):
 
   @staticmethod
   def tableDesc():
-    """ get table desc """
+    """ get table description """
     return { "Fields" :
              { "FTSFileID": "INTEGER NOT NULL AUTO_INCREMENT",
                "FTSJobID":  "INTEGER",
