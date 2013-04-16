@@ -246,9 +246,9 @@ class File( object ):
   @classmethod
   def fromXML( cls, element ):
     """ build File form ElementTree.Element :element: """
-    if type(element) == str:
+    if type( element ) == str:
       try:
-        element = ElementTree.fromstring(element)
+        element = ElementTree.fromstring( element )
       except ExpatError, error:
         return S_ERROR( str( error ) )
     if element.tag != "file":

@@ -69,6 +69,11 @@ class Request( object ):
     self.__data__["RequestID"] = 0
     self.__operations__ = TypedList( allowedTypes = Operation )
     fromDict = fromDict if fromDict else {}
+    for opDict in fromDict.get("Operations"):
+      op = Operation( opDict )
+      if not op["OK"]:
+        pass
+    
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown Request attribute '%s'" % key )
