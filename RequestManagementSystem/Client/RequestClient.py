@@ -81,7 +81,8 @@ class RequestClient( Client ):
     if not valid["OK"]:
       self.log.error("putRequest: request not valid: %s" % valid["Message"] )
       return valid
-    requestXML = request.toXML()
+    # # dump to xml string
+    requestXML = request.toXML( True )
     setRequestMgr = self.requestManager().putRequest( requestXML["Value"] )
     if setRequestMgr["OK"]:
       return setRequestMgr
@@ -198,7 +199,7 @@ class RequestClient( Client ):
     return requestInfo
 
   def getRequestFileStatus( self, requestName, lfns ):
-    """ Get fiel status for request given a request name.
+    """ Get file status for request given a request name.
 
     :param self: self reference
     :param str requestName: request name
