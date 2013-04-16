@@ -380,7 +380,7 @@ class FTSJob( object ):
     ftsJob = FTSJob( root.attrib )
     for ftsJobFile in root.findall( "ftsfile" ):
       ftsJob.addFile( FTSFile.fromXML( element = ftsJobFile ) )
-    return S_OK( ftsJob )
+    return ftsJob
 
   def toXML( self ):
     """ dump request to XML
@@ -407,4 +407,14 @@ class FTSJob( object ):
     for ftsFile in self.__files__:
       root.append( ftsFile.toXML() )
     xmlStr = ElementTree.tostring( root )
-    return S_OK( xmlStr )
+    return xmlStr
+
+  def toJSON( self ):
+    """ dump to JSON format """
+    digest = dict( zip( self.__data__.keys(),
+                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+    digest["FTSFiles"] = []
+    for ftsFile in self:
+      digest["FTSFiles"].append( ftsFile.toJSON() )
+    return digest
+

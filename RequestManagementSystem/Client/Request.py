@@ -387,12 +387,13 @@ class Request( object ):
       request.addOperation( Operation.fromXML( element = subReqElement ) )
     return S_OK( request )
 
-  def toXML( self ):
+  def toXML( self, dumpToStr = False ):
     """ dump request to XML
 
     :param self: self reference
     :return: S_OK( xmlString )
     """
+    dumpToStr = bool( dumpToStr )
     root = ElementTree.Element( "request" )
     root.attrib["RequestName"] = str( self.RequestName ) if self.RequestName else ""
     root.attrib["RequestID"] = str( self.RequestID ) if self.RequestID else ""
@@ -411,8 +412,8 @@ class Request( object ):
     # # trigger xml dump of a whole operations and their files tree
     for operation in self.__operations__:
       root.append( operation.toXML() )
-    xmlStr = ElementTree.tostring( root )
-    return S_OK( xmlStr )
+    return { False: root,
+             True: ElementTree.tostring( root ) }[dumpToStr]
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
@@ -442,4 +443,4 @@ class Request( object ):
     digest["Operations"] = []
     for op in self:
       digest["Operations"].append( op.toJSON() )
-    return S_OK( digest )
+    return digest

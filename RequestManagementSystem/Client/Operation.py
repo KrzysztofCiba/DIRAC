@@ -318,8 +318,8 @@ class Operation( object ):
       value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["LastUpdate"] = value
 
-  def toXML( self ):
-    """ dump subrequest to XML """
+  def toXML( self, dumpToStr = False ):
+    """ dump operation to XML """
     data = dict( [ ( key, str( getattr( self, key ) ) if getattr( self, key ) != None else "" ) for key in self.__data__ ] )
     for key, value in data.items():
       if isinstance( value, datetime.datetime ):
@@ -327,7 +327,8 @@ class Operation( object ):
     element = ElementTree.Element( "operation", data )
     for opFile in self.__files__:
       element.append( opFile.toXML() )
-    return element
+    return { False: element,
+             True: ElementTree.tostring( element ) }[dumpToStr]
 
   @classmethod
   def fromXML( cls, element ):
@@ -375,7 +376,7 @@ class Operation( object ):
     return "".join( query )
 
   def toJSON( self ):
-    """ get digest """
+    """ get json digest """
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["RequestID"] = str( self.RequestID )

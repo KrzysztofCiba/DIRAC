@@ -137,7 +137,7 @@ class FTSSite( object ):
     if element.tag != "ftssite":
       raise ValueError( "wrong tag, expected 'ftssite', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return S_OK( FTSSite( fromDict ) )
+    return FTSSite( fromDict )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
@@ -157,3 +157,7 @@ class FTSSite( object ):
       query.append( " VALUES %s;" % values )
     return "".join( query )
 
+  def toJSON( self ):
+    """ dump FTSFile to JSON format """
+    return dict( zip( self.__data__.keys(),
+                      [ str( val ) if val else "" for val in self.__data__.values() ] ) )

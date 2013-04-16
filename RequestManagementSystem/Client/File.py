@@ -233,10 +233,13 @@ class File( object ):
     self.__data__["Status"] = value
 
   # # (de)serialization
-  def toXML( self ):
+  def toXML( self, dumpToStr = False ):
     """ serialize File to XML """
+    dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
-    return ElementTree.Element( "file", attrs )
+    element = ElementTree.Element( "file", attrs )
+    return { False: element,
+             True: ElementTree.tostring( element ) }[dumpToStr]
 
   @classmethod
   def fromXML( cls, element ):

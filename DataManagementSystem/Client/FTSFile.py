@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
+import re
 try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
@@ -47,6 +48,7 @@ class FTSFile( object ):
     self._parent = None
     self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     self.__data__["Status"] = "Waiting"
+    self.__data__["Attempt"] = 0
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
@@ -64,11 +66,11 @@ class FTSFile( object ):
                "LFN": "VARCHAR(255) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum": "VARCHAR(64)",
-               "ChecksumType": "VARCHAR(32)",
+               "ChecksumType": "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'ADLER32'",
                "Size": "INTEGER",
                "SourceSE": "VARCHAR(128)",
                "SourceSURL": "VARCHAR(255)",
-               "TargerSE": "VARCHAR(128)",
+               "TargetSE": "VARCHAR(128)",
                "TargetSURL": "VARCHAR(255)",
                "Status": "VARCHAR(128) DEFAULT 'Waiting'",
                "Error": "VARCHAR(255)"  },
@@ -153,6 +155,11 @@ class FTSFile( object ):
     if value < 0:
       raise ValueError( "Attempt should be a positive integer!" )
     self.__data__["Attempt"] = int( value )
+
+  @property
+  def Size( self ):
+    """ file size """
+    return self.__data__["Size"]
 
   @Size.setter
   def Size( self, value ):
@@ -246,10 +253,16 @@ class FTSFile( object ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    if not value.startswith( "Waiting" ) or value not in ( "Submitted", "Ready", "Staging", "Canceled",
-                                                           "Active", "Failed", "Finished" ):
-      raise ValueError( "Unknown Status: %s!" % str( value ) )
+    reStatus = re.compile( "Waiting.*|Submitted|Ready|Staging|Canceled|Active\Failed\Finished" )
+    if not reStatus.match( value ):
+      raise ValueError( "Unknown FTSFile Status: %s" % str( value ) )
     self.__data__["Status"] = value
+
+  def toJSON( self ):
+    """ dump FTSFile to JSON format """
+    return dict( zip( self.__data__.keys(),
+                      [ val if val != None else "" for val in self.__data__.values() ] ) )
+
 
   def toXML( self, dumpToStr = False ):
     """ serialize file to XML
@@ -259,7 +272,7 @@ class FTSFile( object ):
     dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
     el = ElementTree.Element( "ftsfile", attrs )
-    return { True : el, False : ElementTree.tostring( el ) }[dumpToStr]
+    return { False: el, True: ElementTree.tostring( el ) }[dumpToStr]
 
   @classmethod
   def fromXML( cls, element ):
