@@ -374,17 +374,21 @@ class Request( object ):
     self.__data__["Error"] = str( error )[255:]
 
   @classmethod
-  def fromXML( cls, xmlString ):
+  def fromXML( cls, element ):
     """ create Request object from xmlString or xml.ElementTree.Element """
-    try:
-      root = ElementTree.fromstring( xmlString )
-    except ExpatError, error:
-      return S_ERROR( "unable to de-serialize request from xml: %s" % str( error ) )
-    if root.tag != "request":
+    if type( element ) == str:
+      try:
+        element = ElementTree.fromstring( element )
+      except ExpatError, error:
+        return S_ERROR( str( error ) )
+    if element.tag != "request":
       return S_ERROR( "unable to de-serialize request, xml root element is not a 'request' " )
-    request = Request( root.attrib )
-    for subReqElement in root.findall( "operation" ):
-      request.addOperation( Operation.fromXML( element = subReqElement ) )
+    request = Request( element.attrib )
+    for operationElement in element.findall( "operation" ):
+      operation = Operation.fromXML( element = operationElement )
+      if not operation["OK"]:
+        return operation
+      request.addOperation( operation["Value"] )
     return S_OK( request )
 
   def toXML( self, dumpToStr = False ):
@@ -411,9 +415,12 @@ class Request( object ):
     root.attrib["LastUpdate"] = self.LastUpdate.isoformat( " " ).split( "." )[0] if self.LastUpdate else ""
     # # trigger xml dump of a whole operations and their files tree
     for operation in self.__operations__:
-      root.append( operation.toXML() )
-    return { False: root,
-             True: ElementTree.tostring( root ) }[dumpToStr]
+      opXML = operation.toXML()
+      if not opXML["OK"]:
+        return opXML
+      root.append( opXML["Value"] )
+    return S_OK( { False: root,
+                    True: ElementTree.tostring( root ) }[dumpToStr] )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
@@ -433,7 +440,7 @@ class Request( object ):
       query.append( columns )
       query.append( " VALUES %s;" % values )
       # query.append( "WHERE NOT EXISTS (SELECT `RequestName` FROM `Request` WHERE `RequestName` = '%s');\n" % self.RequestName )
-    return "".join( query )
+    return S_OK( "".join( query ) )
 
   # # digest
   def toJSON( self ):
@@ -442,5 +449,8 @@ class Request( object ):
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["Operations"] = []
     for op in self:
-      digest["Operations"].append( op.toJSON() )
-    return digest
+      opJSON = op.toJSON()
+      if not opJSON["OK"]:
+        return opJSON
+      digest["Operations"].append( opJSON["Value"] )
+    return S_OK( digest )

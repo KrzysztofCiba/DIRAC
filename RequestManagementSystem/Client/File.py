@@ -31,7 +31,9 @@ try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
   import xml.etree.ElementTree as ElementTree
+from xml.parsers.expat import ExpatError
 # # from DIRAC
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import checkGuid
 
 ########################################################################
@@ -237,16 +239,21 @@ class File( object ):
     dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
     element = ElementTree.Element( "file", attrs )
-    return { False: element,
-             True: ElementTree.tostring( element ) }[dumpToStr]
+    return S_OK( { False: element,
+                    True: ElementTree.tostring( element ) }[dumpToStr] )
 
   @classmethod
   def fromXML( cls, element ):
     """ build File form ElementTree.Element :element: """
+    if type(element) == str:
+      try:
+        element = ElementTree.fromstring(element)
+      except ExpatError, error:
+        return S_ERROR( str( error ) )
     if element.tag != "file":
-      raise ValueError( "wrong tag, expected 'file', got %s" % element.tag )
+      return S_ERROR( "wrong tag, expected 'file', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return File( fromDict )
+    return S_OK( File( fromDict ) )
 
   def __str__( self ):
     """ str operator """
@@ -272,11 +279,11 @@ class File( object ):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append( " VALUES %s;\n" % values )
-    return "".join( query )
+    return S_OK( "".join( query ) )
 
   def toJSON( self ):
     """ get json """
     digest = dict( zip( self.__data__.keys(),
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["OperationID"] = str( self.OperationID )
-    return digest
+    return S_OK( digest )

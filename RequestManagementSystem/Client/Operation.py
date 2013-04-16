@@ -27,8 +27,10 @@ try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
   import xml.etree.ElementTree as ElementTree
+from xml.parsers.expat import ExpatError
 import datetime
 # # from DIRAC
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.RequestManagementSystem.Client.File import File
 
@@ -336,15 +338,21 @@ class Operation( object ):
 
     :param ElementTree.Element element: operation element
     """
-    if not isinstance( element, type( ElementTree.Element( "operation" ) ) ):
-      raise TypeError( "wrong argument type %s, expected ElementTree.Element" % type( element ) )
+    if type( element ) == str:
+      try:
+        element = ElementTree.fromstring( element )
+      except ExpatError, error:
+        return S_ERROR( str( error ) )
     if element.tag != "operation":
-      raise ValueError( "wrong tag <%s>, expected <operation>!" % element.tag )
+      return S_ERROR( "wrong tag <%s>, expected <operation>!" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
     operation = Operation( fromDict )
     for fileElement in element.findall( "file" ):
-      operation += File.fromXML( fileElement )
-    return operation
+      opFile = File.fromXML( fileElement )
+      if not opFile["OK"]:
+        return opFile
+      operation += opFile["Value"]
+    return S_OK( operation )
 
   def __str__( self ):
     """ str operator """
@@ -383,5 +391,8 @@ class Operation( object ):
     digest["Order"] = str( self.Order )
     digest["Files"] = []
     for opFile in self:
-      digest["Files"].append( opFile.toJSON() )
-    return digest
+      opJSON = opFile.toJSON()
+      if not opJSON["OK"]:
+        return opJSON
+      digest["Files"].append( opJSON["Value"] )
+    return S_OK( digest )

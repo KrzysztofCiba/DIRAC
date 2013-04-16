@@ -12,6 +12,8 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     class representing FTS site
+
+    TODO: re-think, do we need this one in FTSDB???
 """
 # for properties
 # pylint: disable=E0211,W0612,W0142,E1101,E0102
@@ -30,7 +32,6 @@ except ImportError:
 from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
-
 
 ########################################################################
 class FTSSite( object ):
@@ -115,7 +116,6 @@ class FTSSite( object ):
   def getSEsTuple( self ):
     """ return SEs as tuple """
     return tuple( [ se.strip() for se in self.SEs.split( "," ) if se.strip() ] )
-
 
   def toXML( self, dumpToStr = False ):
     """ serialize FTS site to XML
