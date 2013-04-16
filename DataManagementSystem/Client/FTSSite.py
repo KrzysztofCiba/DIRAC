@@ -13,9 +13,9 @@
 
     class representing FTS site
 """
-
+# for properties
+# pylint: disable=E0211,W0612,W0142,E1101,E0102
 __RCSID__ = "$Id $"
-
 # #
 # @file FTSSite.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -125,7 +125,8 @@ class FTSSite( object ):
     dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
     el = ElementTree.Element( "ftssite", attrs )
-    return { True : el, False : ElementTree.tostring( el ) }[dumpToStr]
+    return S_OK( { False: el,
+                    True: ElementTree.tostring( el ) }[dumpToStr] )
 
   @classmethod
   def fromXML( cls, element ):

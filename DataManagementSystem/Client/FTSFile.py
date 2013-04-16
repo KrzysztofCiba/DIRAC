@@ -4,7 +4,6 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 09:28:29
 ########################################################################
-
 """ :mod: FTSFile
     =============
 
@@ -14,9 +13,9 @@
 
     class representing a single file in the FTS job
 """
-
+# for properties
+# pylint: disable=E0211,W0612,W0142,E1101,E0102
 __RCSID__ = "$Id $"
-
 # #
 # @file FTSFile.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -258,7 +257,7 @@ class FTSFile( object ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    reStatus = re.compile( "Waiting.*|Submitted|Ready|Staging|Canceled|Active\Failed\Finished" )
+    reStatus = re.compile( "Waiting.*|Submitted|Ready|Staging|Canceled|Active|Failed|Finished" )
     if not reStatus.match( value ):
       raise ValueError( "Unknown FTSFile Status: %s" % str( value ) )
     self.__data__["Status"] = value

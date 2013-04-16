@@ -4,12 +4,11 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/08/03 15:02:53
 ########################################################################
-
 """ :mod: File
-    ================
+    ==========
 
     .. module: File
-    :synopsis: sub-request file
+    :synopsis: RMS operation file
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     sub-request file
