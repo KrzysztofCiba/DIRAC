@@ -4,9 +4,9 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 14:28:29
 ########################################################################
-""" :mod: FTSValidator 
+""" :mod: FTSValidator
     ==================
- 
+
     .. module: FTSValidator
     :synopsis: making sure that all required bits and pieces are in place for FTSLfn, FTSJob
                and FTSJobFile
@@ -20,25 +20,24 @@
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file FTSValidator.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/08 14:28:52
 # @brief Definition of FTSValidator class.
 
-## imports 
+# # imports
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 
-
 ########################################################################
-class FTSValidator(object):
+class FTSValidator( object ):
   """
   .. class:: FTSValidator
-  
+
   """
   __metaclass__ = DIRACSingleton
   # # required attributes in FTSLfn, FTSJob and FTSJobFile
@@ -65,7 +64,7 @@ class FTSValidator(object):
     return S_OK()
 
   @classmethod
-  def hasReqAttrs(cls, obj):
+  def hasReqAttrs( cls, obj ):
     """ has required attributes set
 
     :param mixed obj: FTSLfn, FTSJob of FTSJobFile instance

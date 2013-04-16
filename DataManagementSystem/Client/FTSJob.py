@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 import datetime
+import re
 import tempfile
 try:
   import xml.etree.cElementTree as ElementTree
@@ -62,6 +63,9 @@ class FTSJob( object ):
     self.__data__["FTSJobID"] = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
     fromDict = fromDict if fromDict else {}
+    for ftsFileDict in fromDict.get( "FTSFiles", [] ):
+      self +=FTSFile( ftsFileDict )
+    if "FTSFiles" in fromDict: del fromDict["FTSFiles"]
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown FTSJob attribute '%s'" % key )
@@ -73,21 +77,21 @@ class FTSJob( object ):
     """ get table desc """
     return { "Fields" :
              { "FTSJobID" : "INTEGER NOT NULL AUTO_INCREMENT",
-               "GUID" :  "VARCHAR(64)",
-               "SourceSE" : "VARCHAR(128)",
-               "TargerSE" : "VARCHAR(128)",
-               "FTSServer" : "VARCHAR(255)",
+               "FTSGUID" :  "VARCHAR(64) NOT NULL",
+               "SourceSE" : "VARCHAR(128) NOT NULL",
+               "TargetSE" : "VARCHAR(128) NOT NULL",
+               "FTSServer" : "VARCHAR(255) NOT NULL",
                "TargetToken": "VARCHAR(255)",
                "SourceToken": "VARCHAR(255)",
-               "Size": "INTEGER",
-               "NbFiles": "INTEGER",
+               "Size": "INTEGER NOT NULL",
+               "NbFiles": "INTEGER NOT NULL",
                "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME"  },
              "PrimaryKey" : [ "FTSJobID" ],
-             "Indexes" : { "FTSJobID" : [ "FTSJobID" ] } }
+             "Indexes" : { "FTSJobID" : [ "FTSJobID" ], "FTSGUID": [ "FTSGUID" ] } }
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -109,19 +113,19 @@ class FTSJob( object ):
     self.__data__["FTSJobID"] = long( value ) if value else 0
 
   @property
-  def GUID( self ):
-    """ GUID prop """
-    return self.__data__["GUID"]
+  def FTSGUID( self ):
+    """ FTSGUID prop """
+    return self.__data__["FTSGUID"]
 
-  @GUID.setter
-  def GUID( self, value ):
-    """ GUID setter """
+  @FTSGUID.setter
+  def FTSGUID( self, value ):
+    """ FTSGUID setter """
     if value:
       if type( value ) not in ( str, unicode ):
-        raise TypeError( "GUID should be a string!" )
+        raise TypeError( "FTSGUID should be a string!" )
       if not checkGuid( value ):
         raise ValueError( "'%s' is not a valid GUID!" % str( value ) )
-    self.__data__["GUID"] = value
+    self.__data__["FTSGUID"] = value
 
   @property
   def FTSServer( self ):
@@ -150,9 +154,25 @@ class FTSJob( object ):
     return self.__data__["NbFiles"]
 
   @NbFiles.setter
-  def NbSize( self, value ):
+  def NbFiles( self, value ):
     """ nb files setter """
     self.__data__["NbFiles"] = len( self )
+
+  @property
+  def Status( self ):
+    """ status prop """
+    if not self.__data__["Status"]:
+      self.__data__["Status"] = "Waiting"
+    return self.__data__["Status"]
+
+  @Status.setter
+  def Status( self, value ):
+    """ status setter """
+    reStatus = re.compile( "Submitted|Ready|Staging|Canceled|Active\Failed\Finished" )
+    if not reStatus.match( value ):
+      raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
+    self.__data__["Status"] = value
+
 
   @property
   def Size( self ):
@@ -365,39 +385,45 @@ class FTSJob( object ):
     return "".join( query )
 
   @classmethod
-  def fromXML( cls, xmlString ):
+  def fromXML( cls, element ):
     """ create FTSJob object from xmlString or xml.ElementTree.Element
 
-    :param str xmlString: XML fragment
-    :return: S_OK(FTSJob)/S_ERROR
+    :param mixed element: XML fragment or ElementTree.Element
+    :return: FTSJob instance
     """
-    try:
-      root = ElementTree.fromstring( xmlString )
-    except ExpatError, error:
-      return S_ERROR( "unable to de-serialize FTSJob from xml: %s" % str( error ) )
-    if root.tag != "ftsjob":
+    if type( element ) == str:
+      try:
+        element = ElementTree.fromstring( element )
+      except ExpatError, error:
+        return S_ERROR( "unable to de-serialize FTSJob from xml: %s" % str( error ) )
+    if element.tag != "ftsjob":
       return S_ERROR( "unable to de-serialize FTSJob, xml root element is not a 'ftsjob'" )
-    ftsJob = FTSJob( root.attrib )
-    for ftsJobFile in root.findall( "ftsfile" ):
-      ftsJob.addFile( FTSFile.fromXML( element = ftsJobFile ) )
-    return ftsJob
+    ftsJob = FTSJob( element.attrib )
+    for ftsFileElement in element.findall( "ftsfile" ):
+      ftsFile = FTSFile.fromXML( ftsFileElement )
+      if not ftsFile["OK"]:
+        return S_ERROR( ftsFile["Message"] )
+      ftsJob.addFile( ftsFile["Value"] )
+    return S_OK( ftsJob )
 
-  def toXML( self ):
+  def toXML( self, dumpToStr = False ):
     """ dump request to XML
 
     :param self: self reference
     :return: S_OK( xmlString )/S_ERROR
     """
+    dumpToStr = bool( dumpToStr )
     root = ElementTree.Element( "ftsjob" )
     # # attributes
     root.attrib["FTSJobID"] = str( self.FTSJobID ) if self.FTSJobID else ""
     root.attrib["Error"] = str( self.Error ) if self.Error else ""
-    root.attrib["GUID"] = str( self.GUID ) if self.GUID else ""
+    root.attrib["FTSGUID"] = str( self.FTSGUID ) if self.FTSGUID else ""
     root.attrib["FTSServer"] = str( self.FTSServer ) if self.FTSServer else ""
-    root.attrib["SourceSE"] = self.SourceSE
-    root.attrib["TargetSE"] = self.TargetSE
+    root.attrib["SourceSE"] = self.SourceSE if self.SourceSE else ""
+    root.attrib["TargetSE"] = self.TargetSE if self.TargetSE else ""
+    root.attrib["SourceToken"] = self.SourceToken if self.SourceToken else ""
+    root.attrib["TargetToken"] = self.TargetToken if self.TargetToken else ""
     root.attrib["Size"] = str( self.Size )
-    # # always calculate status, never set
     root.attrib["Status"] = str( self.Status )
     # # datetime up to seconds
     root.attrib["CreationTime"] = self.CreationTime.isoformat( " " ).split( "." )[0] if self.CreationTime else ""
@@ -405,9 +431,11 @@ class FTSJob( object ):
     root.attrib["LastUpdate"] = self.LastUpdate.isoformat( " " ).split( "." )[0] if self.LastUpdate else ""
     # # trigger xml dump of a whole operations and their files tree
     for ftsFile in self.__files__:
-      root.append( ftsFile.toXML() )
-    xmlStr = ElementTree.tostring( root )
-    return xmlStr
+      fileXML = ftsFile.toXML()
+      if not fileXML["OK"]:
+        return fileXML
+      root.append( fileXML["Value"] )
+    return S_OK( { False: root, True: ElementTree.tostring( root ) }[dumpToStr] )
 
   def toJSON( self ):
     """ dump to JSON format """
@@ -415,6 +443,9 @@ class FTSJob( object ):
                         [ str( val ) if val else "" for val in self.__data__.values() ] ) )
     digest["FTSFiles"] = []
     for ftsFile in self:
-      digest["FTSFiles"].append( ftsFile.toJSON() )
-    return digest
+      fileJSON = ftsFile.toJSON()
+      if not fileJSON["OK"]:
+        return fileJSON
+      digest["FTSFiles"].append( fileJSON["Value"] )
+    return S_OK( digest )
 

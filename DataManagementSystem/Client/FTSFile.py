@@ -30,6 +30,10 @@ try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
   import xml.etree.ElementTree as ElementTree
+from xml.parsers.expat import ExpatError
+# # from DIRAC
+from DIRAC import S_OK, S_ERROR
+
 
 ########################################################################
 class FTSFile( object ):
@@ -60,23 +64,24 @@ class FTSFile( object ):
     """ get table description """
     return { "Fields" :
              { "FTSFileID": "INTEGER NOT NULL AUTO_INCREMENT",
-               "FTSJobID":  "INTEGER",
-               "FileID": "INTEGER",
-               "OperationID": "INTEGER",
+               "FileID": "INTEGER NOT NULL",
+               "OperationID": "INTEGER NOT NULL",
                "LFN": "VARCHAR(255) NOT NULL",
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum": "VARCHAR(64)",
                "ChecksumType": "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'ADLER32'",
-               "Size": "INTEGER",
-               "SourceSE": "VARCHAR(128)",
-               "SourceSURL": "VARCHAR(255)",
-               "TargetSE": "VARCHAR(128)",
-               "TargetSURL": "VARCHAR(255)",
+               "Size": "INTEGER NOT NULL",
+               "FTSGUID":  "VARCHAR(64) NOT NULL",
+               "SourceSE": "VARCHAR(128) NOT NULL",
+               "SourceSURL": "VARCHAR(255) NOT NULL",
+               "TargetSE": "VARCHAR(128) NOT NULL",
+               "TargetSURL": "VARCHAR(255) NOT NULL",
                "Status": "VARCHAR(128) DEFAULT 'Waiting'",
                "Error": "VARCHAR(255)"  },
              "PrimaryKey": [ "FTSFileID" ],
-             "Indexes": { "FTSJobID": [ "FTSJobID" ], "FTSFileID": [ "FTSFileID"],
-                          "FileID": ["FileID"], "LFN": ["LFN"]  } }
+             "Indexes": { "FTSGUID": [ "FTSGUID" ], "FTSFileID": [ "FTSFileID"],
+                          "FileID": ["FileID", "OperationID"], "LFN": ["LFN"],
+                          "SourceSETargetSE": [ "SourceSE", "TargetSE" ]  } }
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -98,14 +103,14 @@ class FTSFile( object ):
     self.__data__["FTSFileID"] = long( value ) if value else 0
 
   @property
-  def FTSJobID( self ):
-    """ FTSJobID getter """
-    return self.__data__["FTSJobID"]
+  def FTSGUID( self ):
+    """ FTSGUID getter """
+    return self.__data__["FTSGUID"]
 
-  @FTSJobID.setter
-  def FTSJobID( self, value ):
-    """ FTSJobID setter """
-    self.__data__["FTSJobID"] = long( value ) if value else 0
+  @FTSGUID.setter
+  def FTSGUID( self, value ):
+    """ FTSGUID setter """
+    self.__data__["FTSGUID"] = value
 
   @property
   def OperationID( self ):
@@ -260,8 +265,8 @@ class FTSFile( object ):
 
   def toJSON( self ):
     """ dump FTSFile to JSON format """
-    return dict( zip( self.__data__.keys(),
-                      [ val if val != None else "" for val in self.__data__.values() ] ) )
+    return S_OK( dict( zip( self.__data__.keys(),
+                      [ val if val != None else "" for val in self.__data__.values() ] ) ) )
 
 
   def toXML( self, dumpToStr = False ):
@@ -272,15 +277,20 @@ class FTSFile( object ):
     dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
     el = ElementTree.Element( "ftsfile", attrs )
-    return { False: el, True: ElementTree.tostring( el ) }[dumpToStr]
+    return S_OK( { False: el, True: ElementTree.tostring( el ) }[dumpToStr] )
 
   @classmethod
   def fromXML( cls, element ):
     """ build FTSFile form ElementTree.Element :element: """
+    if type( element ) == str:
+      try:
+        element = ElementTree.fromstring( element )
+      except ExpatError, error:
+        return S_ERROR( str( error ) )
     if element.tag != "ftsfile":
-      raise ValueError( "wrong tag, expected 'ftsfile', got %s" % element.tag )
+      return S_ERROR( "wrong tag, expected 'ftsfile', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return FTSFile( fromDict )
+    return S_OK( FTSFile( fromDict ) )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
@@ -298,4 +308,4 @@ class FTSFile( object ):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append( " VALUES %s;" % values )
-    return "".join( query )
+    return S_OK( "".join( query ) )

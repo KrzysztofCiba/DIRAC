@@ -128,16 +128,17 @@ class FTSSite( object ):
     return { True : el, False : ElementTree.tostring( el ) }[dumpToStr]
 
   @classmethod
-  def fromXML( cls, xmlString ):
+  def fromXML( cls, element ):
     """ build FTSSite from xml fragment """
-    try:
-      element = ElementTree.fromstring( xmlString )
-    except ExpatError, error:
-      return S_ERROR( "unable to de-serialize FTSSite from xml: %s" % str( error ) )
+    if type( element ) == str:
+      try:
+        element = ElementTree.fromstring( element )
+      except ExpatError, error:
+        return S_ERROR( "unable to de-serialize FTSSite from xml: %s" % str( error ) )
     if element.tag != "ftssite":
-      raise ValueError( "wrong tag, expected 'ftssite', got %s" % element.tag )
+      return S_ERROR( "wrong tag, expected 'ftssite', got %s" % element.tag )
     fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return FTSSite( fromDict )
+    return S_OK( FTSSite( fromDict ) )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
@@ -155,9 +156,9 @@ class FTSSite( object ):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append( " VALUES %s;" % values )
-    return "".join( query )
+    return S_OK( "".join( query ) )
 
   def toJSON( self ):
     """ dump FTSFile to JSON format """
-    return dict( zip( self.__data__.keys(),
-                      [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+    return S_OK( dict( zip( self.__data__.keys(),
+                      [ str( val ) if val else "" for val in self.__data__.values() ] ) ) )
