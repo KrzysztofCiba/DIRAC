@@ -77,7 +77,7 @@ class OperationTests( unittest.TestCase ):
 
     # # same with file
     operation = Operation( self.fromDict )
-    operation += self.subFile
+    operation.addFile( self.subFile )
 
     opXML = operation.toXML()
 
@@ -160,32 +160,30 @@ class OperationTests( unittest.TestCase ):
       self.assertEqual( type( error ), ValueError )
       self.assertEqual( str( error ), "unknown Status 'foo'" )
 
-    operation += File( { "Status" : "Waiting" } )
+    operation.addFile( File( { "Status" : "Waiting", "LFN": "/a" } ) )
     oldStatus = operation.Status
-    print "aaaaaaaaaaaaaaaaa", oldStatus
+
     # # won't modify - there are Waiting files
     operation.Status = "Done"
     self.assertEqual( operation.Status, oldStatus )
+
     # # won't modify - there are Scheduled files
     for subFile in operation:
       subFile.Status = "Scheduled"
     operation.Status = "Done"
     self.assertEqual( operation.Status, oldStatus )
+
     # # will modify - all files are Done now
     for subFile in operation:
       subFile.Status = "Done"
-
     operation.Status = "Done"
     self.assertEqual( operation.Status, "Done" )
 
     operation = Operation()
-    operation += File( { "Status" : "Done" } )
-
+    operation.addFile( File( { "Status" : "Done", "LFN": "/b" } ) )
     self.assertEqual( operation.Status, "Done" )
 
-    operation += File( { "Status" : "Waiting" } )
-
-    print "aaaaaaaaaaaaaa", operation.Status
+    operation.addFile ( File( { "Status" : "Waiting", "LFN": "/c" } ) )
     self.assertEqual( operation.Status, oldStatus )
 
 

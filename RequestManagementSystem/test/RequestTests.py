@@ -5,9 +5,9 @@
 # Date: 2012/07/24 10:23:40
 ########################################################################
 
-""" :mod: RequestTests 
+""" :mod: RequestTests
     =======================
- 
+
     .. module: RequestTests
     :synopsis: test cases for Request class
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -17,31 +17,31 @@
 
 __RCSID__ = "$Id$"
 
-##
+# #
 # @file RequestTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/07/24 10:23:52
 # @brief Definition of RequestTests class.
 
-## imports 
+# # imports
 import unittest
 import datetime
-## from DIRAC
+# # from DIRAC
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
-## SUT
+# # SUT
 from DIRAC.RequestManagementSystem.Client.Request import Request
 
 ########################################################################
-class RequestTests(unittest.TestCase):
+class RequestTests( unittest.TestCase ):
   """
   .. class:: RequestTests
-  
+
   """
 
   def setUp( self ):
-    """ set up """  
+    """ set up """
     self.fromDict = { "RequestName" : "test", "JobID" : 12345 }
 
   def tearDown( self ):
@@ -50,7 +50,7 @@ class RequestTests(unittest.TestCase):
 
   def test_ctor( self ):
     """ test c'tor and serialisation """
-    ## empty c'tor
+    # # empty c'tor
     req = Request()
     self.assertEqual( isinstance( req, Request ), True )
     self.assertEqual( req.JobID, 0 )
@@ -61,29 +61,35 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( req.RequestName, "test" )
     self.assertEqual( req.JobID, 12345 )
     self.assertEqual( req.Status, "Waiting" )
-    
+
     toXML = req.toXML()
     self.assertEqual( toXML["OK"], True )
-    
-    req = Request.fromXML( toXML["Value"] )
+
+    req = Request.fromXML( toXML["Value"]
+                            )
     self.assertEqual( req["OK"], True )
     self.assertEqual( isinstance( req["Value"], Request ), True )
     req = req["Value"]
+
     self.assertEqual( req.RequestName, "test" )
     self.assertEqual( req.JobID, 12345 )
     self.assertEqual( req.Status, "Waiting" )
 
     toSQL = req.toSQL()
-    self.assertEqual( toSQL.startswith("INSERT"), True )
-    print toSQL
-    req.RequestID = 1 
+    self.assertEqual( toSQL["OK"], True )
+    toSQL = toSQL["Value"]
+    self.assertEqual( toSQL.startswith( "INSERT" ), True )
+
+    req.RequestID = 1
+
     toSQL = req.toSQL()
-    self.assertEqual( toSQL.startswith("UPDATE"), True )
-    print toSQL
+    self.assertEqual( toSQL["OK"], True )
+    toSQL = toSQL["Value"]
+    self.assertEqual( toSQL.startswith( "UPDATE" ), True )
 
   def test_props( self ):
     """ test props """
-    ## valid values
+    # # valid values
     req = Request()
 
     req.RequestID = 1
@@ -98,25 +104,25 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( req.JobID, 1 )
 
     req.CreationTime = "1970-01-01 00:00:00"
-    self.assertEqual( req.CreationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
-    req.CreationTime = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.CreationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.CreationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
+    req.CreationTime = datetime.datetime( 1970, 1, 1, 0, 0, 0 )
+    self.assertEqual( req.CreationTime, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
 
     req.SubmitTime = "1970-01-01 00:00:00"
-    self.assertEqual( req.SubmitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
-    req.SubmitTime = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.SubmitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.SubmitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
+    req.SubmitTime = datetime.datetime( 1970, 1, 1, 0, 0, 0 )
+    self.assertEqual( req.SubmitTime, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
 
     req.LastUpdate = "1970-01-01 00:00:00"
-    self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
-    req.LastUpdate = datetime.datetime( 1970, 1, 1, 0, 0, 0)
-    self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0) )
+    self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
+    req.LastUpdate = datetime.datetime( 1970, 1, 1, 0, 0, 0 )
+    self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
 
   def test_operations( self ):
     """ test operations arithemtic and state machine """
     req = Request()
-    self.assertEqual( len(req), 0 )
-    
+    self.assertEqual( len( req ), 0 )
+
     transfer = Operation()
     transfer.Type = "replicateAndRegister"
     transfer.addFile( File( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
@@ -126,7 +132,7 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( getWaiting["Value"], None )
 
     req.addOperation( transfer )
-    self.assertEqual( len(req), 1 )
+    self.assertEqual( len( req ), 1 )
     self.assertEqual( transfer.Order, req.Order )
     self.assertEqual( transfer.Status, "Waiting" )
 
@@ -134,7 +140,7 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], transfer )
 
-    removal = Operation( { "Type" : "removeFile" } )
+    removal = Operation( { "Type" : "RemoveFile" } )
     removal.addFile( File( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
 
     req.insertBefore( removal, transfer )
@@ -143,7 +149,7 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], removal )
 
-    self.assertEqual( len(req), 2 )
+    self.assertEqual( len( req ), 2 )
     self.assertEqual( [ op.Status for op in req ], ["Waiting", "Queued"] )
     self.assertEqual( req.subStatusList() , ["Waiting", "Queued"] )
 
@@ -165,8 +171,8 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( transfer.Status, "Waiting" )
     self.assertEqual( transfer.Order, req.Order )
 
-    ## len, looping
-    self.assertEqual( len(req), 2 )
+    # # len, looping
+    self.assertEqual( len( req ), 2 )
     self.assertEqual( [ op.Status for op in req ], ["Done", "Waiting"] )
     self.assertEqual( req.subStatusList() , ["Done", "Waiting"] )
 
@@ -177,21 +183,12 @@ class RequestTests(unittest.TestCase):
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], transfer )
 
-    rXML = req.toXML()["Value"]
-    r1 = Request.fromXML( rXML )
-
-    rJSON = req.toJSON()["Value"]
-    #print type(rXML), rXML, len(rXML)
-    print type(rJSON), rJSON, len(str(rJSON))
-    encXML = DEncode.encode( rXML )
-    print encXML, len(encXML)
-    encJSON = DEncode.encode( rJSON )
-    print encJSON, len(encJSON)
 
 
 
-## test execution
+
+# # test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
-  suite = testLoader.loadTestsFromTestCase(RequestTests)     
-  unittest.TextTestRunner(verbosity=3).run(suite)
+  suite = testLoader.loadTestsFromTestCase( RequestTests )
+  unittest.TextTestRunner( verbosity = 3 ).run( suite )

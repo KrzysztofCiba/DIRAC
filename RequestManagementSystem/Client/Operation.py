@@ -109,15 +109,19 @@ class Operation( object ):
   def _notify( self ):
     """ notify self about file status change """
     fStatus = self.fileStatusList()
+    newStatus = self.Status
+    # print "1 _notify", fStatus, self.Status, newStatus
+    if "Done" in fStatus:
+      newStatus = "Done"
+    if "Failed" in fStatus:
+      newStatus = "Failed"
+    if "Waiting" in fStatus or "Scheduled" in fStatus:
+      newStatus = "Queued"
 
-    if "Scheduled" not in fStatus and "Waiting" not in fStatus:
-      if "Failed" in fStatus:
-        self.Status = "Failed"
-      else:
-        self.Status = "Done"
-    # else:
-    #  if self.Status == "Queued":
-    #    self.Status = "Waiting"
+    # print "2 _notify", fStatus, self.Status, newStatus
+    if newStatus != self.Status:
+      self.Status = newStatus
+    # print "3 _notify", fStatus, self.Status, newStatus
 
   def _setQueued( self, caller ):
     """ don't touch """
@@ -136,19 +140,14 @@ class Operation( object ):
 
   def __iadd__( self, subFile ):
     """ += operator """
-    if subFile not in self:
-      self.__files__.append( subFile )
-      subFile._parent = self
-      self._notify()
+    self.addFile( subFile )
     return self
 
-  def __add__( self, subFile ):
-    """ + operator """
-    self +=subFile
-
   def addFile( self, subFile ):
-    """ add :subFile: to subrequest """
-    self +=subFile
+    """ add :subFile: to operation """
+    self.__files__.append( subFile )
+    subFile._parent = self
+    self._notify()
 
   # # helpers for looping
   def __iter__( self ):
@@ -271,7 +270,7 @@ class Operation( object ):
     if value in ( "Failed", "Done" ) and self.__files__:
       fStatuses = self.fileStatusList()
       # # no update
-      if "Scheduled" not in fStatuses or "Waiting" not in fStatuses:
+      if "Scheduled" in fStatuses or "Waiting" in fStatuses:
         return
     # # update? notify parent
     old = self.__data__["Status"]
