@@ -5,9 +5,9 @@
 # Date: 2012/08/14 14:30:20
 ########################################################################
 
-""" :mod: OperationTests 
+""" :mod: OperationTests
     =======================
- 
+
     .. module: OperationTests
     :synopsis: Operation test cases
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -17,25 +17,25 @@
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file OperationTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/08/14 14:30:34
 # @brief Definition of OperationTests class.
 
-## imports 
+# # imports
 import unittest
-## from DIRAC
+# # from DIRAC
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.File import File
-## SUT
+# # SUT
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 ########################################################################
-class OperationTests(unittest.TestCase):
+class OperationTests( unittest.TestCase ):
   """
   .. class:: OperationTests
-  
+
   """
 
   def setUp( self ):
@@ -49,40 +49,52 @@ class OperationTests(unittest.TestCase):
                            "Size" : 1024,
                            "Status" : "Waiting" } )
     self.operation = None
-    
+
   def tearDown( self ):
     """ test case tear down """
     del self.fromDict
     del self.subFile
- 
+
   def test_ctor( self ):
     """ test constructors and (de)serialisation """
-    ## empty ctor
-    self.assertEqual( isinstance( Operation(), Operation), True )
+    # # empty ctor
+    self.assertEqual( isinstance( Operation(), Operation ), True )
 
-    operation = Operation()
-  
-    ## using fromDict
+    # # using fromDict
     operation = Operation( self.fromDict )
-    self.assertEqual( isinstance( operation, Operation), True )
+    self.assertEqual( isinstance( operation, Operation ), True )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( operation, key), value )
-    ## from XML
-    operation = Operation.fromXML( operation.toXML() )
-    self.assertEqual( isinstance( operation, Operation), True )
+      self.assertEqual( getattr( operation, key ), value )
+    # # from and to  XML
+    opXML = operation.toXML()
+    self.assertEqual( opXML["OK"], True )
+    opXML = opXML["Value"]
+    operation = Operation.fromXML( opXML )
+    self.assertEqual( operation["OK"], True )
+    operation = operation["Value"]
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( operation, key), value )
-    ## same with file
+      self.assertEqual( getattr( operation, key ), value )
+
+    # # same with file
     operation = Operation( self.fromDict )
     operation += self.subFile
-    operation = Operation.fromXML( operation.toXML() )
-    self.assertEqual( isinstance( operation, Operation), True )
+
+    opXML = operation.toXML()
+
+    self.assertEqual( opXML["OK"], True )
+
+    opXML = opXML["Value"]
+
+    operation = Operation.fromXML( opXML )
+    self.assertEqual( operation["OK"], True )
+
+    operation = operation["Value"]
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( operation, key ), value )
 
   def test_props( self ):
     """ test properties """
-    ## valid values
+    # # valid values
     operation = Operation()
     operation.OperationID = 1
     self.assertEqual( operation.OperationID, 1 )
@@ -98,67 +110,68 @@ class OperationTests(unittest.TestCase):
     operation.TargetSE = "CERN-RAW"
     self.assertEqual( operation.TargetSE, "CERN-RAW" )
 
-    operation.Catalogue = ""
-    self.assertEqual( operation.Catalogue, "" )
+    operation.Catalog = ""
+    self.assertEqual( operation.Catalog, "" )
 
-    operation.Catalogue = "Bookkeeping"
-    self.assertEqual( operation.Catalogue, "Bookkeeping" )
+    operation.Catalog = "BookkeepingDB"
+    self.assertEqual( operation.Catalog, "BookkeepingDB" )
 
     operation.Error = "error"
     self.assertEqual( operation.Error, "error" )
 
-    ## wrong props
+    # # wrong props
     try:
       operation.RequestID = "foo"
     except Exception, error:
-      self.assertEqual( type(error), AttributeError )
-      self.assertEqual( str(error), "can't set attribute" )
+      self.assertEqual( type( error ), AttributeError )
+      self.assertEqual( str( error ), "can't set attribute" )
 
     try:
       operation.OperationID = "foo"
     except Exception, error:
-      self.assertEqual( type(error), ValueError )
-    
+      self.assertEqual( type( error ), ValueError )
+
     operation = Operation()
     try:
       operation.Type = "foo"
     except Exception, error:
-      self.assertEqual( type(error), ValueError )
-      self.assertEqual( str(error), "'foo' in not valid Operation!")
-    
-    
-    ## timestamps
+      self.assertEqual( type( error ), ValueError )
+      self.assertEqual( str( error ), "'foo' in not valid Operation!" )
+
+
+    # # timestamps
     try:
       operation.SubmitTime = "foo"
     except Exception, error:
-      self.assertEqual( type(error), ValueError )
-      self.assertEqual( str(error), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
+      self.assertEqual( type( error ), ValueError )
+      self.assertEqual( str( error ), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
 
     try:
       operation.LastUpdate = "foo"
     except Exception, error:
-      self.assertEqual( type(error), ValueError )
-      self.assertEqual( str(error), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
-      
-    ## Status
+      self.assertEqual( type( error ), ValueError )
+      self.assertEqual( str( error ), "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'" )
+
+    # # Status
     operation = Operation()
     try:
       operation.Status = "foo"
     except Exception, error:
-      self.assertEqual( type(error), ValueError )
-      self.assertEqual( str(error), "unknown Status 'foo'" )
+      self.assertEqual( type( error ), ValueError )
+      self.assertEqual( str( error ), "unknown Status 'foo'" )
 
     operation += File( { "Status" : "Waiting" } )
-    oldStatus = operation.Status 
-    ## won't modify - there are Waiting files
+    oldStatus = operation.Status
+    print "aaaaaaaaaaaaaaaaa", oldStatus
+    # # won't modify - there are Waiting files
     operation.Status = "Done"
     self.assertEqual( operation.Status, oldStatus )
-    ## won't modify - there are Scheduled files 
+    # # won't modify - there are Scheduled files
     for subFile in operation:
       subFile.Status = "Scheduled"
     operation.Status = "Done"
     self.assertEqual( operation.Status, oldStatus )
-    ## will modify - all fileas are Done now
+    # # will modify - all files are Done now
     for subFile in operation:
       subFile.Status = "Done"
 
@@ -167,45 +180,49 @@ class OperationTests(unittest.TestCase):
 
     operation = Operation()
     operation += File( { "Status" : "Done" } )
+
     self.assertEqual( operation.Status, "Done" )
+
     operation += File( { "Status" : "Waiting" } )
-    self.assertEqual( operation.Status, "Queued" )
-     
+
+    print "aaaaaaaaaaaaaa", operation.Status
+    self.assertEqual( operation.Status, oldStatus )
+
 
   def test_sql( self ):
     """ insert or update """
     operation = Operation()
-    operation.Type = "replicateAndRegister"
+    operation.Type = "ReplicateAndRegister"
 
     request = Request()
     request.RequestName = "testRequest"
     request.RequestID = 1
 
-    ## no parent request set
+    # # no parent request set
     try:
       operation.toSQL()
     except Exception, error:
-      self.assertEqual( isinstance(error, AttributeError), True )
-      self.assertEqual( str(error), "RequestID not set" )
+      self.assertEqual( isinstance( error, AttributeError ), True )
+      self.assertEqual( str( error ), "RequestID not set" )
 
-    ## parent set, no OperationID, INSERT
+    # # parent set, no OperationID, INSERT
     request.addOperation( operation )
-    self.assertEqual( operation.toSQL().startswith("INSERT"), True )
-    
+    self.assertEqual( operation.toSQL().startswith( "INSERT" ), True )
+
     op2 = Operation()
-    op2.Type = "removal"
-    
+    op2.Type = "RemoveReplica"
+
     request.insertBefore( op2, operation )
-    
-    ## OperationID set = UPDATE
+
+    # # OperationID set = UPDATE
     operation.OperationID = 1
-    self.assertEqual( operation.toSQL().startswith("UPDATE"), True )
+    self.assertEqual( operation.toSQL().startswith( "UPDATE" ), True )
 
 
-## test execution
+# # test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
   operationTests = testLoader.loadTestsFromTestCase( OperationTests )
   suite = unittest.TestSuite( [ operationTests ] )
-  unittest.TextTestRunner(verbosity=3).run(suite)
+  unittest.TextTestRunner( verbosity = 3 ).run( suite )
 

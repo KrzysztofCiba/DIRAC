@@ -84,7 +84,7 @@ class Operation( object ):
              { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
                "RequestID" : "INTEGER NOT NULL",
                "Type" : "VARCHAR(64) NOT NULL",
-               "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled', 'Scheduled') "\
+               "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled') "\
                  "DEFAULT 'Queued'",
                "Arguments" : "BLOB",
                "Order" : "INTEGER NOT NULL",
@@ -108,10 +108,16 @@ class Operation( object ):
   # # protected methods for parent only
   def _notify( self ):
     """ notify self about file status change """
-    if "Scheduled" not in self.fileStatusList() and "Waiting" not in self.fileStatusList():
-      self.Status = "Done"
-    else:
-      self.Status = "Queued"
+    fStatus = self.fileStatusList()
+
+    if "Scheduled" not in fStatus and "Waiting" not in fStatus:
+      if "Failed" in fStatus:
+        self.Status = "Failed"
+      else:
+        self.Status = "Done"
+    # else:
+    #  if self.Status == "Queued":
+    #    self.Status = "Waiting"
 
   def _setQueued( self, caller ):
     """ don't touch """
@@ -123,7 +129,7 @@ class Operation( object ):
     if caller == self._parent:
       self.__data__["Status"] = "Waiting"
 
-  # # Files aritmetics
+  # # Files arithmetics
   def __contains__( self, subFile ):
     """ in operator """
     return subFile in self.__files__
@@ -234,7 +240,7 @@ class Operation( object ):
 
   @property
   def Catalog( self ):
-    """ catalogue prop """
+    """ catalog prop """
     return self.__data__["Catalog"]
 
   @Catalog.setter
@@ -260,10 +266,12 @@ class Operation( object ):
   @Status.setter
   def Status( self, value ):
     """ Status setter """
-    if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done", "Scheduled" ):
+    if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done" ):
       raise ValueError( "unknown Status '%s'" % str( value ) )
     if value in ( "Failed", "Done" ) and self.__files__:
-      if "Waiting" in self.fileStatusList() or "Scheduled" in self.fileStatusList():
+      fStatuses = self.fileStatusList()
+      # # no update
+      if "Scheduled" not in fStatuses or "Waiting" not in fStatuses:
         return
     # # update? notify parent
     old = self.__data__["Status"]
@@ -328,9 +336,12 @@ class Operation( object ):
         data[key] = str( value )
     element = ElementTree.Element( "operation", data )
     for opFile in self.__files__:
-      element.append( opFile.toXML() )
-    return { False: element,
-             True: ElementTree.tostring( element ) }[dumpToStr]
+      fileElement = opFile.toXML()
+      if not fileElement["OK"]:
+        return fileElement
+      element.append( fileElement["Value"] )
+    return S_OK( { False: element,
+                    True: ElementTree.tostring( element ) }[dumpToStr] )
 
   @classmethod
   def fromXML( cls, element ):

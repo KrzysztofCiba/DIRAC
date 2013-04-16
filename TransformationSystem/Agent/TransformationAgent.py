@@ -178,8 +178,6 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
         res = self.processTransformation( transDict, clients )
         if not res['OK']:
           self._logInfo( "Failed to process transformation: %s" % res['Message'], transID = transID )
-        else:
-          self._logInfo( "Processed transformation in %.1f seconds" % ( time.time() - startTime ), transID = transID )
       except Exception, x:
         self._logException( '%s' % x, transID = transID )
       finally:
@@ -371,7 +369,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       newReplicas = {}
       noReplicas = []
       for chunk in breakListIntoChunks( newLFNs, 1000 ):
-        res = self.__getDataReplicasRM( transID, chunk, clients, active = active )
+        res = self._getDataReplicasRM( transID, chunk, clients, active = active )
         if res['OK']:
           for lfn, ses in res['Value'].items():
             if ses:
@@ -390,13 +388,12 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
       self._logInfo( "Obtained %d replicas from catalog in %.1f seconds" \
                       % ( len( newReplicas ), time.time() - startTime ),
                       method = method, transID = transID )
-    self.__cleanCache()
     return S_OK( dataReplicas )
 
-  def __getDataReplicasRM( self, transID, lfns, clients, active = True ):
+  def _getDataReplicasRM( self, transID, lfns, clients, active = True ):
     """ Get the replicas for the LFNs and check their statuses, using the replica manager
     """
-    method = '__getDataReplicasRM'
+    method = '_getDataReplicasRM'
 
     startTime = time.time()
     self._logVerbose( "Getting replicas for %d files from catalog" % len( lfns ),
@@ -425,8 +422,7 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
     # Create a dictionary containing all the file replicas
     failoverLfns = []
     for lfn, replicaDict in replicas['Successful'].items():
-      ses = replicaDict.keys()
-      for se in ses:
+      for se in replicaDict:
         #### This should definitely be included in the SE definition (i.e. not used for transformations)
         if active and re.search( 'failover', se.lower() ):
           self._logVerbose( "Ignoring failover replica for %s." % lfn, method = method, transID = transID )
@@ -453,20 +449,30 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
   @gSynchro
   def __updateCache( self, transID, newReplicas ):
+    """ Add replicas to the cache
+    """
     self.replicaCache.setdefault( transID, {} )[datetime.datetime.utcnow()] = newReplicas
+
+  @gSynchro
+  def __clearCacheForTrans( self, transID ):
+    """ Remove all replicas for a transformation
+    """
+    self.replicaCache.pop( transID , None )
 
   @gSynchro
   def __cleanCache( self ):
     """ Cleans the cache
     """
+    cacheChanged = False
     try:
       timeLimit = datetime.datetime.utcnow() - datetime.timedelta( days = self.replicaCacheValidity )
-      for transID in self.replicaCache.keys():
-        for updateTime in self.replicaCache[transID].keys():
+      for transID in self.replicaCache:
+        for updateTime in self.replicaCache[transID]:
           if updateTime < timeLimit or not self.replicaCache[transID][updateTime]:
             self._logVerbose( "Clear %d cached replicas for transformation %s" % ( len( self.replicaCache[transID][updateTime] ),
                                                                                     str( transID ) ), method = '__cleanCache' )
             self.replicaCache[transID].pop( updateTime )
+            cacheChanged = True
         # Remove empty transformations
         if not self.replicaCache[transID]:
           self.replicaCache.pop( transID )
@@ -475,7 +481,8 @@ class TransformationAgent( AgentModule, TransformationAgentsUtilities ):
 
     # Write the cache file
     try:
-      self.__writeCache()
+      if cacheChanged:
+        self.__writeCache()
     except Exception:
       self._logException( "While writing replica cache" )
 

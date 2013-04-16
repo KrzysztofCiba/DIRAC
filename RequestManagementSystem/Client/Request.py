@@ -83,7 +83,7 @@ class Request( object ):
                "RequestName" : "VARCHAR(255) NOT NULL",
                "OwnerDN" : "VARCHAR(255)",
                "OwnerGroup" : "VARCHAR(32)",
-               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled', 'Scheduled') DEFAULT 'Waiting'",
+               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled') DEFAULT 'Waiting'",
                "Error" : "VARCHAR(255)",
                "DIRACSetup" : "VARCHAR(32)",
                "SourceComponent" : "BLOB",
@@ -97,7 +97,7 @@ class Request( object ):
   def _notify( self ):
     """ simple state machine for sub request statuses """
     self.__waiting = None
-    # # update sub-requets statuses
+    # # update operations statuses
     for operation in self:
       status = operation.Status
       if status in ( "Done", "Failed" ):
@@ -115,8 +115,8 @@ class Request( object ):
     if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
       if self.Status != "Waiting":
         self.Status = "Waiting"
-    elif "Scheduled" in self.subStatusList():
-      self.Status = "Scheduled"
+    # elif "Scheduled" in self.subStatusList():
+    #  self.Status = "Scheduled"
     else:
       self.Status = "Done"
 

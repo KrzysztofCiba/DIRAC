@@ -1,4 +1,4 @@
-[v7r0-pre2]
+[v7r0-pre3]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -13,6 +13,7 @@ FIX: Workflow package - fix wild wild card imports resulting in circular imports
 NEW: MySQL - assign one MySQL connection per thread
 FIX: LocalConfiguration - if short option is not set, do not print "-" in help message,
      closes #1371
+FIX: dirac-install - update creation of bashrc/cshrc to allow multiplatform installations
 
 *Accounting
 FIX: AccountingDB - align properly days with MySQL bucketing. Closes #1219
@@ -46,6 +47,9 @@ FIX: Multiple fixes to please pylint
 
 *Resources
 FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding it to the 
+     payload when updating it
+NEW: StorageElement - enable Storage Element proxy configuration by protocol name
+CHANGE: glexecComputingElement - updated to reflect new glexec evolution     
 
 [v6r7p19]
 
@@ -134,6 +138,12 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p22]
+
+*Transformation
+CHANGE: InputDataAgent - treats only suitable transformations, e.g. not the extendable ones. 
+CHANGE: TransformationAgent - make some methods more public for easy overload
 
 [v6r7p21]
 

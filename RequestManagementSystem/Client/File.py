@@ -43,7 +43,7 @@ class File( object ):
 
   A bag object holding sub-request file attributes.
 
-  :param SubRequest _parent: reference to parent SubRequest
+  :param Operation _parent: reference to parent Operation
   :param dict __data__: attrs dict
   """
 
@@ -89,8 +89,8 @@ class File( object ):
     object.__setattr__( self, name, value )
 
   def __eq__( self, other ):
-    """ == operator, comparing str """
-    return str( self ) == str( other )
+    """ == operator, compating only LFN or PFN """
+    return ( self.LFN == other.LFN ) or ( self.PFN == other.PFN )
 
   # # properties
 
@@ -232,6 +232,7 @@ class File( object ):
     if value not in ( "Waiting", "Failed", "Done", "Scheduled" ):
       raise ValueError( "Unknown Status: %s!" % str( value ) )
     self.__data__["Status"] = value
+    if self._parent: self._parent._notify()
 
   # # (de)serialization
   def toXML( self, dumpToStr = False ):

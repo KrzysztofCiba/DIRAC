@@ -67,10 +67,12 @@ class FileTests( unittest.TestCase ):
       self.assertEqual( getattr( theFile, key ), value  )
 
     ## fromXML using ElementTree
-    theFile = File.fromXML( self.fileElement )  
-    self.assertEqual( isinstance( theFile, File ), True )
+    theFile = File.fromXML( self.fileElement )
+    self.assertEqual( theFile["OK"], True )
+    self.assertEqual( isinstance( theFile["Value"], File ), True )
+    theFile = theFile["Value"]
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( theFile, key ), value  )
+      self.assertEqual( getattr( theFile, key ), value )
 
       
   def test_props( self ):
