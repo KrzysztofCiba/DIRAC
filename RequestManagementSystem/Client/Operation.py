@@ -71,7 +71,7 @@ class Operation( object ):
     self.__files__ = TypedList( allowedTypes = File )
     # # init from dict
     fromDict = fromDict if fromDict else {}
-    for fileDict in fromDict.get( "Files" ):
+    for fileDict in fromDict.get( "Files", [] ):
       self +=File( fileDict )
     if "Files" in fromDict: del fromDict["Files"]
     for key, value in fromDict.items():

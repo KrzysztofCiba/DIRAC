@@ -34,7 +34,6 @@
 
     In all inherited class one should overwrite __call__ and initialize, when appropriate.
 
-
     For monitoring purpose each of operation handler has got defined at this level three
     :gMonitor: activities to be used together with given operation.Type, namely
     operation.Type + "Att", operation.Type + "Succ" and operation.Type + "Fail", i.e. for
@@ -52,7 +51,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 # # from DIRAC
-from DIRAC import gLogger, gMonitor, gConfig, S_ERROR, S_OK
+from DIRAC import gLogger, gConfig, S_ERROR, S_OK
 from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager

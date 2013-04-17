@@ -69,7 +69,7 @@ class Request( object ):
     self.__data__["RequestID"] = 0
     self.__operations__ = TypedList( allowedTypes = Operation )
     fromDict = fromDict if fromDict else {}
-    for opDict in fromDict.get( "Operations" ):
+    for opDict in fromDict.get( "Operations", [] ):
       self.addOperation( opDict )
     if "Operations" in fromDict: del fromDict["Operations"]
     for key, value in fromDict.items():

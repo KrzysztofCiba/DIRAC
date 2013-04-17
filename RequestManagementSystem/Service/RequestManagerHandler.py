@@ -103,8 +103,8 @@ class RequestManagerHandler(RequestHandler):
     gLogger.info("RequestHandler.getRequest: Attempting to get request")
     try:
       getRequest = gRequestDB.getRequest( requestName )
-      if not ret["OK"]:
-        gLogger.error("RequestHandler.getRequest: %s" % ret["Message"] )
+      if not getRequest["OK"]:
+        gLogger.error( "RequestHandler.getRequest: %s" % getRequest["Message"] )
         return getRequest
       return S_OK( getRequest["Value"].toXML() ) if getRequest["Value"] else getRequest 
     except Exception, error:
@@ -134,11 +134,11 @@ class RequestManagerHandler(RequestHandler):
   @staticmethod
   def export_deleteRequest( requestName ):
     """ Delete the request with the supplied name"""
-    gLogger.info("RequestManagerHandler.deleteRequest: Deleting request '%s'..." % requestName)
+    gLogger.info( "deleteRequest: Deleting request '%s'..." % requestName )
     try:
       return gRequestDB.deleteRequest( requestName )
     except Exception, error:
-      errStr = "RequestManagerHandler.deleteRequest: Exception which deleting request '%s'." % requestName 
+      errStr = "deleteRequest: Exception which deleting request '%s'." % requestName
       gLogger.exception( errStr, lException=error )
       return S_ERROR(errStr)
 
@@ -146,11 +146,11 @@ class RequestManagerHandler(RequestHandler):
   @staticmethod
   def export_getRequestNamesForJobs( jobIDs ):
     """ Select the request names for supplied jobIDs """
-    gLogger.info("RequestManagerHandler.getRequestNamesForJobs: Attempting to get request names for %s jobs." % len(jobIDs))
+    gLogger.info( "getRequestNamesForJobs: Attempting to get request names for %s jobs." % len( jobIDs ) )
     try:
       return gRequestDB.getRequestNamesForJobs( jobIDs )
     except Exception, error:
-      errStr = "RequestManagerHandler.getRequestNamesForJobs: Exception which getting request names."
+      errStr = "getRequestNamesForJobs: Exception which getting request names."
       gLogger.exception( errStr, '', lException=error )
       return S_ERROR(errStr)
     
@@ -158,12 +158,12 @@ class RequestManagerHandler(RequestHandler):
   @staticmethod
   def export_readRequestsForJobs( jobIDs ):
     """ read requests for jobs given list of jobIDs """
-    gLogger.verbose("RequestManagerHandler.readRequestsForJobs: Attepting to read requests associated to the jobs." )
+    gLogger.verbose( "readRequestsForJobs: Attempting to read requests associated to the jobs." )
     try:
       res = gRequestDB.readRequestsForJobs( jobIDs )
       return res
     except Exception, error:
-      errStr = "RequestManagerHandler.readRequestsForJobs: Exception while selecting requests."
+      errStr = "readRequestsForJobs: Exception while selecting requests."
       gLogger.exception( errStr, '', lException=error )
       return S_ERROR( errStr )
 

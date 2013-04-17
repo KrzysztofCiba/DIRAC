@@ -264,6 +264,10 @@ class RequestDB(DB):
       return delete
     return S_OK()
 
+  def getRequestProperties( self, requestName, columnNames ):
+    """ submit query """
+    return self._query( self._getRequestProperties( requestName, columnNames ) )
+
   def _getRequestProperties( self, requestName, columnNames = None ):
     """ select :columnNames: from Request table  """
     columnNames = columnNames if columnNames else Request.tableDesc()["Fields"].keys()

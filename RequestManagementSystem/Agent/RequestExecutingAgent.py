@@ -76,8 +76,6 @@ class RequestExecutingAgent( AgentModule ):
   __requestClient = None
   # # FTS scheduling flag
   __FTSMode = False
-  # # max attempts for calling operations for waiting files
-  __maxAttempts = 256
 
   def __init__( self, *args, **kwargs ):
     """ c'tor """
@@ -86,8 +84,6 @@ class RequestExecutingAgent( AgentModule ):
     # # ProcessPool related stuff
     self.__requestsPerCycle = self.am_getOption( "RequestsPerCycle", self.__requestsPerCycle )
     self.log.info( "Requests/cycle = %d" % self.__requestsPerCycle )
-    self.__maxAttempts = self.am_getOption( "MaxAttempts", self.__maxAttempts )
-    self.log.info( "MaxAttempts = %d" % self.__maxAttepmts )
     self.__minProcess = self.am_getOption( "MinProcess", self.__minProcess )
     self.log.info( "ProcessPool min process = %d" % self.__minProcess )
     self.__maxProcess = self.am_getOption( "MaxProcess", 4 )
