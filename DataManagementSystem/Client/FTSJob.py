@@ -27,10 +27,7 @@ import os
 import datetime
 import re
 import tempfile
-try:
-  import xml.etree.cElementTree as ElementTree
-except ImportError:
-  import xml.etree.ElementTree as ElementTree
+import xml.etree.ElementTree as ElementTree
 from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
