@@ -244,7 +244,7 @@ class RequestExecutingAgent( AgentModule ):
           time.sleep( self.__poolSleep )
         else:
           self.log.info( "spawning task for request '%s'" % ( request.RequestName ) )
-          enqueue = self.processPool().createAndQueueTask( self.__requestTask,
+          enqueue = self.processPool().createAndQueueTask( RequestTask,
                                                            kwargs = { "requestXML" : request.toXML()["Value"],
                                                                       "handlersDict" : self.handlersDict,
                                                                       "csPath" : self.__configPath },
