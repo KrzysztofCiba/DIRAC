@@ -87,7 +87,7 @@ class MonitoringClient(object):
   def activitiesLock( self ):
     if not self.__activitiesLock:
       self.__activitiesLock = LockRing().getLock( "activityLock" )
-    return self.__activitieslock
+    return self.__activitiesLock
 
   @property
   def flushingLock( self ):
