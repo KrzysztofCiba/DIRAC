@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: Operation
-    =======================
+    ===============
 
     .. module: Operation
     :synopsis: Operation implementation
@@ -23,10 +23,7 @@ __RCSID__ = "$Id$"
 # @date 2012/07/24 12:12:18
 # @brief Definition of Operation class.
 # # imports
-try:
-  import xml.etree.cElementTree as ElementTree
-except ImportError:
-  import xml.etree.ElementTree as ElementTree
+import xml.etree.ElementTree as ElementTree
 from xml.parsers.expat import ExpatError
 import datetime
 # # from DIRAC
