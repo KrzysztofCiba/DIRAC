@@ -45,7 +45,7 @@ class RequestDBTests( unittest.TestCase ):
     """ test case setup """
     self.request = Request( { "RequestName" : "test1", "JobID" : 1  } )
     self.operation1 = Operation( { "Type" : "ReplicateAndRegister", "TargetSE" : "CERN-USER" } )
-    self.file = File( { "LFN" : "/a/b/c" } )
+    self.file = File( { "LFN" : "/a/b/c", "ChecksumType" : "ADLER32", "Checksum" : "123456" } )
     self.request.addOperation( self.operation1 )
     self.operation1.addFile( self.file )
     self.operation2 = Operation()
@@ -159,12 +159,13 @@ class RequestDBTests( unittest.TestCase ):
     """ stress test """
     db = RequestDB()
     for i in range( 10 ):
-      req = Request( {"RequestName": "test-%d" % i } )
+      request = Request( { "RequestName": "test-%d" % i } )
       op = Operation( { "Type": "RemoveReplica", "TargetSE": "CERN-USER" } )
       op += File( { "LFN": "/lhcb/user/c/cibak/foo" } )
-      req += op
-      put = db.putRequest( req )
-      self.assertEqual( put["OK"], True, "put failed" )
+      request += op
+      print request
+      # put = db.putRequest( req )
+      # self.assertEqual( put["OK"], True, "put failed" )
 
 
 

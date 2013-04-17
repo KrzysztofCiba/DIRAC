@@ -138,7 +138,7 @@ class Request( object ):
     self._notify()
     return S_OK( self.__waiting )
 
-  # # Operation aritmetics
+  # # Operation arithmetics
   def __contains__( self, operation ):
     """ in operator
 
@@ -147,8 +147,8 @@ class Request( object ):
     """
     return bool( operation in self.__operations__ )
 
-  def __add__( self, operation ):
-    """ + operator for subRequest
+  def __iadd__( self, operation ):
+    """ += operator for subRequest
 
     :param self: self reference
     :param Operation operation: sub-request to add
@@ -157,7 +157,7 @@ class Request( object ):
       self.__operations__.append( operation )
       operation._parent = self
       self._notify()
-    return S_OK()
+    return self
 
   def insertBefore( self, newOperation, existingOperation ):
     """ insert :newOperation: just before :existingOperation:
@@ -198,7 +198,7 @@ class Request( object ):
     :param Operation operation: Operation to be inserted
     """
     if operation not in self:
-      self +operation
+      self +=operation
     return S_OK()
 
   def __iter__( self ):
