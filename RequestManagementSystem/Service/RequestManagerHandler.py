@@ -106,7 +106,8 @@ class RequestManagerHandler(RequestHandler):
       if not getRequest["OK"]:
         gLogger.error( "RequestHandler.getRequest: %s" % getRequest["Message"] )
         return getRequest
-      return S_OK( getRequest["Value"].toXML() ) if getRequest["Value"] else getRequest 
+      getRequest = getRequest["Value"].toXML( True )
+      return S_OK( getRequest["Value"] ) if getRequest["Value"] else getRequest
     except Exception, error:
       errStr = "RequestManagerHandler.getRequest: Exception while getting request."
       gLogger.exception( errStr, lException=error )

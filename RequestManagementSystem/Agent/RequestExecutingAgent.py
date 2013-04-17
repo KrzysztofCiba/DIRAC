@@ -129,7 +129,7 @@ class RequestExecutingAgent( AgentModule ):
     # # common monitor activity
     gMonitor.registerActivity( "Iteration", "Agent Loops",
                                "RequestExecutingAgent", "Loops/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "Execute", "Request Processed",
+    gMonitor.registerActivity( "Processed", "Request Processed",
                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "Done", "Request Completed",
                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
