@@ -92,13 +92,10 @@ class RequestDBTests( unittest.TestCase ):
     ret = db.putRequest( self.request )
     self.assertEqual( ret, {'OK': True, 'Value': ''} )
 
-    # # get digest -> JSON as string
+    # # get digest -> JSON
     ret = db.getDigest( self.request.RequestName )
     self.assertEqual( ret["OK"], True )
-
     self.assertEqual( bool( ret["Value"] ), True )
-
-    self.assertEqual( type( ret["Value"] ) == str, True )
 
     # # db summary
     ret = db.getDBSummary()
