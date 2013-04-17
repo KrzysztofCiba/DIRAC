@@ -5,7 +5,6 @@
 __RCSID__ = "$Id$"
 
 import datetime
-
 # DIRAC
 from DIRAC.Core.Utilities.LockRing import LockRing
 
@@ -22,9 +21,7 @@ class DictCache( object ):
       If a delete function is specified it will be invoked when deleting a cached object
     """
     self.__lock = None
-    # self.__lock = LockRing()
-    # self.__lock.getLock( self.__class__.__name__, recursive = True )
-    
+
     self.__cache = {}
     self.__deleteFunction = deleteFunction
 
@@ -44,14 +41,14 @@ class DictCache( object ):
     """
     self.lock.acquire()
     try:
-      #Is the key in the cache?
+      # Is the key in the cache?
       if cKey in self.__cache:
         expTime = self.__cache[ cKey ][ 'expirationTime' ]
-        #If it's valid return True!
+        # If it's valid return True!
         if expTime > datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ):
           return True
         else:
-          #Delete expired
+          # Delete expired
           self.delete( cKey )
       return False
     finally:
@@ -100,14 +97,14 @@ class DictCache( object ):
     """
     self.lock.acquire()
     try:
-      #Is the key in the cache?
+      # Is the key in the cache?
       if cKey in self.__cache:
         expTime = self.__cache[ cKey ][ 'expirationTime' ]
-        #If it's valid return True!
+        # If it's valid return True!
         if expTime > datetime.datetime.now() + datetime.timedelta( seconds = validSeconds ):
           return self.__cache[ cKey ][ 'value' ]
         else:
-          #Delete expired
+          # Delete expired
           self.delete( cKey )
       return False
     finally:

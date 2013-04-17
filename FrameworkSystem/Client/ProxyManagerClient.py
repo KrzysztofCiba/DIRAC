@@ -21,7 +21,7 @@ gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
-class ProxyManagerClient:
+class ProxyManagerClient( object ):
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__( self ):
@@ -29,9 +29,10 @@ class ProxyManagerClient:
     self.__proxiesCache = DictCache()
     self.__vomsProxiesCache = DictCache()
     self.__pilotProxiesCache = DictCache()
-    self.__filesCache = DictCache( self.__deleteTemporalFile )
+    self.__filesCache = DictCache( ProxyManagerClient.__deleteTemporalFile )
 
-  def __deleteTemporalFile( self, filename ):
+  @staticmethod
+  def __deleteTemporalFile( filename ):
     try:
       os.unlink( filename )
     except:
