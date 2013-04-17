@@ -29,10 +29,10 @@ class ProxyManagerClient( object ):
     self.__proxiesCache = DictCache()
     self.__vomsProxiesCache = DictCache()
     self.__pilotProxiesCache = DictCache()
-    self.__filesCache = DictCache( ProxyManagerClient.__deleteTemporalFile )
+    self.__filesCache = DictCache( ProxyManagerClient.deleteTemporalFile )
 
   @staticmethod
-  def __deleteTemporalFile( filename ):
+  def deleteTemporalFile( filename ):
     try:
       os.unlink( filename )
     except:
