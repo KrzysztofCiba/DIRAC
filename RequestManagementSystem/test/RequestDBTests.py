@@ -95,15 +95,17 @@ class RequestDBTests( unittest.TestCase ):
     # # get digest -> JSON as string
     ret = db.getDigest( self.request.RequestName )
     self.assertEqual( ret["OK"], True )
+
     self.assertEqual( bool( ret["Value"] ), True )
+
     self.assertEqual( type( ret["Value"] ) == str, True )
 
     # # db summary
     ret = db.getDBSummary()
     self.assertEqual( ret,
                       { 'OK': True,
-                        'Value': { 'Operation': { 'removeFile': { 'Queued': 1L },
-                                                  'replicateAndRegister': { 'Waiting': 1L } },
+                        'Value': { 'Operation': { 'RemoveFile': { 'Queued': 1L },
+                                                  'ReplicateAndRegister': { 'Waiting': 1L } },
                                    'Request': { 'Waiting': 1L },
                                    'File': {'Waiting': 2L } } } )
 
@@ -127,8 +129,8 @@ class RequestDBTests( unittest.TestCase ):
     ret = db.getDBSummary()
     self.assertEqual( ret,
                       { 'OK': True,
-                        'Value': { 'Operation': { 'removeFile': { 'Queued': 1L },
-                                                  'replicateAndRegister': { 'Waiting': 1L } },
+                        'Value': { 'Operation': { 'RemoveFile': { 'Queued': 1L },
+                                                  'ReplicateAndRegister': { 'Waiting': 1L } },
                                    'Request': { 'Assigned': 1L },
                                    'File': { 'Waiting': 2L} } } )
     # # update
@@ -139,8 +141,8 @@ class RequestDBTests( unittest.TestCase ):
     ret = db.getDBSummary()
     self.assertEqual( ret,
                       { 'OK': True,
-                        'Value': { 'Operation': { 'removeFile': { 'Queued': 1L },
-                                                  'replicateAndRegister': {'Waiting': 1L } },
+                        'Value': { 'Operation': { 'RemoveFile': { 'Queued': 1L },
+                                                  'ReplicateAndRegister': {'Waiting': 1L } },
                                    'Request': { 'Waiting': 1L },
                                    'File': { 'Waiting': 2L} } } )
 

@@ -134,6 +134,7 @@ class RequestDB( DB ):
     reqSQL = request.toSQL()
     if not reqSQL["OK"]:
       return reqSQL
+    reqSQL = reqSQL["Value"]
     putRequest = self._transaction( reqSQL, connection = connection )
     if not putRequest["OK"]:
       self.log.error( "putRequest: %s" % putRequest["Message"] )
