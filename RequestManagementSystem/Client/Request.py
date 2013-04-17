@@ -32,6 +32,7 @@ from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 ########################################################################
@@ -67,6 +68,14 @@ class Request( object ):
     self.__data__["Status"] = "Waiting"
     self.__data__["JobID"] = 0
     self.__data__["RequestID"] = 0
+
+    proxyInfo = getProxyInfo()
+    if proxyInfo["OK"]:
+      proxyInfo = proxyInfo["Value"]
+      if proxyInfo["validGroup"] and proxyInfo["validDN"]:
+        self.OwnerDN = proxyInfo["identity"]
+        self.OwnerGroup = proxyInfo["group"]
+
     self.__operations__ = TypedList( allowedTypes = Operation )
     fromDict = fromDict if fromDict else {}
     for opDict in fromDict.get( "Operations", [] ):

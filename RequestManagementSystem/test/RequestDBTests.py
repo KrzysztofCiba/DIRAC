@@ -157,12 +157,13 @@ class RequestDBTests( unittest.TestCase ):
 
   def test04Stress( self ):
     """ stress test """
-    for i in range( 1000 ):
+    db = RequestDB()
+    for i in range( 10 ):
       req = Request( {"RequestName": "test-%d" % i } )
       op = Operation( { "Type": "RemoveReplica", "TargetSE": "CERN-USER" } )
       op += File( { "LFN": "/lhcb/user/c/cibak/foo" } )
       req += op
-      put = self.db.putRequest( req )
+      put = db.putRequest( req )
       self.assertEqual( put["OK"], True, "put failed" )
 
 
