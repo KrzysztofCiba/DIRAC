@@ -130,8 +130,11 @@ class RequestDB( DB ):
 
     if exists[query] and exists[query][0]["RequestID"] != request.RequestID:
       return S_ERROR( "putRequest: request '%s' already exists in the db (RequestID=%s)" % ( request.RequestName,
-                                                                                            exists[query][0]["RequestID"] ) )
-    putRequest = self._transaction( request.toSQL(), connection = connection )
+                                                                                             exists[query][0]["RequestID"] ) )
+    reqSQL = request.toSQL()
+    if not reqSQL["OK"]:
+      return reqSQL
+    putRequest = self._transaction( reqSQL, connection = connection )
     if not putRequest["OK"]:
       self.log.error( "putRequest: %s" % putRequest["Message"] )
       return putRequest
@@ -143,7 +146,10 @@ class RequestDB( DB ):
       request.RequestID = lastrowid
 
     for operation in request:
-      putOperation = self._transaction( operation.toSQL(), connection = connection )
+      opSQL = operation.toSQL()["Value"]
+
+
+      putOperation = self._transaction( opSQL, connection = connection )
       if not putOperation["OK"]:
         self.log.error( "putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ),
                                                                         putOperation["Message"] ) )

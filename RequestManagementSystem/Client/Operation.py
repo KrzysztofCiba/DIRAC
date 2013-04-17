@@ -394,7 +394,7 @@ class Operation( object ):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append( " VALUES %s;\n" % values )
-    return "".join( query )
+    return S_OK( "".join( query ) )
 
   def toJSON( self ):
     """ get json digest """
