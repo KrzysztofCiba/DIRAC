@@ -79,7 +79,7 @@ class Request( object ):
     self.__operations__ = TypedList( allowedTypes = Operation )
     fromDict = fromDict if fromDict else {}
     for opDict in fromDict.get( "Operations", [] ):
-      self.addOperation( opDict )
+      self +=Operation( opDict )
     if "Operations" in fromDict: del fromDict["Operations"]
     for key, value in fromDict.items():
       if key not in self.__data__:
@@ -197,8 +197,9 @@ class Request( object ):
     :param self: self reference
     :param Operation operation: Operation to be inserted
     """
-    if operation not in self:
-      self +=operation
+    if operation in self:
+      return S_ERROR( "This operation is already in!!!" )
+    self +=operation
     return S_OK()
 
   def __iter__( self ):
