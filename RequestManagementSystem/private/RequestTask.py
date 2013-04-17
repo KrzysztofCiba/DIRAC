@@ -212,7 +212,7 @@ class RequestTask( object ):
 
   def updateRequest( self ):
     """ put back request to the RequestDB """
-    updateRequest = self.requestClient().updateRequest( self.request )
+    updateRequest = self.requestClient().putRequest( self.request )
     if not updateRequest["OK"]:
       self.log.error( updateRequest["Message"] )
     return updateRequest
