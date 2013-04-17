@@ -147,8 +147,6 @@ class RequestDB( DB ):
 
     for operation in request:
       opSQL = operation.toSQL()["Value"]
-
-
       putOperation = self._transaction( opSQL, connection = connection )
       if not putOperation["OK"]:
         self.log.error( "putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ),
@@ -161,7 +159,7 @@ class RequestDB( DB ):
       putOperation = putOperation["Value"]
       if operation.OperationID == 0:
         operation.OperationID = lastrowid
-      filesToSQL = [ opFile.toSQL() for opFile in operation ]
+      filesToSQL = [ opFile.toSQL()["Value"] for opFile in operation ]
       if filesToSQL:
         putFiles = self._transaction( filesToSQL, connection = connection )
         if not putFiles["OK"]:
