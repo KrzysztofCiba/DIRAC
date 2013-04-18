@@ -42,6 +42,7 @@ class AgentConfigError( Exception ):
     """ ctor
     :param str msg: error string
     """
+    Exception.__init__( self )
     self.msg = msg
   def __str__( self ):
     """ str op """
@@ -52,7 +53,7 @@ class RequestExecutingAgent( AgentModule ):
   """
   .. class:: RequestExecutingAgent
 
-  request processing agent using ProcessPool and Operation handlers
+  request processing agent using ProcessPool, Operation handlers and RequestTask
   """
   # # process pool
   __processPool = None
@@ -96,8 +97,6 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "ProcessPool sleep time = %d seconds" % self.__poolSleep )
     self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
     self.log.info( "ProcessTask timeout = %d seconds" % self.__taskTimeout )
-    # #  RequestTask class def
-    self.__requestTask = RequestTask
 
     # # keep config path
     agentName = self.am_getModuleParam( "fullName" )
@@ -280,19 +279,12 @@ class RequestExecutingAgent( AgentModule ):
     :param str taskID: Reqiest.RequestName
     :param dict taskResult: task result S_OK/S_ERROR
     """
-    self.log.info( "%s result callback" % taskID )
-
+    self.log.info( "callback: %s result is %s" % ( taskID, taskResult ) )
     if not taskResult["OK"]:
-      self.log.error( "%s result callback: %s" % ( taskID, taskResult["Message"] ) )
       if taskResult["Message"] == "Timed out":
         self.resetRequest( taskID )
-      self.cleanCache( taskID )
-      return
-
     # # clean cache
     self.cleanCache( taskID )
-    taskResult = taskResult["Value"]
-    self.log.info( "got %s" % taskResult )
 
   def exceptionCallback( self, taskID, taskException ):
     """ definition of exception callback function
@@ -300,6 +292,5 @@ class RequestExecutingAgent( AgentModule ):
     :param str taskID: Request.RequestName
     :param Exception taskException: Exception instance
     """
-    self.log.error( "%s exception callback" % taskID )
-    self.log.error( taskException )
+    self.log.error( "exceptionCallback: %s was hit by exception %s" % ( taskID, taskException ) )
     self.resetRequest( taskID )
