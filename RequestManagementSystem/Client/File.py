@@ -55,6 +55,8 @@ class File( object ):
     self.__data__["Status"] = "Waiting"
     self.__data__["OperationID"] = 0
     self.__data__["FileID"] = 0
+    self.__data__["Checksum"] = ""
+    self.__data__["ChecksumType"] = ""
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
@@ -190,9 +192,11 @@ class File( object ):
   @ChecksumType.setter
   def ChecksumType( self, value ):
     """ checksum type setter """
-    if value and str( value ).upper() not in ( "ADLER32", "MD5", "SHA1", "" ):
+    if not value:
+      self.__data__["ChecksumType"] = ""
+    elif value and str( value.strip() ).upper() not in ( "ADLER32", "MD5", "SHA1" ):
       raise ValueError( "unknown checksum type: %s" % value )
-    self.__data__["ChecksumType"] = str( value ).upper() if value else ""
+    self.__data__["ChecksumType"] = str( value.strip() ).upper()
 
   @property
   def Checksum( self ):
