@@ -5,9 +5,9 @@
 # Date: 2012/08/06 13:48:54
 ########################################################################
 
-""" :mod: FileTest 
+""" :mod: FileTest
     =======================
- 
+
     .. module: FileTest
     :synopsis: test cases for Files
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -17,33 +17,33 @@
 
 __RCSID__ = "$Id$"
 
-##
+# #
 # @file FileTest.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/08/06 13:49:05
 # @brief Definition of FileTest class.
 
-## imports 
+# # imports
 import unittest
 try:
   import xml.etree.cElementTree as ElementTree
 except ImportError:
   import xml.etree.ElementTree
-## from DIRAC
+# # from DIRAC
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
-## SUT
+# # SUT
 from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
 class FileTests( unittest.TestCase ):
   """
   .. class:: FileTest
-  
+
   """
 
   def setUp( self ):
     """ test setup """
-    self.fromDict = { "Size" : 1, "LFN" : "/test/lfn", "ChecksumType" : "ADLER32", "Checksum" : "123456", "Status" : "Waiting" } 
+    self.fromDict = { "Size" : 1, "LFN" : "/test/lfn", "ChecksumType" : "ADLER32", "Checksum" : "123456", "Status" : "Waiting" }
     self.fileElement = ElementTree.Element( "file", self.fromDict )
 
   def tearDown( self ):
@@ -53,20 +53,20 @@ class FileTests( unittest.TestCase ):
 
   def test_ctors( self ):
     """ File construction and (de)serialisation """
-    ## empty default ctor
+    # # empty default ctor
     theFile = File()
     self.assertEqual( isinstance( theFile, File ), True )
 
-    ## fromDict
+    # # fromDict
     try:
       theFile = File( self.fromDict )
     except AttributeError, error:
-      print "AttributeError: %s" % str(error)
+      print "AttributeError: %s" % str( error )
     self.assertEqual( isinstance( theFile, File ), True )
     for key, value in self.fromDict.items():
-      self.assertEqual( getattr( theFile, key ), value  )
+      self.assertEqual( getattr( theFile, key ), value )
 
-    ## fromXML using ElementTree
+    # # fromXML using ElementTree
     theFile = File.fromXML( self.fileElement )
     self.assertEqual( theFile["OK"], True )
     self.assertEqual( isinstance( theFile["Value"], File ), True )
@@ -74,7 +74,7 @@ class FileTests( unittest.TestCase ):
     for key, value in self.fromDict.items():
       self.assertEqual( getattr( theFile, key ), value )
 
-      
+
   def test_props( self ):
     """ test props and attributes  """
     theFile = File()
@@ -98,52 +98,58 @@ class FileTests( unittest.TestCase ):
     self.assertEqual( theFile.ChecksumType, "ADLER32" )
     theFile.Checksum = "123456"
     self.assertEqual( theFile.Checksum, "123456" )
-    ## invalid props
-    
+
+    # #
+    theFile.Checksum = None
+    theFile.ChecksumType = None
+    self.assertEqual( theFile.Checksum, "" )
+    self.assertEqual( theFile.ChecksumType, "" )
+
+    # # invalid props
+
     # FileID
     try:
       theFile.FileID = "foo"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-    
+
     # parent
     parent = Operation( { "OperationID" : 99999 } )
     parent += theFile
 
     theFile.FileID = 0
-    
 
     self.assertEqual( parent.OperationID, theFile.OperationID )
     try:
       theFile.OperationID = 111111
     except Exception, error:
       self.assertEqual( isinstance( error, AttributeError ), True )
-      self.assertEqual( str(error), "can't set attribute")
+      self.assertEqual( str( error ), "can't set attribute" )
 
     # LFN
     try:
       theFile.LFN = 1
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
-      self.assertEqual( str(error), "LFN has to be a string!")
+      self.assertEqual( str( error ), "LFN has to be a string!" )
     try:
       theFile.LFN = "../some/path"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "LFN should be an absolute path!")
-    
+      self.assertEqual( str( error ), "LFN should be an absolute path!" )
+
     # PFN
     try:
       theFile.PFN = 1
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
-      self.assertEqual( str(error), "PFN has to be a string!")
+      self.assertEqual( str( error ), "PFN has to be a string!" )
     try:
       theFile.PFN = "snafu"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "Wrongly formatted URI!")
-  
+      self.assertEqual( str( error ), "Wrongly formatted URI!" )
+
     # Size
     try:
       theFile.Size = "snafu"
@@ -153,20 +159,20 @@ class FileTests( unittest.TestCase ):
       theFile.Size = -1
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "Size should be a positive integer!")
-  
+      self.assertEqual( str( error ), "Size should be a positive integer!" )
+
     # GUID
     try:
       theFile.GUID = "snafuu-uuu-uuu-uuu-uuu-u"
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "'snafuu-uuu-uuu-uuu-uuu-u' is not a valid GUID!")
+      self.assertEqual( str( error ), "'snafuu-uuu-uuu-uuu-uuu-u' is not a valid GUID!" )
     try:
       theFile.GUID = 2233345
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
-      self.assertEqual( str(error), "GUID should be a string!")
-      
+      self.assertEqual( str( error ), "GUID should be a string!" )
+
     # Attempt
     try:
       theFile.Attempt = "snafu"
@@ -176,26 +182,26 @@ class FileTests( unittest.TestCase ):
       theFile.Attempt = -1
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "Attempt should be a positive integer!")
+      self.assertEqual( str( error ), "Attempt should be a positive integer!" )
 
     # Status
     try:
       theFile.Status = None
     except Exception, error:
       self.assertEqual( isinstance( error, ValueError ), True )
-      self.assertEqual( str(error), "Unknown Status: None!")
+      self.assertEqual( str( error ), "Unknown Status: None!" )
 
     # Error
     try:
-      theFile.Error = Exception("test")
+      theFile.Error = Exception( "test" )
     except Exception, error:
       self.assertEqual( isinstance( error, TypeError ), True )
-      self.assertEqual( str(error), "Error has to be a string!")
-    
-## test execution
+      self.assertEqual( str( error ), "Error has to be a string!" )
+
+# # test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
   fileTests = testLoader.loadTestsFromTestCase( FileTests )
   suite = unittest.TestSuite( [ fileTests ] )
-  unittest.TextTestRunner(verbosity=3).run(suite)
+  unittest.TextTestRunner( verbosity = 3 ).run( suite )
 

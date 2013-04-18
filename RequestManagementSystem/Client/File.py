@@ -67,10 +67,10 @@ class File( object ):
     return { "Fields" :
              { "FileID" : "INTEGER NOT NULL AUTO_INCREMENT",
                "OperationID" : "INTEGER NOT NULL",
-               "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled', 'Cancelled')",
+               "Status" : "ENUM('Waiting', 'Done', 'Failed', 'Scheduled') DEFAULT 'Waiting'",
                "LFN" : "VARCHAR(255)",
                "PFN" : "VARCHAR(255)",
-               "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'NONE'",
+               "ChecksumType" : "ENUM('ADLER32', 'MD5', 'SHA1', '') DEFAULT ''",
                "Checksum" : "VARCHAR(255)",
                "GUID" : "VARCHAR(26)",
                "Size" : "INTEGER",
@@ -190,9 +190,9 @@ class File( object ):
   @ChecksumType.setter
   def ChecksumType( self, value ):
     """ checksum type setter """
-    if str( value ).upper() not in ( "ADLER32", "MD5", "SHA1", "NONE" ):
+    if value and str( value ).upper() not in ( "ADLER32", "MD5", "SHA1", "" ):
       raise ValueError( "unknown checksum type: %s" % value )
-    self.__data__["ChecksumType"] = str( value ).upper() if value else None
+    self.__data__["ChecksumType"] = str( value ).upper() if value else ""
 
   @property
   def Checksum( self ):
@@ -202,7 +202,7 @@ class File( object ):
   @Checksum.setter
   def Checksum( self, value ):
     """ checksum setter """
-    self.__data__["Checksum"] = str( value )
+    self.__data__["Checksum"] = str( value ) if value else ""
 
   @property
   def Error( self ):

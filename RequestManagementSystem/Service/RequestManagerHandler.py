@@ -106,8 +106,11 @@ class RequestManagerHandler(RequestHandler):
       if not getRequest["OK"]:
         gLogger.error( "RequestHandler.getRequest: %s" % getRequest["Message"] )
         return getRequest
-      getRequest = getRequest["Value"].toXML( True )
-      return S_OK( getRequest["Value"] ) if getRequest["Value"] else getRequest
+      if getRequest["Value"]:
+        getRequest = getRequest["Value"].toXML( True )
+        if not getRequest["OK"]:
+          gLogger.error( getRequest["Message"] )
+      return getRequest
     except Exception, error:
       errStr = "RequestManagerHandler.getRequest: Exception while getting request."
       gLogger.exception( errStr, lException=error )
@@ -116,7 +119,7 @@ class RequestManagerHandler(RequestHandler):
   types_getRequestSummaryWeb = [ DictType, ListType, IntType, IntType ]
   @staticmethod
   def export_getRequestSummaryWeb( selectDict, sortList, startItem, maxItems):
-    """ Get summary of the request/subrequest info in the standard form for the web
+    """ Get summary of the request/operations info in the standard form for the web
 
     :param dict selectDict: selection dict
     :param list sortList: ???
