@@ -46,14 +46,16 @@ class RequestManagerHandlerTests(unittest.TestCase):
     self.request = Request()
     self.request.RequestName = "test"
     self.operation = Operation()
-    self.operation.Type = "replicateAndRegister"
+    self.operation.Type = "ReplicateAndRegister"
     self.operation.TargetSE = "CERN-USER"
     self.file = File()
     self.file.LFN = "/lhcb/user/c/cibak/testFile"
+    self.file.Checksum = "123456"
+    self.file.ChecksumType = "ADLER32"
     self.request.addOperation( self.operation )
     self.operation.addFile( self.file )
     ## xml representation of a whole request
-    self.xmlStr = self.request.toXML()
+    self.xmlStr = self.request.toXML( True )["Value"]
     ## request client
     self.requestClient = RequestClient()
 
