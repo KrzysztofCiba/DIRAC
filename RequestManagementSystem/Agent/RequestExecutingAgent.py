@@ -220,7 +220,7 @@ class RequestExecutingAgent( AgentModule ):
     # # requests (and so tasks) counter
     taskCounter = 0
     while taskCounter < self.__requestsPerCycle:
-      self.log.info( "execute: submitting %d request" % taskCounter )
+      self.log.debug( "execute: executing %d request" % taskCounter )
       getRequest = self.requestClient().getRequest()
       if not getRequest["OK"]:
         self.log.error( "execute: %s" % getRequest["Message"] )

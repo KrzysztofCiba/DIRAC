@@ -120,7 +120,7 @@ class RequestClient( Client ):
 
     :return: S_OK( Request instance ) or S_OK() or S_ERROR
     """
-    self.log.info( "getRequest: attempting to get request." )
+    self.log.debug( "getRequest: attempting to get request." )
     getRequest = self.requestManager().getRequest( requestName )
     if not getRequest["OK"]:
       self.log.error( "getRequest: unable to get '%s' request: %s" % ( requestName, getRequest["Message"] ) )
@@ -136,7 +136,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.info( "deleteRequest: attempt to delete '%s' request" % requestName )
+    self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestName )
     deleteRequest = self.requestManager().deleteRequest( requestName )
     if not deleteRequest["OK"]:
       self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName,
@@ -145,7 +145,7 @@ class RequestClient( Client ):
 
   def getDBSummary( self ):
     """ Get the summary of requests in the RequestDBs. """
-    self.log.info( "getDBSummary: attempting to get RequestDB summary." )
+    self.log.debug( "getDBSummary: attempting to get RequestDB summary." )
     dbSummary = self.requestManager().getDBSummary()
     if not dbSummary["OK"]:
       self.log.error( "getDBSummary: unable to get RequestDB summary: %s" % dbSummary["Message"] )
@@ -157,7 +157,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.info( "getDigest: attempting to get digest for '%s' request." % requestName )
+    self.log.debug( "getDigest: attempting to get digest for '%s' request." % requestName )
     digest = self.requestManager().getDigest( requestName )
     if not digest["OK"]:
       self.log.error( "getDigest: unable to get digest for '%s' request: %s" % ( requestName, digest["Message"] ) )
@@ -169,7 +169,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: name of teh request
     """
-    self.log.info( "getRequestStatus: attempting to get status for '%s' request." % requestName )
+    self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestName )
     requestStatus = self.requestManager().getRequestStatus( requestName )
     if not requestStatus["OK"]:
       self.log.error( "getRequestStatus: unable to get status for '%s' request: %s" % ( requestName,
@@ -182,7 +182,7 @@ class RequestClient( Client ):
     :param self: self reference
     :param str requestName: request name
     """
-    self.log.info( "getRequestInfo: attempting to get info for '%s' request." % requestName )
+    self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
     requestInfo = self.requestManager().getRequestInfo( requestName )
     if not requestInfo["OK"]:
       self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName,
@@ -196,7 +196,7 @@ class RequestClient( Client ):
     :param str requestName: request name
     :param list lfns: list of LFNs
     """
-    self.log.info( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
+    self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
     fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
     if not fileStatus["OK"]:
       self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" % \
