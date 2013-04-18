@@ -64,7 +64,7 @@ class RequestManagerHandler(RequestHandler):
     :param cls: class ref
     :param str requestString: xml string
     """
-    gLogger.info("RequestManager.putRequest: Setting request %s"  % requestString )
+    gLogger.debug( "RequestManager.putRequest: Setting request %s" % requestString )
     requestName = "***UNKNOWN***"
     try:
       request = Request.fromXML( requestString )

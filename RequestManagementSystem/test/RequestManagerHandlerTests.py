@@ -67,12 +67,19 @@ class RequestManagerHandlerTests(unittest.TestCase):
     del self.file
     del self.xmlStr
 
-  def testSetRequest( self ):
+  def testPutRequest( self ):
     """ test set request """
     put = self.requestClient.putRequest( self.request )
-    print put
+    self.assertEqual( put["OK"], True, "put failed" )
 
-    pass
+    get = self.requestClient.getRequest( "test" )
+    self.assertEqual( get["OK"], True, "get failed" )
+
+    delete = self.requestClient.deleteRequest( "test" )
+    self.assertEqual( delete["OK"], True, "delete failed" )
+
+
+
 
 ## test execution
 if __name__ == "__main__":
