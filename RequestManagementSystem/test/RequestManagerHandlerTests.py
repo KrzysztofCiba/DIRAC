@@ -49,7 +49,7 @@ class RequestManagerHandlerTests( unittest.TestCase ):
     :param self: self reference
     """
     self.request = Request()
-    self.request.RequestName = "test"
+    self.request.RequestName = "RequestManagerHandlerTests"
     self.request.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
     self.request.OwnerGroup = "dirac_user"
     self.operation = Operation()
@@ -74,17 +74,20 @@ class RequestManagerHandlerTests( unittest.TestCase ):
     del self.file
     del self.xmlStr
 
-  def testPutRequest( self ):
+  def test01PutRequest( self ):
     """ test set request """
     put = self.requestClient.putRequest( self.request )
     self.assertEqual( put["OK"], True, "put failed" )
 
-    get = self.requestClient.getRequest( "test" )
+  def test02GetRequest( self ):
+    """ test get request """
+    get = self.requestClient.getRequest( self.request.RequestName )
     self.assertEqual( get["OK"], True, "get failed" )
 
+  def test03DeleteRequest( self ):
+    """ test delete request """
     delete = self.requestClient.deleteRequest( "test" )
     self.assertEqual( delete["OK"], True, "delete failed" )
-
 
 # # test execution
 if __name__ == "__main__":
