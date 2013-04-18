@@ -295,4 +295,8 @@ class RequestTask( object ):
           self.log.info( "request finalized" )
 
     # # update request to the RequestDB
-    return self.updateRequest()
+    update = self.updateRequest()
+    if not update["OK"]:
+      self.log.error( update["Message"] )
+      return update
+    return S_OK()

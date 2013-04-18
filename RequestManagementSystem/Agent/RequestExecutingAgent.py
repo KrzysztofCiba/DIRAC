@@ -279,7 +279,10 @@ class RequestExecutingAgent( AgentModule ):
     :param str taskID: Reqiest.RequestName
     :param dict taskResult: task result S_OK/S_ERROR
     """
-    self.log.info( "callback: %s result is %s" % ( taskID, taskResult ) )
+    self.log.info( "callback: %s result is %s(%s)" % ( taskID,
+                                                      "S_OK" if taskResult["OK"] else "S_ERROR",
+                                                      taskResult["Value"] if taskResult["OK"] else taskResult["Message"] ) )
+
     if not taskResult["OK"]:
       if taskResult["Message"] == "Timed out":
         self.resetRequest( taskID )
