@@ -33,12 +33,12 @@ except ImportError:
   from md5 import md5
 ## from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.ConfigurationSystem.Client import PathFinder
+# from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities.File import makeGuid
+# from DIRAC.Core.Utilities.File import makeGuid
 
 def initializeRequestProxyHandler( serviceInfo ):
   """ init RequestProxy handler 
@@ -114,10 +114,10 @@ class RequestProxyHandler( RequestHandler ):
           cachedName = cachedRequest["Value"].RequestName if cachedRequest["Value"] else ""
           setRequest = cls.requestManager().setRequest( requestString )
           if not setRequest["OK"]:
-            gLogger.error("sweeper: unable to set request %s @ RequestManager: %s" % ( requestName, 
+            gLogger.error( "sweeper: unable to set request %s @ RequestManager: %s" % ( cachedName,
                                                                                        setRequest["Message"] ) )
             continue
-          gLogger.info("sweeper: successfully set request '%s' @ RequestManager" % requestName )
+          gLogger.info( "sweeper: successfully set request '%s' @ RequestManager" % cachedName )
           os.unlink( cachedFile )
         except Exception, error:
           gLogger.exception( "sweeper: hit by exception %s" % str(error) )
@@ -163,7 +163,7 @@ class RequestProxyHandler( RequestHandler ):
 
     request = Request.fromXML( requestString )
     if not request["OK"]:
-      gLogger.error("setRequest: error deserialising request: %s" % request["Message"] )
+      gLogger.error( "setRequest: error de-serializing request: %s" % request["Message"] )
       return request
     request = request["Value"]
     requestName = request.RequestName
@@ -199,6 +199,6 @@ class RequestProxyHandler( RequestHandler ):
     :param str requestString: XML-serialised request
     """
     for operation in request:
-      if operation.Type in ( "putAndRegister", "physicalRemoval", "reTransfer" ):
+      if operation.Type in ( "PutAndRegister", "PhysicalRemoval", "ReTransfer" ):
         return S_ERROR("found operation '%s' that cannot be forwarded" % operation.Type )
     return S_OK()

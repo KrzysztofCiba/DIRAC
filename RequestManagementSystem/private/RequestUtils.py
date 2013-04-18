@@ -13,6 +13,9 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     utilities for RMS
+
+    TODO: not used, OBSOLETE
+
 """
 
 __RCSID__ = "$Id $"

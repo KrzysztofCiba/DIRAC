@@ -1,6 +1,8 @@
 # $HeadURL$
 
 """ RequestDBMySQL is the MySQL plug in for the request DB
+
+TODO: OBSOLETE
 """
 
 __RCSID__ = "$Id$"

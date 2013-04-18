@@ -6,6 +6,8 @@
  
     .. module: RequestDBFile
     :synopsis: RequestDBFile is the plug in for the file backend.
+
+    TODO: OBSOLETE
 """
 ## imports
 import os, os.path
