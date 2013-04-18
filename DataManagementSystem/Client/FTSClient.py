@@ -97,14 +97,35 @@ class FTSClient( Client ):
     if not ftsFileXML["OK"]:
       self.log.error( ftsFileXML["Message"] )
       return ftsFileXML
+    ftsFileXML = ftsFileXML["Value"]
     return self.ftsManager().putFTSFile( ftsFileXML )
 
-  def getFTSFile( self, fileID = None, ftsFileID = None ):
+  def getFTSFile( self, ftsFileID = None ):
     """ get FTSFile
 
-    :param int fileID: FTSFileID
+    :param int fileID: FileID
+    :param int ftsFileID: FTSFileID
     """
-    pass
+    getFile = self.ftsManager().getFTSFile( ftsFileID )
+    if not getFile["OK"]:
+      self.log.error( getFile["Message"] )
+    # # de-serialize
+    if getFile["Value"]:
+      getFile = FTSFile.fromXML( getFile["Value"] )
+      if not getFile["OK"]:
+        self.log.error( getFile["Message"] )
+    return getFile
+
+  def deleteFTSFile( self, ftsFileID = None ):
+    """ get FTSFile
+
+    :param int ftsFileID: FTSFileID
+    """
+    deleteFile = self.ftsManager().deleteFTSFile( ftsFileID )
+    if not deleteFile["OK"]:
+      self.log.error( deleteFile["Message"] )
+      return deleteFile
+    return S_OK()
 
   def putFTSJob( self, ftsJob ):
     """ put FTSJob into FTSDB
@@ -120,6 +141,33 @@ class FTSClient( Client ):
       self.log.error( ftsJobXML["Message"] )
       return ftsJobXML
     return self.ftsManager().putFTSJob( ftsJobXML )
+
+  def getFTSJob( self, ftsJobID ):
+    """ get FTS job
+
+    :param int ftsJobID: FTSJobID
+    """
+    getJob = self.ftsManager().getFTSJob( ftsJobID )
+    if not getJob["OK"]:
+      self.log.error( getJob["Message"] )
+      return getJob
+    # # de-serialize
+    if getJob["Value"]:
+      getJob = getJob["Value"]
+      getJob = FTSJob.fromXML( getJob )
+      if not getJob["OK"]:
+        self.log.error( getJob["Message"] )
+    return getJob
+
+  def deleteFTSJob( self, ftsJobID ):
+    """ delete FTSJob into FTSDB
+
+    :param int ftsJob: FTSJobID
+    """
+    deleteJob = self.ftsManager().deleteFTSJob( ftsJobID )
+    if not deleteJob["OK"]:
+      self.log.error( deleteJob["Message"] )
+    return deleteJob
 
   def putFTSSite( self, ftsSite ):
     """ put FTSSite into FTSDB

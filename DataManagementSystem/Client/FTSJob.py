@@ -165,11 +165,10 @@ class FTSJob( object ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    reStatus = re.compile( "Submitted|Ready|Staging|Canceled|Active\Failed\Finished" )
+    reStatus = re.compile( "Submitted|Ready|Staging|Canceled|Active|Failed|Finished" )
     if not reStatus.match( value ):
       raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
     self.__data__["Status"] = value
-
 
   @property
   def Size( self ):
@@ -334,14 +333,14 @@ class FTSJob( object ):
     returnCode, output, errStr = submit["Value"]
     if not returnCode == 0:
       return S_ERROR( errStr )
-    self.GUID = output.replace( "\n", "" )
+    self.FTSGUID = output.replace( "\n", "" )
     return S_OK()
 
   def monitorFTS2( self ):
     """ monitor fts job """
     if not self.GUID:
       return S_ERROR( "GUID not set, FTS job not submitted?" )
-    monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.GUID, "-l" ]
+    monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.FTSGUID, "-l" ]
     monitor = executeGridCommand( "", monitorCommand )
     if not monitor['OK']:
       return monitor
