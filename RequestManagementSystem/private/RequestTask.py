@@ -220,7 +220,7 @@ class RequestTask( object ):
   def __call__( self ):
     """ request processing """
 
-    self.log.info( "about to execute request" )
+    self.log.debug( "about to execute request" )
     gMonitor.addMark( "RequestAtt", 1 )
 
     # # setup proxy for request owner
@@ -240,6 +240,7 @@ class RequestTask( object ):
         self.log.error( operation["Message"] )
         return operation
       operation = operation["Value"]
+      self.log.debug( "about to execute operation %s" % operation.Type )
       gMonitor.addMark( "%s%s" % ( operation.Type, "Att" ), 1 )
 
       # # and handler for it
@@ -250,10 +251,8 @@ class RequestTask( object ):
         operation.Error = handler["Message"]
         break
       handler = handler["Value"]
-
       # # set shifters list in the handler
       handler.shifter = shifter
-
       # # and execute
       try:
         exe = handler()
@@ -276,13 +275,13 @@ class RequestTask( object ):
       elif operation.Status in ( "Waiting", "Scheduled" ):
         break
 
-    # # not a shifter at all? delete temporary proxy file
+    # # not a shifter at all? delete temp proxy file
     if not shifter:
       os.unlink( proxyFile )
 
     # # request done?
     if self.request.Status == "Done":
-      self.log.info( "request done" )
+      self.log.info( "request is done" )
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
@@ -292,7 +291,7 @@ class RequestTask( object ):
                                                                   finalizeRequest["Message"] ) )
           return finalizeRequest
         else:
-          self.log.info( "request finalized" )
+          self.log.info( "request is finalized" )
 
     # # update request to the RequestDB
     update = self.updateRequest()
