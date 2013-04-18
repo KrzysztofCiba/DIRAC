@@ -220,7 +220,7 @@ class RequestExecutingAgent( AgentModule ):
     # # requests (and so tasks) counter
     taskCounter = 0
     while taskCounter < self.__requestsPerCycle:
-      self.log.debug( "execute: executing %d request" % taskCounter )
+      self.log.debug( "execute: executing %d request in this cycle" % taskCounter )
       getRequest = self.requestClient().getRequest()
       if not getRequest["OK"]:
         self.log.error( "execute: %s" % getRequest["Message"] )
@@ -254,7 +254,7 @@ class RequestExecutingAgent( AgentModule ):
           if not enqueue["OK"]:
             self.log.error( enqueue["Message"] )
           else:
-            self.log.info( "successfully enqueued task %s" % taskID )
+            self.log.debug( "successfully enqueued task '%s'" % taskID )
             # # update monitor
             gMonitor.addMark( "Processed", 1 )
             # # update request counter
