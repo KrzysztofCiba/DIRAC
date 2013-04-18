@@ -198,6 +198,10 @@ class TransformationDB( DB ):
                                       }
 
     if 'TransformationTasks' not in tablesInDB:
+      ## The engine of that table must stay MyISAM, because the addTaskToTransformation needs 
+      # that when inserting a row, the LAST_INSERT_ID returns the last task ID for 
+      # the given transformation. This only works because TaskID is NOT an INDEX
+      # and because the engine is MyISAM.
       tablesD['TransformationTasks'] = {'Fields': {'CreationTime': 'DATETIME NOT NULL',
                                                    'ExternalID': "char(16) DEFAULT ''",
                                                    'ExternalStatus': "char(16) DEFAULT 'Created'",
@@ -205,12 +209,11 @@ class TransformationDB( DB ):
                                                    'TargetSE': "char(255) DEFAULT 'Unknown'",
                                                    'TaskID': 'INTEGER NOT NULL AUTO_INCREMENT',
                                                    'TransformationID': 'INTEGER NOT NULL'},
-                                        'Indexes': {'ExternalStatus': ['ExternalStatus'],
-                                                    'TaskID': ['TaskID']},
+                                        'Indexes': {'ExternalStatus': ['ExternalStatus']},
                                         'PrimaryKey': ['TransformationID', 'TaskID'],
-                                        'Engine': 'InnoDB'
+                                        'Engine': 'MyISAM'
                                         },
-
+    
     if 'Transformations' not in tablesInDB:
       tablesD['Transformations'] = {'Fields': {'AgentType': "CHAR(32) DEFAULT 'Manual'",
                                                'AuthorDN': 'VARCHAR(255) NOT NULL',
@@ -1553,7 +1556,7 @@ class TransformationDB( DB ):
       for lfn in lfns:
         if not lfn in foundLfns:
           allAvailable = False
-          gLogger.error( "Supplied file not found for transformation" % lfn )
+          gLogger.error( "Supplied file not found for transformation", lfn )
       if not allAvailable:
         return S_ERROR( "Not all supplied files available in the transformation database" )
 
