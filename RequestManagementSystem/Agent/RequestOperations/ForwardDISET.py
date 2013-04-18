@@ -48,7 +48,7 @@ class ForwardDISET( BaseOperation ):
     """ execute RPC stub """
     # # decode arguments
     try:
-      decode, lenght = DEncode.decode( self.operation.Arguments )  
+      decode, lenght = DEncode.decode( self.operation.Arguments )
       self.log.debug( "decoded len=%s val=%s" % ( lenght, decode ) )
     except ValueError, error:
       self.log.exception( error )
@@ -58,7 +58,7 @@ class ForwardDISET( BaseOperation ):
     forward = executeRPCStub( decode )
     if not forward["OK"]:
       self.log.error( "unable to execute '%s' operation: %s" % ( self.operation.Type, forward["Message"] ) )
-      self.operation.Error = str( error )
+      self.operation.Error = forward["Message"]
       return forward
     self.log.info( "DISET forwarding done" )
     self.operation.Status = "Done"

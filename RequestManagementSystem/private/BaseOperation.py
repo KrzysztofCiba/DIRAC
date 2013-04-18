@@ -94,7 +94,8 @@ class BaseOperation( object ):
     # # pre setup logger
     self.log = gLogger.getSubLogger( name, True )
     # # set log level
-    self.log.setLevel( { True: getattr( self, "LogLevel" ), False : "INFO" }[hasattr( self, "LogLevel" )] )
+    logLevel = getattr( self, "LogLevel" ) if hasattr( self, "LogLevel" ) else "INFO"
+    self.log.setLevel( logLevel )
     # # list properties
     for option in csOptionsDict:
       self.log.info( "%s = %s" % ( option, getattr( self, option ) ) )
