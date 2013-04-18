@@ -45,6 +45,8 @@ class RequestManagerHandlerTests(unittest.TestCase):
     """
     self.request = Request()
     self.request.RequestName = "test"
+    self.request.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
+    self.request.OwnerGroup = "dirac_user"
     self.operation = Operation()
     self.operation.Type = "ReplicateAndRegister"
     self.operation.TargetSE = "CERN-USER"
