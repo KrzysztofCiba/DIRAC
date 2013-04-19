@@ -59,7 +59,7 @@ class FTSHistoryView(object):
                           "`Size`": "SUM(`FTSJob.Size`)",
                           "`FailedFiles`": "SUM(`FTSJob.FailedFiles`)",
                           "`FailedSize`": "SUM(`FTSJob.FailedSize`)" },
-             "SelectFrom" : "`FTSJob`" 
+             "SelectFrom" : "`FTSJob`",
              "Clauses": [ "`FTSJob.LastUpdate` > ( UTC_TIMESTAMP() - 3600 SECOND )" ],
              "GroupBy": [ "`SourceSE`", "`TargetSE`", "`Status`" ] }
 
