@@ -32,6 +32,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
 ########################################################################
 class FTSDB( DB ):
@@ -63,6 +64,14 @@ class FTSDB( DB ):
     """ get db schema in a dict format """
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
                    for classDef in ( FTSSite, FTSJob, FTSFile ) ] )
+
+  @staticmethod
+  def getViewMeta():
+    """ return db views in dict format
+
+    at the moment only one view - FTSHistoryView
+    """
+    return { FTSHistoryView.__name__: FTSHistoryView.viewDesc() }
 
   def _checkViews( self, force = False ):
     """ create views """
