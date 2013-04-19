@@ -722,11 +722,12 @@ class MySQL:
       gLogger.always( viewsDict )
 
       for viewName, viewDict in viewsDict.items():
+
         viewQuery = [ "CREATE OR REPLACE VIEW `%s.%s` " % ( self.__dbName, viewName ) ]
 
-        columns = ",".join( [ "%s AS %s" ( colDef, colName )
+        columns = ",".join( [ "%s AS %s" % ( colDef, colName )
                              for colName, colDef in  viewDict.get( "Columns", {} ).items() ] )
-        tables = viewDict.get( "SelectFrom" , "" )
+        tables = viewDict.get( "SelectFrom", "" )
         if columns and tables:
           viewQuery.append( "SELECT %s FROM %s" % ( columns, tables ) )
 
