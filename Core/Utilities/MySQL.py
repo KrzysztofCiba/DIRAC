@@ -719,7 +719,7 @@ class MySQL:
                                         "OrderBy": [ "`b` DESC" ] }
     """
     if force:
-      for viewName, viewDict in viewDict.items():
+      for viewName, viewDict in viewsDict.items():
         viewQuery = [ "CREATE OR REPLACE VIEW `%s.%s` " % ( self.__dbName, viewName ) ]
 
         columns = ",".join( [ "%s AS %s" ( colDef, colName )
