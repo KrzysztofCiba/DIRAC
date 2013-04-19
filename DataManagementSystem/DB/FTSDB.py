@@ -66,7 +66,7 @@ class FTSDB( DB ):
 
   def _checkViews( self, force = False ):
     """ create views """
-    viewDict = { "FTSView":
+    viewDict = { "FTSHistoryView":
                   "SELECT `SourceSE`,`TargetSE`,`FTSServer`,SUM(`Files`) AS `Files`,`Status`,"\
                   "SUM(`Size`) AS `Size`,SUM(`FailedFiles`) AS `FailedFiles`,SUM(`FailedSize`) AS `FailedSize`"\
                   " FROM `FTSJob` WHERE `LastUpdate` > (UTC_TIMESTAMP() - INTERVAL 3600 SECOND)"\

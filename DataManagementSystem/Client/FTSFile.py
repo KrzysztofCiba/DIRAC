@@ -66,7 +66,7 @@ class FTSFile( object ):
                "Checksum": "VARCHAR(64)",
                "ChecksumType": "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'ADLER32'",
                "Size": "INTEGER NOT NULL",
-               "FTSGUID":  "VARCHAR(64) NOT NULL",
+               "FTSGUID":  "VARCHAR(64)",
                "SourceSE": "VARCHAR(128) NOT NULL",
                "SourceSURL": "VARCHAR(255) NOT NULL",
                "TargetSE": "VARCHAR(128) NOT NULL",
