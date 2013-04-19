@@ -81,7 +81,9 @@ class FTSJob( object ):
                "TargetToken": "VARCHAR(255)",
                "SourceToken": "VARCHAR(255)",
                "Size": "INTEGER NOT NULL",
-               "NbFiles": "INTEGER NOT NULL",
+               "Files": "INTEGER NOT NULL",
+               "FailedFiles": "INTEGER DEFAULT 0",
+               "FailedSize": "INTEGER DEFAULT 0",
                "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
@@ -145,15 +147,15 @@ class FTSJob( object ):
     self.__data__["Error"] = str( error )[255:]
 
   @property
-  def NbFiles( self ):
+  def Files( self ):
     """ nb files getter """
-    self.__data__["NbFiles"] = len( self )
-    return self.__data__["NbFiles"]
+    self.__data__["Files"] = len( self )
+    return self.__data__["Files"]
 
-  @NbFiles.setter
-  def NbFiles( self, value ):
+  @Files.setter
+  def Files( self, value ):
     """ nb files setter """
-    self.__data__["NbFiles"] = len( self )
+    self.__data__["Files"] = len( self )
 
   @property
   def Status( self ):
@@ -171,6 +173,20 @@ class FTSJob( object ):
     self.__data__["Status"] = value
 
   @property
+  def FailedFiles( self ):
+    """ nb failed files getter """
+    self.__data__["FailedFiles"] = len( [ ftsFile for ftsFile in self if ftsFile.Status == "Failed" ] )
+    return self.__data__["FailedFiles"]
+
+  @FailedFiles.setter
+  def FailedFiles( self, value ):
+    """ nb failed files setter """
+    if value:
+      self.__data__["FailedFiles"] = value
+    else:
+      self.__data__["FailedFiles"] = sum( [ ftsFile for ftsFile in self if ftsFile.Status == "Failed" ] )
+
+  @property
   def Size( self ):
     """ size getter """
     if not self.__data__["Size"]:
@@ -184,6 +200,22 @@ class FTSJob( object ):
       self.__data__["Size"] = value
     else:
       self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
+
+  @property
+  def FailedSize( self ):
+    """ size getter """
+    if not self.__data__["FailedSize"]:
+      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status == "Failed" ] )
+    return self.__data__["FailedSize"]
+
+  @FailedSize.setter
+  def FailedSize( self, value ):
+    """ size setter """
+    if value:
+      self.__data__["FailedSize"] = value
+    else:
+      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status == "Failed" ] )
+
 
   @property
   def CreationTime( self ):
@@ -419,12 +451,16 @@ class FTSJob( object ):
     root.attrib["TargetSE"] = self.TargetSE if self.TargetSE else ""
     root.attrib["SourceToken"] = self.SourceToken if self.SourceToken else ""
     root.attrib["TargetToken"] = self.TargetToken if self.TargetToken else ""
-    root.attrib["Size"] = str( self.Size )
     root.attrib["Status"] = str( self.Status )
     # # datetime up to seconds
     root.attrib["CreationTime"] = self.CreationTime.isoformat( " " ).split( "." )[0] if self.CreationTime else ""
     root.attrib["SubmitTime"] = self.SubmitTime.isoformat( " " ).split( "." )[0] if self.SubmitTime else ""
     root.attrib["LastUpdate"] = self.LastUpdate.isoformat( " " ).split( "." )[0] if self.LastUpdate else ""
+    # # failed files
+    root.attrib["Files"] = str( self.Files )
+    root.attrib["Size"] = str( self.Size )
+    root.attrib["FailedFiles"] = str( self.FailedFiles )
+    root.attrib["FailedSize"] = str( self.FailedSize )
     # # trigger xml dump of a whole operations and their files tree
     for ftsFile in self.__files__:
       fileXML = ftsFile.toXML()

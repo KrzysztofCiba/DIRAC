@@ -52,16 +52,26 @@ class FTSDB( DB ):
     self.log = gLogger.getSubLogger( "DataManagement/FTSDB" )
     # # private lock
     self.getIdLock = LockRing().getLock( "FTSDBLock" )
-    # # max attmprt for reschedule
+    # # max attempt for reschedule
     self.maxAttempt = 100
     # # check tables
     self._checkTables( False )
+    self._checkViews( False )
 
   @staticmethod
   def getTableMeta():
     """ get db schema in a dict format """
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
                    for classDef in ( FTSSite, FTSJob, FTSFile ) ] )
+
+  def _checkViews( self, force = False ):
+    """ create views """
+    viewDict = { "FTSView":
+                  "SELECT `SourceSE`,`TargetSE`,`FTSServer`,SUM(`Files`) AS `Files`,`Status`,"\
+                  "SUM(`Size`) AS `Size`,SUM(`FailedFiles`) AS `FailedFiles`,SUM(`FailedSize`) AS `FailedSize`"\
+                  " FROM `FTSJob` WHERE `LastUpdate` > (UTC_TIMESTAMP() - INTERVAL 3600 SECOND)"\
+                  " GROUP BY `SourceSE`, `TargetSE`, `Status`" }
+    return self._createViews( viewDict, force )
 
   def _checkTables( self, force = False ):
     """ create tables if not exisiting

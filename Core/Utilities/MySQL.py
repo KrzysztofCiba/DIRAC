@@ -709,16 +709,19 @@ class MySQL:
     cursor.close()
     return S_OK( cmdRet )
 
-  def _createView( self, tableDict, force = False ):
-    """ create view based on query """
-    viewDefs = tableDict.get("Views", {} )
-    for viewName in viewDefs:
-      if viewName in tableDict:
-         return S_ERROR( "unable to create view `%s`, table of the same name is present!" )
-      # viewColumns = viewDefs[viewName].get( "Columns", [] )
-      viewQuery = viewDefs[viewName].get( "Query", "" )
-      viewQuery = "CREATE OR REPLACE VIEW `%s.%s` AS SELECT %s;" % ( self.__dbName, viewName, viewQuery )
-      self._query( query )
+  def _createViews( self, viewDict, force = False ):
+    """ create view based on query
+
+    :param dict viewDict: { 'ViewName' : "SELECT `foo` FROM `bar` WHERE `snafu` = `baz`;" }
+    """
+    if force:
+      for viewName, viewQuery in viewDict.items():
+        viewQuery = "CREATE OR REPLACE VIEW `%s.%s` AS %s" % ( self.__dbName, viewName, viewQuery )
+        createView = self._query( viewQuery )
+        if not createView["OK"]:
+          gLogger.error( createView["Message"] )
+          return createView
+    return S_OK()
 
   def _createTables( self, tableDict, force = False ):
     """
