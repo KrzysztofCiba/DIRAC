@@ -51,11 +51,9 @@ class FTSDBTests( unittest.TestCase ):
     self.ftsFileList = [ FTSFile() ] * 100
     for i, ftsFile in enumerate ( self.ftsFileList ) :
       ftsFile.FileID = i
-        
       ftsFile.LFN = "/a/b/c"
       ftsFile.Size = 10
       ftsFile.Status = "Waiting"
-      fstFile.
 
 
   def tearDown( self ):
