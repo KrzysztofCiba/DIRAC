@@ -723,7 +723,7 @@ class MySQL:
 
       for viewName, viewDict in viewsDict.items():
 
-        viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` " % ( self.__dbName, viewName ) ]
+        viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` AS" % ( self.__dbName, viewName ) ]
 
         columns = ",".join( [ "%s AS %s" % ( colDef, colName )
                              for colName, colDef in  viewDict.get( "Columns", {} ).items() ] )
