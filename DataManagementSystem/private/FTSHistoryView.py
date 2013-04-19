@@ -53,7 +53,7 @@ class FTSHistoryView(object):
     """ view description """
     return { "Columns": { "`SourceSE`": "`FTSJob`.`SourceSE`",
                           "`TargetSE`": "`FTSJob`.`TargetSE`",
-                          "`FTSJobs`": "SUM(DISTINCT `FTSJob`.`FTSJobID`)",
+                          "`FTSJobs`": "COUNT(DISTINCT `FTSJob`.`FTSJobID`)",
                           "`FTSServer`": "`FTSJob`.`FTSServer`",
                           "`Status`": "`FTSJob`.`Status`",
                           "`Files`": "SUM(`FTSJob`.`Files`)",
