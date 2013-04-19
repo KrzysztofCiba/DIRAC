@@ -719,6 +719,8 @@ class MySQL:
                                         "OrderBy": [ "`b` DESC" ] }
     """
     if force:
+      gLogger.always( viewsDict )
+
       for viewName, viewDict in viewsDict.items():
         viewQuery = [ "CREATE OR REPLACE VIEW `%s.%s` " % ( self.__dbName, viewName ) ]
 

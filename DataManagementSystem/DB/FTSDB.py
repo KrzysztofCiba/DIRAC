@@ -75,12 +75,7 @@ class FTSDB( DB ):
 
   def _checkViews( self, force = False ):
     """ create views """
-    viewDict = { "FTSHistoryView":
-                  "SELECT `SourceSE`,`TargetSE`,`FTSServer`,SUM(`Files`) AS `Files`,`Status`,"\
-                  "SUM(`Size`) AS `Size`,SUM(`FailedFiles`) AS `FailedFiles`,SUM(`FailedSize`) AS `FailedSize`"\
-                  " FROM `FTSJob` WHERE `LastUpdate` > (UTC_TIMESTAMP() - INTERVAL 3600 SECOND)"\
-                  " GROUP BY `SourceSE`, `TargetSE`, `Status`" }
-    return self._createViews( viewDict, force )
+    return self._createViews( self.getViewMeta(), force )
 
   def _checkTables( self, force = False ):
     """ create tables if not exisiting
