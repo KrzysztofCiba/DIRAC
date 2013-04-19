@@ -745,7 +745,7 @@ class MySQL:
 
         viewQuery.append( ";" )
         viewQuery = " ".join( viewQuery )
-        self.log.info( "`%s` VIEW QUERY IS: %s" % ( viewName, viewQuery ) )
+        self.log.always( "`%s` VIEW QUERY IS: %s" % ( viewName, viewQuery ) )
         createView = self._query( viewQuery )
         if not createView["OK"]:
           gLogger.error( createView["Message"] )

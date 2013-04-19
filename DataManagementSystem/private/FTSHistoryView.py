@@ -51,16 +51,16 @@ class FTSHistoryView(object):
   @staticmethod
   def viewDesc():
     """ view description """
-    return { "Columns": { "`SourceSE`": "`FTSJob.SourceSE`",
-                          "`TargetSE`": "`FTSJob.TargetSE`",
-                          "`FTSServer`": "`FTSJob.FTSServer`",
-                          "`Status`": "`FTSJob.Status`",
-                          "`Files`": "SUM(`FTSJob.Files`)",
-                          "`Size`": "SUM(`FTSJob.Size`)",
-                          "`FailedFiles`": "SUM(`FTSJob.FailedFiles`)",
-                          "`FailedSize`": "SUM(`FTSJob.FailedSize`)" },
+    return { "Columns": { "`SourceSE`": "`FTSJob`.`SourceSE`",
+                          "`TargetSE`": "`FTSJob`.`TargetSE`",
+                          "`FTSServer`": "`FTSJob`.`FTSServer`",
+                          "`Status`": "`FTSJob`.`Status`",
+                          "`Files`": "SUM(`FTSJob`.`Files`)",
+                          "`Size`": "SUM(`FTSJob`.`Size`)",
+                          "`FailedFiles`": "SUM(`FTSJob`.`FailedFiles`)",
+                          "`FailedSize`": "SUM(`FTSJob`.`FailedSize`)" },
              "SelectFrom" : "`FTSJob`",
-             "Clauses": [ "`FTSJob.LastUpdate` > ( UTC_TIMESTAMP() - 3600 SECOND )" ],
+             "Clauses": [ "`FTSJob`.`LastUpdate` > ( UTC_TIMESTAMP() - 3600 SECOND )" ],
              "GroupBy": [ "`SourceSE`", "`TargetSE`", "`Status`" ] }
 
   def __setattr__( self, name, value ):
