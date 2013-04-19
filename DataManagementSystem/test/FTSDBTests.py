@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import unittest
+from DIRAC import gConfig
 ## SUT
 from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
 
@@ -38,11 +39,22 @@ class FTSDBTests(unittest.TestCase ):
 
   def setUp( self ):
     """ test case set up """
-    pass
+    # ## set some defaults
+    gConfig.setOptionValue( 'DIRAC/Setup', 'Test' )
+    gConfig.setOptionValue( '/DIRAC/Setups/Test/DataManagement', 'Test' )
+    gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/Host', 'localhost' )
+    gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/DBName', 'FTSDB' )
+    gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/User', 'Dirac' )
+  
 
   def tearDown( self ):
     """ clean up """
     pass
+
+  def test( self ):
+    db = FTSDB()
+    db._checkTables( True )
+
 
   
 
