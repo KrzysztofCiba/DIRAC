@@ -235,6 +235,13 @@ class RequestDB( DB ):
 
     return S_OK( request )
 
+  def peekRequest( self, requestName ):
+    """ get request (ro), no update on states
+
+    :param str requestName: Request.RequestName
+    """
+    return self.getRequest( requestName, False )
+
   def deleteRequest( self, requestName, connection = None ):
     """ delete request given its name
 
@@ -387,7 +394,6 @@ class RequestDB( DB ):
         continue
       reqDict[jobID] = request["Value"].toXML()
     return S_OK( reqDict )
-
 
   def getDigest( self, requestName ):
     """ get digest for request given its name

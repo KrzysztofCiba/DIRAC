@@ -24,7 +24,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSClient class.
 
 # # imports
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
@@ -192,5 +192,8 @@ class FTSClient( Client ):
     :param list targetSEs: list of target SEs
     """
     opFileJSON = opFile.toJSON()
-    return self.ftsManager().ftsSchedule( opFileJSON, sourceSEs, targetSEs )
+    if not opFileJSON["OK"]:
+      self.log.error( opFileJSON["Message"] )
+      return opFileJSON
+    return self.ftsManager().ftsSchedule( opFileJSON["Value"], sourceSEs, targetSEs )
 

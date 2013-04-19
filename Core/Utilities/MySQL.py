@@ -673,7 +673,6 @@ class MySQL:
 
     return retDict
 
-
   def _transaction( self, cmdList, conn = None ):
     """ dummy transaction support
 
@@ -709,6 +708,17 @@ class MySQL:
     ## close cursor, put back connection to the pool
     cursor.close()
     return S_OK( cmdRet )
+
+  def _createView( self, tableDict, force = False ):
+    """ create view based on query """
+    viewDefs = tableDict.get("Views", {} )
+    for viewName in viewDefs:
+      if viewName in tableDict:
+         return S_ERROR( "unable to create view `%s`, table of the same name is present!" )
+      # viewColumns = viewDefs[viewName].get( "Columns", [] )
+      viewQuery = viewDefs[viewName].get( "Query", "" )
+      viewQuery = "CREATE OR REPLACE VIEW `%s.%s` AS SELECT %s;" % ( self.__dbName, viewName, viewQuery )
+      self._query( query )
 
   def _createTables( self, tableDict, force = False ):
     """

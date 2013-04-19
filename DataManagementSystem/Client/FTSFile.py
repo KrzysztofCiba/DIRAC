@@ -30,7 +30,6 @@ from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 
-
 ########################################################################
 class FTSFile( object ):
   """
