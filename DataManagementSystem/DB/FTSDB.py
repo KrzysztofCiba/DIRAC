@@ -51,7 +51,7 @@ class FTSDB( DB ):
     DB.__init__( self, "FTSDB", "DataManagement/FTSDB", maxQueueSize )
     self.log = gLogger.getSubLogger( "DataManagement/FTSDB" )
     # # private lock
-    self.getIdLock = LockRing.getLock()
+    self.getIdLock = LockRing().getLock( "FTSDBLock" )
     # # max attmprt for reschedule
     self.maxAttempt = 100
     # # check tables
