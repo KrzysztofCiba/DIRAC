@@ -180,8 +180,6 @@ class FTSDB( DB ):
     getFTSJob = getFTSJob["Value"]
     connection = getFTSJob["connection"]
 
-
-
   def selectFTSFiles( self, status = "Waiting" ):
     """ select FTSJobFiles for submit """
     selectFiles = "SELECT * FROM `FTSFile` WHERE `Status` = '%s'" % status;
@@ -190,11 +188,17 @@ class FTSDB( DB ):
       self.log.error( selectFiles["Message"] )
       return selectFiles
 
-  def _getFTSSiteProperties( self, ftsSiteID, columnNames = None ):
-    """ select :columnNames: from FTSSite table  """
-    columnNames = columnNames if columnNames else FTSSite.tableDesc()["Fields"].keys()
-    columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-    return "SELECT %s FROM `FTSSite` WHERE `FTSSiteID` = %s;" % ( columnNames, int( ftsSiteID ) )
+
+
+  def getFTSHistory( self ):
+    """ query FTSHistoryView """
+    query = self._query( self._getFTSHistoryProperties() )
+    if not query["OK"]:
+      return query
+    ftsHistoryView = None
+
+    return S_OK( ftsHistoryView )
+
 
   def _getFTSJobProperties( self, ftsJobID, columnNames = None ):
     """ select :columnNames: from FTSJob table  """
@@ -207,3 +211,9 @@ class FTSDB( DB ):
     columnNames = columnNames if columnNames else FTSFile.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
     return "SELECT %s FROM `FTSFile` WHERE `FTSFileID` = %s;" % ( columnNames, int( ftsFileID ) )
+
+  def _getFTSHistoryProperties( self, columnNames = None ):
+    """ select :columnNames: from FTSHistory view """
+    columnNames = columnNames if columnNames else FTSHistoryView.viewDesc()["Fields"].keys()
+    columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
+    return "SELECT %s FROM `FTSHistoryView`;"
