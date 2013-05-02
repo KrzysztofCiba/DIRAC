@@ -29,10 +29,11 @@ import datetime
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
+from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.RequestManagementSystem.Client.File import File
 
 ########################################################################
-class Operation( object ):
+class Operation( Record ):
   """
   .. class:: Operation
 
@@ -54,9 +55,10 @@ class Operation( object ):
     :param self: self reference
     :param dict fromDict: attributes dictionary
     """
+    Record.__init__( self )
     self._parent = None
     # # sub-request attributes
-    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+    # self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
@@ -95,15 +97,6 @@ class Operation( object ):
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME" },
              "PrimaryKey" : "OperationID" }
-
-  def __setattr__( self, name, value ):
-    """ bweare of tpyos!!! """
-    if not name.startswith( "_" ) and name not in dir( self ):
-      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
-    try:
-      object.__setattr__( self, name, value )
-    except AttributeError, error:
-      print name, value, error
 
   # # protected methods for parent only
   def _notify( self ):

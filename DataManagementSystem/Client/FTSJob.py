@@ -36,9 +36,10 @@ from DIRAC.Core.Utilities.File import checkGuid
 # from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.RequestManagementSystem.private.Record import Record
 
 ########################################################################
-class FTSJob( object ):
+class FTSJob( Record ):
   """
   .. class:: FTSJob
 
@@ -51,7 +52,7 @@ class FTSJob( object ):
     :param self: self reference
     :param dict fromDict: data dict
     """
-    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+    Record.__init__( self )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["SubmitTime"] = now
@@ -91,15 +92,6 @@ class FTSJob( object ):
                "LastUpdate" : "DATETIME"  },
              "PrimaryKey" : [ "FTSJobID" ],
              "Indexes" : { "FTSJobID" : [ "FTSJobID" ], "FTSGUID": [ "FTSGUID" ] } }
-
-  def __setattr__( self, name, value ):
-    """ bweare of tpyos!!! """
-    if not name.startswith( "_" ) and name not in dir( self ):
-      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
-    try:
-      object.__setattr__( self, name, value )
-    except AttributeError, error:
-      print name, value, error
 
   @property
   def FTSJobID( self ):

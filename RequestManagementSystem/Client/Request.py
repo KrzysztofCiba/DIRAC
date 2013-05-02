@@ -29,11 +29,12 @@ from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TypedList import TypedList
+from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 ########################################################################
-class Request( object ):
+class Request( Record ):
   """
   .. class:: Request
 
@@ -56,8 +57,8 @@ class Request( object ):
 
     :param self: self reference
     """
+    Record.__init__( self )
     self.__waiting = None
-    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["SubmitTime"] = now

@@ -34,19 +34,13 @@ class Record(object):
   a single record in the db
   """
 
-  def __init__( self, fromDict = None ):
+  def __init__( self ):
     """c'tor
 
     :param self: self reference
     :param dict fromDict: dict with fields and values 
     """
     self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
-    fromDict = fromDict if fromDict else {}
-    for attrName, attrValue in fromDict.items():
-      if attrName not in self.__data__:
-        raise AttributeError( "unknown %s attribute %s" % ( self.__class__.__name__,
-                                                            str( attrName ) ) )
-      setattr( self, attrName, attrValue )
 
   def __setattr__( self, name, value ):
     """ bweare of tpyos!!! """
@@ -68,3 +62,4 @@ class Record(object):
     """
     raise NotImplementedError("Must provide table description!")
 
+  

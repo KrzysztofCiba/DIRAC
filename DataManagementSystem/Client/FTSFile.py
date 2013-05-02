@@ -29,9 +29,10 @@ import xml.etree.ElementTree as ElementTree
 from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
+from DIRAC.RequestManagementSystem.private.Record import Record
 
 ########################################################################
-class FTSFile( object ):
+class FTSFile( Record ):
   """
   .. class:: FTSFile
 
@@ -44,8 +45,8 @@ class FTSFile( object ):
     :param self: self reference
     :param dict fromDict: data dict
     """
+    Record.__init__( self )
     self._parent = None
-    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     self.__data__["Status"] = "Waiting"
     self.__data__["Attempt"] = 0
     fromDict = fromDict if fromDict else {}
@@ -77,15 +78,6 @@ class FTSFile( object ):
              "Indexes": { "FTSGUID": [ "FTSGUID" ], "FTSFileID": [ "FTSFileID"],
                           "FileID": ["FileID", "OperationID"], "LFN": ["LFN"],
                           "SourceSETargetSE": [ "SourceSE", "TargetSE" ]  } }
-
-  def __setattr__( self, name, value ):
-    """ bweare of tpyos!!! """
-    if not name.startswith( "_" ) and name not in dir( self ):
-      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
-    try:
-      object.__setattr__( self, name, value )
-    except AttributeError, error:
-      print name, value, error
 
   @property
   def FTSFileID( self ):

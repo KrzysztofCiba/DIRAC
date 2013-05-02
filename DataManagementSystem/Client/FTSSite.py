@@ -32,9 +32,10 @@ except ImportError:
 from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
+from DIRAC.RequestManagementSystem.private.Record import Record
 
 ########################################################################
-class FTSSite( object ):
+class FTSSite( Record ):
   """
   .. class:: FTSSite
 
@@ -46,7 +47,7 @@ class FTSSite( object ):
     :param self: self reference
     :param dict fromDict: data dict
     """
-    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+    Record.__init__( self )
     self.__data__["Status"] = "Active"
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
@@ -63,15 +64,6 @@ class FTSSite( object ):
                "ServerURI":  "VARCHAR(255)",
                "SEs": "BLOB" },
              "PrimaryKey": [ "FTSSiteID" ] }
-
-  def __setattr__( self, name, value ):
-    """ bweare of tpyos!!! """
-    if not name.startswith( "_" ) and name not in dir( self ):
-      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
-    try:
-      object.__setattr__( self, name, value )
-    except AttributeError, error:
-      print name, value, error
 
   @property
   def FTSSiteID( self ):

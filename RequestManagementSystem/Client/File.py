@@ -31,10 +31,11 @@ import xml.etree.ElementTree as ElementTree
 from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
+from DIRAC.RequestManagementSystem.private.Record import Record
 from DIRAC.Core.Utilities.File import checkGuid
 
 ########################################################################
-class File( object ):
+class File( Record ):
   """
   .. class:: File
 
@@ -50,8 +51,9 @@ class File( object ):
     :param self: self reference
     :param dict fromDict: property dict
     """
+    Record.__init__( self )
     self._parent = None
-    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+    # self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     self.__data__["Status"] = "Waiting"
     self.__data__["OperationID"] = 0
     self.__data__["FileID"] = 0
@@ -80,15 +82,8 @@ class File( object ):
              "PrimaryKey" : "FileID",
              "Indexes" : { "LFN" : [ "LFN" ] } }
 
-  def __setattr__( self, name, value ):
-    """ beawre of tpyos """
-    if not name.startswith( "_" ) and name not in dir( self ):
-      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
-    # print name, value
-    object.__setattr__( self, name, value )
-
   def __eq__( self, other ):
-    """ == operator, compating only LFN or PFN """
+    """ == operator, comparing only LFN or PFN """
     return ( self.LFN == other.LFN ) or ( self.PFN == other.PFN )
 
   # # properties
@@ -194,9 +189,10 @@ class File( object ):
     """ checksum type setter """
     if not value:
       self.__data__["ChecksumType"] = ""
-    elif value and str( value.strip() ).upper() not in ( "ADLER32", "MD5", "SHA1" ):
+    elif value and str( value ).strip().upper() not in ( "ADLER32", "MD5", "SHA1" ):
       raise ValueError( "unknown checksum type: %s" % value )
-    self.__data__["ChecksumType"] = str( value.strip() ).upper()
+    else:
+      self.__data__["ChecksumType"] = str( value ).strip().upper()
 
   @property
   def Checksum( self ):

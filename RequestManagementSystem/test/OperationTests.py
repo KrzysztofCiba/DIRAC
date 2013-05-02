@@ -205,7 +205,9 @@ class OperationTests( unittest.TestCase ):
 
     # # parent set, no OperationID, INSERT
     request.addOperation( operation )
-    self.assertEqual( operation.toSQL().startswith( "INSERT" ), True )
+    toSQL = operation.toSQL()
+    self.assertEqual( toSQL["OK"], True, "toSQL error" )
+    self.assertEqual( toSQL["Value"].startswith( "INSERT" ), True )
 
     op2 = Operation()
     op2.Type = "RemoveReplica"
@@ -214,7 +216,9 @@ class OperationTests( unittest.TestCase ):
 
     # # OperationID set = UPDATE
     operation.OperationID = 1
-    self.assertEqual( operation.toSQL().startswith( "UPDATE" ), True )
+    toSQL = operation.toSQL()
+    self.assertEqual( toSQL["OK"], True, "toSQL error" )
+    self.assertEqual( toSQL["Value"].startswith( "UPDATE" ), True )
 
 
 # # test execution
