@@ -80,7 +80,7 @@ class RequestClientTests(unittest.TestCase):
     """ peek request """
     requestClient = RequestClient()
     
-    ## get requets names
+    # # get requests names
     start = time.clock()
     ret = requestClient.getRequestNamesForJobs( [ self.request.JobID] )
     print time.clock() - start

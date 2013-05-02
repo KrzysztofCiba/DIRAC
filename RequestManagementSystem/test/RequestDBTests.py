@@ -179,9 +179,6 @@ class RequestDBTests( unittest.TestCase ):
       self.assertEqual( delete["OK"], True, "delete failed" )
 
 
-
-
-
 # # test suite execution
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()
