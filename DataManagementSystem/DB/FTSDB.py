@@ -138,10 +138,14 @@ class FTSDB( DB ):
 
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """
-    putFTSFile = self._transaction( ftsFile.toSQL() )
+    ftsFileSQL = ftsFile.toSQL()
+    if not ftsFileSQL["OK"]:
+      self.log.error( ftsFileSQL["Message"] )
+      return ftsFileSQL
+    ftsFileSQL = ftsFileSQL["Value"]
+    putFTSFile = self._transaction( ftsFileSQL )
     if not putFTSFile["OK"]:
       self.log.error( putFTSFile["Message"] )
-
     return putFTSFile
 
   def getFTSFile( self, fileID = None, lfn = None ):
@@ -154,7 +158,14 @@ class FTSDB( DB ):
 
     :param FTSJob ftsJob: FTSJob instance
     """
-    putJob = [ ftsJob.toSQL() ] + [ ftsFile.toSQL() for ftsFile in ftsJob ]
+    ftsJobSQL = ftsJob.toSQL()
+    if not ftsJob["OK"]:
+      return ftsJobSQL
+    putJob = [ ftsJob["Value"] ]
+    for ftsFile in [ ftsFile.toSQL() for ftsFile in ftsJob ]:
+      if not ftsFile["OK"]:
+        return ftsFile
+      putJob.append( ftsFile["Value"] )
     putJob = self._transaction( putJob )
     if not putJob["OK"]:
       self.log.error( putJob["Message"] )

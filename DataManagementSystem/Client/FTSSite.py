@@ -14,6 +14,8 @@
     class representing FTS site
 
     TODO: re-think, do we need this one in FTSDB???
+    nope...
+
 """
 # for properties
 # pylint: disable=E0211,W0612,W0142,E1101,E0102
