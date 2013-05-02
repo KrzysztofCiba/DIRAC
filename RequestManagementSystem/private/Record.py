@@ -12,7 +12,7 @@
     :synopsis: db record
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    db record
+    base class for orm-loke db record
 """
 
 __RCSID__ = "$Id $"
@@ -32,13 +32,14 @@ class Record(object):
   .. class:: Record
 
   a single record in the db
+
+  all columns should be exported as properties in the inherited classes
   """
 
   def __init__( self ):
     """c'tor
 
     :param self: self reference
-    :param dict fromDict: dict with fields and values 
     """
     self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
 
