@@ -1,0 +1,70 @@
+########################################################################
+# $HeadURL $
+# File: Record.py
+# Author: Krzysztof.Ciba@NOSPAMgmail.com
+# Date: 2013/05/02 08:42:19
+########################################################################
+
+""" :mod: Record 
+    ============
+ 
+    .. module: Record
+    :synopsis: db record
+    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+
+    db record
+"""
+
+__RCSID__ = "$Id $"
+
+##
+# @file Record.py
+# @author Krzysztof.Ciba@NOSPAMgmail.com
+# @date 2013/05/02 08:42:24
+# @brief Definition of Record class.
+
+## imports 
+from DIRAC import gLogger
+
+########################################################################
+class Record(object):
+  """
+  .. class:: Record
+
+  a single record in the db
+  """
+
+  def __init__( self, fromDict = None ):
+    """c'tor
+
+    :param self: self reference
+    :param dict fromDict: dict with fields and values 
+    """
+    self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
+    fromDict = fromDict if fromDict else {}
+    for attrName, attrValue in fromDict.items():
+      if attrName not in self.__data__:
+        raise AttributeError( "unknown %s attribute %s" % ( self.__class__.__name__,
+                                                            str( attrName ) ) )
+      setattr( self, attrName, attrValue )
+
+  def __setattr__( self, name, value ):
+    """ bweare of tpyos!!! """
+    if not name.startswith( "_" ) and name not in dir( self ):
+      raise AttributeError( "'%s' has no attribute '%s'" % ( self.__class__.__name__, name ) )
+    try:
+      object.__setattr__( self, name, value )
+    except AttributeError, error:
+      gLogger.exception( error )
+
+  @staticmethod
+  def tableDesc():
+    """ should return dict with table description, i.e.::
+
+    { "Fields" : { "RecID" : "INTEGER NOT NULL AUTO_INCREMENT",
+                   "Data": "FLOAT" },
+      "PrimaryKey" : [ "RecID" ] },
+      "Indexes" : { "RecID" : [ "RecID" ] } }
+    """
+    raise NotImplementedError("Must provide table description!")
+
