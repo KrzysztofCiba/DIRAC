@@ -1,4 +1,4 @@
-[v7r0-pre3]
+[v7r0-pre4]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -33,6 +33,8 @@ CHANGE: Job.py - setPlatform renamed to setSubmitPools
 *DMS
 CHANGE: MigrationMonitoringAgent - removed obsoleted
 NEW: FileCatalogClient - getFileUserMetadata to get both file and directory metadata for a given file
+CHANGE: FileCatalogClient - list meta data sets
+FIX: FileCatalog - extra check while new user registration for already existing entry
 BUGFIX: ReplicaManager - pass catalog argument in putAndRegister to registerFile call, closes #1369
 
 *WMS
@@ -52,6 +54,34 @@ FIX: ComputingElement - properly check if the pilot proxy has VOMS before adding
 NEW: StorageElement - enable Storage Element proxy configuration by protocol name
 CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added DIRAC_GLEXEC 
         to the environment when running under glexec     
+
+[v6r8p10]
+
+NEW: Applied patches from v6r7p27
+
+[v6r8p9]
+
+*DMS
+FIX: TransferAgent,dirac-dms-show-se-status, ResourceStatus,TaskManager - fixes
+     needed for DMS components to use RSS status information
+NEW: ReplicaManager - allow to get metadata for an LFN+SE as well as PFN+SE     
+
+[v6r8p8]
+
+*RSS
+BUGFIX: dirac-rss-setup - added missing return of S_OK() result
+
+[v6r8p7]
+
+NEW: Applied patches from v6r7p24
+
+*DMS
+BUGFIX: LcgFileCatalogClient - bug in addFile()
+
+*RSS
+BUGFIX: fixed script dirac-rss-set-token, broken in the current release.
+NEW: Statistics module - will be used in the future to provide detailed information 
+     from the History of the elements 
 
 [v6r8p6]
 
@@ -152,6 +182,46 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p27]
+
+*Core
+FIX: Mail.py - fix of the problem of colons in the mail's body
+
+*Interfaces
+NEW: Job API - added setSubmitPools(), setPlatform() sets ... "Platform"
+
+*WMS
+FIX: TaskQueueDB - use SystemConfig as Platform for matching ( if Platform is not set explicitly
+
+*Resources
+FIX: SSHComputingElement - use ssh host ( and not CE name ) in the pilot reference
+BUGFIX: SSHGEComputingElement - forgotten return statement in _getJobOutputFiles()
+
+*Framework
+NEW: dirac-sys-sendmail - email's body can be taken from pipe. Command's argument 
+     in this case will be interpreted as a destination address     
+
+[v6r7p26]
+
+*DMS
+FIX: ReplicaManager - status names Read/Write -> ReadAccess/WriteAccess
+
+[v6r7p25]
+
+*Core
+CHANGE: X509Chain - in getCredentials() failure to contact CS is not fatal, 
+        can happen when calling dirac-proxy-init -x, for example
+
+[v6r7p24]
+
+*DMS
+NEW: FileCatalog - added getFilesByMetadataWeb() to allow pagination in the Web 
+     catalog browser
+     
+*WMS
+CHANGE: WMSAdministrator, DiracAdmin - get banned sites list by specifying the status
+        to the respective jobDB call     
 
 [v6r7p23]
 

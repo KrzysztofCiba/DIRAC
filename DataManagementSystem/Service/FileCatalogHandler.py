@@ -410,6 +410,35 @@ class FileCatalogHandler(RequestHandler):
         lfns.append( os.path.join( dir, fname) )
     return gFileCatalogDB.getFileDetails( lfns, self.getRemoteCredentials() )
   
+  types_findFilesByMetadataWeb = [ DictType, StringTypes, [IntType,LongType], [IntType,LongType]]
+  def export_findFilesByMetadataWeb( self, metaDict, path, startItem, maxItems ):
+    """ Find all the files satisfying the given metadata set
+    """
+    result = gFileCatalogDB.fmeta.findFilesByMetadata( metaDict, path, self.getRemoteCredentials() )
+    if not result['OK'] or not result['Value']:
+      return result
+
+    lfns = []
+    for directory in result['Value']:
+      for fname in result['Value'][directory]:
+        lfns.append( os.path.join( directory, fname) )
+
+    start = startItem
+    totalRecords = len( lfns )
+    if start > totalRecords:
+      return S_ERROR( 'Requested files out of existing range' )
+    end = start+maxItems
+    if end > totalRecords:
+      end = totalRecords
+    lfnsResultList = lfns[start:end]
+
+    resultDetails = gFileCatalogDB.getFileDetails( lfnsResultList, self.getRemoteCredentials() )
+    if not resultDetails['OK']:
+      return resultDetails
+
+    result = S_OK( {"TotalRecords":totalRecords, "Records":resultDetails['Value'] } )
+    return result
+  
   types_getCompatibleMetadata = [ DictType ]
   def export_getCompatibleMetadata( self, metaDict ):
     """ Get metadata values compatible with the given metadata subset
@@ -427,3 +456,9 @@ class FileCatalogHandler(RequestHandler):
     """ Add a new metadata set
     """
     return gFileCatalogDB.dmeta.getMetadataSet( setName, expandFlag, self.getRemoteCredentials() )
+
+  types_listMetadatasets = []
+  def export_listMetadataSets(self):
+    """ Get the list of metadata sets with their definitions
+    """
+    return gFileCatalogDB.dmeta.listMetadataSets(self.getRemoteCredentials())
