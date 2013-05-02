@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: FTSSiteTests 
-    =======================
+    ==================
  
     .. module: FTSSiteTests
     :synopsis: unittest for FTSSite class
@@ -33,10 +33,18 @@ class FTSSiteTests(unittest.TestCase):
   
   """
 
-  def __init__( self ):
+  def setUp( self ):
     """c'tor
 
     :param self: self reference
     """
     pass
 
+
+
+# # test execution
+if __name__ == "__main__":
+  testLoader = unittest.TestLoader()
+  suite = testLoader.loadTestsFromTestCase( FTSSiteTests )
+  suite = unittest.TestSuite( [ suite ] )
+  unittest.TextTestRunner( verbosity = 3 ).run( suite )

@@ -36,6 +36,7 @@ from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 

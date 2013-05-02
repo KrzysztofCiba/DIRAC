@@ -29,7 +29,6 @@ from MySQLdb import Error as MySQLdbError
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
@@ -63,7 +62,7 @@ class FTSDB( DB ):
   def getTableMeta():
     """ get db schema in a dict format """
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
-                   for classDef in ( FTSSite, FTSJob, FTSFile ) ] )
+                   for classDef in ( FTSJob, FTSFile ) ] )
 
   @staticmethod
   def getViewMeta():
@@ -78,7 +77,7 @@ class FTSDB( DB ):
     return self._createViews( self.getViewMeta(), force )
 
   def _checkTables( self, force = False ):
-    """ create tables if not exisiting
+    """ create tables if not existing
 
     :param bool force: flag to trigger recreation of db schema
     """
@@ -136,21 +135,6 @@ class FTSDB( DB ):
       # # close cursor
       cursor.close()
       return S_ERROR( str( error ) )
-
-  def putFTSSite( self, ftsSite ):
-    """ put FTSSite into fts db """
-    putFTSSite = self._transaction( ftsSite.toSQL() )
-    if not putFTSSite["OK"]:
-      self.log.error( putFTSSite["Message"] )
-    return putFTSSite
-
-  def getFTSSite( self, ftsSiteID ):
-    """ get FTSSite from fts db """
-    getFTSSite = self._transaction( self._getFTSSiteProperties( ftsSiteID ) )
-    if not getFTSSite["OK"]:
-      self.log.error( getFTSSite["Message"] )
-    getFTSSite = getFTSSite["Value"]
-    return getFTSSite
 
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """

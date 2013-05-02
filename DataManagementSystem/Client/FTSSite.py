@@ -77,7 +77,7 @@ class FTSSite( Record ):
 
   @property
   def Name( self ):
-    """ name getter """
+    """ Name getter """
     return self.__data__["Name"]
 
   @Name.setter

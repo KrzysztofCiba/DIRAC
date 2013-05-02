@@ -5,29 +5,30 @@
 # Date: 2013/04/19 12:26:30
 ########################################################################
 
-""" :mod: FTSHistoryView 
+""" :mod: FTSHistoryView
     ====================
- 
+
     .. module: FTSHistoryView
     :synopsis: last hour history of FTS transfers as read from FTSHistoryView
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     last hour history of FTS transfers as read from FTSHistoryView
+    this one is read-only!!!
 """
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file FTSHistoryView.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/19 12:26:55
 # @brief Definition of FTSHistoryView class.
 
-## imports 
+# # imports
 
 
 ########################################################################
-class FTSHistoryView(object):
+class FTSHistoryView( object ):
   """
   .. class:: FTSHistoryView
 
@@ -40,7 +41,6 @@ class FTSHistoryView(object):
     :param self: self reference
     """
     fromDict = fromDict if fromDict else {}
-
     self.__data__ = dict.fromkeys( self.viewDesc()["Columns"].keys(), None )
     for key, value in fromDict.items():
       if key not in self.__data__:
