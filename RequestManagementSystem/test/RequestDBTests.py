@@ -25,9 +25,8 @@ __RCSID__ = "$Id $"
 
 # # imports
 import unittest
-import sys
 # # from DIRAC
-from DIRAC import gConfig, gLogger
+from DIRAC import gConfig
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -59,6 +58,8 @@ class RequestDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/Host', 'localhost' )
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/DBName', 'ReqDB' )
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/User', 'Dirac' )
+
+    self.i = 1000
 
   def tearDown( self ):
     """ test case tear down """
@@ -156,15 +157,27 @@ class RequestDBTests( unittest.TestCase ):
 
   def test04Stress( self ):
     """ stress test """
+
     db = RequestDB()
-    for i in range( 10 ):
+
+    for i in range( self.i ):
       request = Request( { "RequestName": "test-%d" % i } )
       op = Operation( { "Type": "RemoveReplica", "TargetSE": "CERN-USER" } )
       op += File( { "LFN": "/lhcb/user/c/cibak/foo" } )
       request += op
-      print request
-      # put = db.putRequest( req )
-      # self.assertEqual( put["OK"], True, "put failed" )
+      put = db.putRequest( request )
+      self.assertEqual( put["OK"], True, "put failed" )
+
+    for i in range( self.i ):
+      get = db.getRequest( "test-%s" % i )
+      self.assertEqual( get["OK"], True, "get failed" )
+      print get
+      # self.assertEqual(get["Value"], , msg)
+
+    for i in range( self.i ):
+      delete = db.deleteRequest( "test-%s" % i )
+      self.assertEqual( delete["OK"], True, "delete failed" )
+
 
 
 
