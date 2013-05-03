@@ -85,13 +85,19 @@ class FTSDBTests( unittest.TestCase ):
       ftsJob.Status = "Submitted"
       ftsJob.SourceSE = "CERN-USER"
       ftsJob.TargetSE = "RAL-USER"
-      for ftsFile in self.ftsFileList:
-        ftsJob.addFile( ftsFile )
-
+      ftsFile = FTSFile()
+      ftsFile.FileID = i * 100
+      ftsFile.OperationID = 9999
+      ftsFile.LFN = "/a/b/c/%d" % i
+      ftsFile.Size = 10
+      ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
+      ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
+      ftsFile.Status = "Waiting"
+      ftsJob.addFile( ftsFile )
       self.assertEqual( len( ftsJob ), len( self.ftsFileList ), "addFile error" )
 
-    put = db.putFTSJob( ftsJob )
-    self.assertEqual( put["OK"], True, "putFTSJob failed" )
+      put = db.putFTSJob( ftsJob )
+      self.assertEqual( put["OK"], True, "putFTSJob failed" )
 
   def test03historyView( self ):
     """ history view """
