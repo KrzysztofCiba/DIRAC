@@ -205,7 +205,7 @@ class FTSDB( DB ):
 
   def getFTSHistory( self ):
     """ query FTSHistoryView """
-    query = self._query( "SELECT * FROM `FTSHistoryView`;" )
+    query = self._transaction( [ "SELECT * FROM `FTSHistoryView`;" ] )
     if not query["OK"]:
       return query
     gLogger.always( query )
