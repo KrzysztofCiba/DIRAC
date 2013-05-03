@@ -60,6 +60,28 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.Status = "Waiting"
       self.ftsFileList.append( ftsFile )
 
+    self.ftsJobs = []
+    for i in range( 100 ):
+
+      ftsJob = FTSJob()
+      ftsJob.FTSGUID = str( uuid.uuid4() )
+      ftsJob.FTSServer = "https://fts.service.org"
+      ftsJob.Status = "Submitted"
+      ftsJob.SourceSE = "CERN-USER"
+      ftsJob.TargetSE = "RAL-USER"
+
+      ftsFile = FTSFile()
+      ftsFile.FileID = i * 100
+      ftsFile.OperationID = 9999
+      ftsFile.LFN = "/a/b/c/%d" % i
+      ftsFile.Size = 10
+      ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
+      ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
+      ftsFile.Status = "Waiting"
+
+      ftsJob.addFile( ftsFile )
+      self.ftsJobs.append( ftsJob )
+
   def tearDown( self ):
     """ clean up """
     del self.ftsFileList
@@ -79,24 +101,7 @@ class FTSDBTests( unittest.TestCase ):
       put = db.putFTSFile( ftsFile )
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
-    for i in range( 100 ):
-
-      ftsJob = FTSJob()
-      ftsJob.FTSGUID = str( uuid.uuid4() )
-      ftsJob.FTSServer = "https://fts.service.org"
-      ftsJob.Status = "Submitted"
-      ftsJob.SourceSE = "CERN-USER"
-      ftsJob.TargetSE = "RAL-USER"
-      ftsFile = FTSFile()
-      ftsFile.FileID = i * 100
-      ftsFile.OperationID = 9999
-      ftsFile.LFN = "/a/b/c/%d" % i
-      ftsFile.Size = 10
-      ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
-      ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
-      ftsFile.Status = "Waiting"
-      ftsJob.addFile( ftsFile )
-
+    for ftsJob in self.ftsJobs:
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )
 
