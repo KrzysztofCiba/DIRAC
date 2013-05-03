@@ -76,7 +76,7 @@ class FTSDBTests( unittest.TestCase ):
     ftsJob.Status = "Submitted"
     ftsJob.SourceSE = "CERN-USER"
     ftsJob.TargetSE = "RAL-USER"
-    for ftsFile in self.fstFileList:
+    for ftsFile in self.ftsFileList:
       ftsJob.addFile( ftsFile )
 
     put = db.putFTSJob( ftsJob )
