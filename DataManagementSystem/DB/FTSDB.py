@@ -257,5 +257,4 @@ class FTSDB( DB ):
   def _getFTSHistoryProperties( self, columnNames = None ):
     """ select :columnNames: from FTSHistory view """
     columnNames = columnNames if columnNames else FTSHistoryView.viewDesc()["Fields"].keys()
-    columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
-    return "SELECT %s FROM `FTSHistoryView`;" % columnNames
+    return "SELECT %s FROM `FTSHistoryView`;" % ",".join( columnNames )
