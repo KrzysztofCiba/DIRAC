@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import unittest
+import uuid
 # # from DIRAC
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 # # SUT
@@ -48,7 +49,7 @@ class FTSJobTests( unittest.TestCase ):
     del self.fileA
     del self.fileB
 
-  def testCtor( self ):
+  def test01Ctor( self ):
     """ test ctor and (de-)serilisation """
     ftsJob = FTSJob()
     self.assertEqual( isinstance( ftsJob, FTSJob ), True )
@@ -85,6 +86,22 @@ class FTSJobTests( unittest.TestCase ):
     XML = ftsJob.toXML()
     ftsJobXML = FTSJob.fromXML( XML["Value"] )
     self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True )
+
+  def test02Files( self ):
+    """ FTSFiles arithmetic """
+    ftsJob = FTSJob()
+    ftsJob.FTSGUID = str( uuid.uuid4() )
+
+    self.assertEqual( len( ftsJob ), 0 )
+    self.assertEqual( ftsJob.Files, 0 )
+    self.assertEqual( ftsJob.Size, 0 )
+
+    ftsJob.addFile( self.fileA )
+    ftsJob.addFile( self.fileB )
+
+    self.assertEqual( len( ftsJob ), 2 )
+    self.assertEqual( ftsJob.Files, 2 )
+    self.assertEqual( ftsJob.Size, 19 )
 
 # # test execution
 if __name__ == "__main__":

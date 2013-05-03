@@ -164,9 +164,9 @@ class FTSDB( DB ):
     :param FTSJob ftsJob: FTSJob instance
     """
     ftsJobSQL = ftsJob.toSQL()
-    if not ftsJob["OK"]:
+    if not ftsJobSQL["OK"]:
       return ftsJobSQL
-    putJob = [ ftsJob["Value"] ]
+    putJob = [ ftsJobSQL["Value"] ]
     for ftsFile in [ ftsFile.toSQL() for ftsFile in ftsJob ]:
       if not ftsFile["OK"]:
         return ftsFile
