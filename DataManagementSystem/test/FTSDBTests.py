@@ -69,7 +69,20 @@ class FTSDBTests( unittest.TestCase ):
 
   def test02PutGetDelete( self ):
     """ put, get, delete  methods """
-    pass
+    db = FTSDB()
+
+    ftsJob = FTSJob()
+    ftsJob.FTSGUID = "1111-2222-33333333-4444-5555"
+    ftsJob.Status = "Submitted"
+    ftsJob.SourceSE = "CERN-USER"
+    ftsJob.TargetSE = "RAL-USER"
+    for ftsFile in self.fstFileList:
+      ftsJob.addFile( ftsFile )
+
+    put = db.putFTSJob( ftsJob )
+    print put
+
+
 
   def test03historyView( self ):
     """ history view """
