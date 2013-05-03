@@ -204,11 +204,13 @@ class FTSDB( DB ):
       return selectFiles
 
   def getFTSHistory( self ):
-    """ query FTSHistoryView """
+    """ query FTSHistoryView, return list of FTSHistoryViews """
     query = self._transaction( [ "SELECT * FROM `FTSHistoryView`;" ] )
     if not query["OK"]:
       return query
-    return S_OK( FTSHistoryView( query["Value"].values()[0][0] ) if query else FTSHistoryView() )
+    if not query["Value"]:
+      return S_OK()
+    return S_OK( [ FTSHistoryView( fromDict ) for fromDict in query["Value"].values()[0] ] )
 
   def getDBSummary( self ):
     """ get DB summary """
