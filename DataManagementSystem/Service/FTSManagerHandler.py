@@ -83,13 +83,14 @@ class FTSManagerHandler( RequestHandler ):
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
+    """ initialize handler """
     global gFTSDB
-    global gFTStrategy
+    global gFTSStrategy
     from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
     gFTSDB = FTSDB()
 
-    cls.ftsMode = cls.svr_getCSOption( "FTSMode", False )
-    gLogger.info( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
+    cls.ftsMode = cls.srv_getCSOption( "FTSMode", False )
+    gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:
       csPath = getServiceSection( "DataManagement/FTSManager" )
