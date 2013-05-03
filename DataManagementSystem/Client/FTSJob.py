@@ -159,7 +159,7 @@ class FTSJob( Record ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    reStatus = re.compile( "Submitted|Ready|Staging|Canceled|Active|Failed|Finished" )
+    reStatus = re.compile( "Submitted|Ready|Staging|Canceled|Active|Failed|Finished|FinishedDirty" )
     if not reStatus.match( value ):
       raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
     self.__data__["Status"] = value
@@ -409,7 +409,7 @@ class FTSJob( Record ):
     """ create FTSJob object from xmlString or xml.ElementTree.Element
 
     :param mixed element: XML fragment or ElementTree.Element
-    :return: FTSJob instance
+    :return: S_OK( FTSJob instance )
     """
     if type( element ) == str:
       try:
