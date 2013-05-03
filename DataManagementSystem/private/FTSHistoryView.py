@@ -84,6 +84,11 @@ class FTSHistoryView( object ):
     return self.__data__["TargetSE"]
 
   @property
+  def FTSJobs( self ):
+    """ FTSJob count getter """
+    return self.__data__["FTSJobs"]
+
+  @property
   def FTSServer( self ):
     """ FTS server getter """
     return self.__data__["FTSServer"]
