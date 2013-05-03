@@ -41,7 +41,6 @@ from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
 # # global instance of FTSDB
-gFTSDB = None
 gFTSStrategy = None
 
 ########################################################################
@@ -56,14 +55,27 @@ class FTSManagerHandler( RequestHandler ):
   __storageFactory = None
   # # replica manager
   __replicaManager = None
+  # # FTSDB
+  __ftsDB = None
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
-    global gFTSDB
     global gFTSStrategy
     from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
-    gFTSDB = FTSDB()
+    cls.__ftsDB = FTSDB()
+    # # connect
+    connect = cls.__ftsDB._connect()
+    if not connect["OK"]:
+      gLogger.error( connect["Message"] )
+      return connect
+    checkTables = cls.__ftsDB._checkTables( self )
+
+    if not checkTables["OK"] and not checkTables["Message"] == "The requested table already exist":
+      return checkTables
+    checkViews = cls.__ftsDB._checkViews( self )
+    if not checkViews["OK"]:
+      return checkViews
 
     cls.ftsMode = cls.srv_getCSOption( "FTSMode", False )
     gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
@@ -148,7 +160,7 @@ class FTSManagerHandler( RequestHandler ):
     ftsFile.Status = "Waiting"
 
     try:
-      put = gFTSDB.putFTSFile( ftsFile )
+      put = self.__ftsDB.putFTSFile( ftsFile )
       if not put["OK"]:
         gLogger.error( put["Message"] )
         return put
@@ -157,11 +169,11 @@ class FTSManagerHandler( RequestHandler ):
       return S_ERROR( str( error ) )
 
   types_getFTSFile = [ LongType ]
-  @staticmethod
-  def export_getFTSFile( ftsFileID ):
+  @classmethod
+  def export_getFTSFile( cls, ftsFileID ):
     """ get FTSFile from FTSDB """
     try:
-      getFile = gFTSDB.getFTSFile( ftsFileID )
+      getFile = cls.__ftsDB.getFTSFile( ftsFileID )
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
@@ -190,7 +202,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.error( isValid["Message"] )
       return isValid
     try:
-      return gFTSDB.putFTSFile( ftsFile )
+      return cls.__ftsDB.putFTSFile( ftsFile )
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
@@ -200,7 +212,7 @@ class FTSManagerHandler( RequestHandler ):
   def export_deleteFTSFile( cls, ftsFileID ):
     """ delete FTSFile record given FTSFileID """
     try:
-      deleteFTSFile = gFTSDB.deleteFTSFile( ftsFileID )
+      deleteFTSFile = cls.__ftsDB.deleteFTSFile( ftsFileID )
       if not deleteFTSFile["OK"]:
         gLogger.error( deleteFTSFile["Message"] )
       return deleteFTSFile
@@ -222,11 +234,10 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.error( isValid["Message"] )
       return isValid
     try:
-      return gFTSDB.putFTSJob( ftsJob )
+      return cls.__ftsDB.putFTSJob( ftsJob )
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
-
 
   @staticmethod
   def _ancestorSortKeys( tree, aKey = "Ancestor" ):
