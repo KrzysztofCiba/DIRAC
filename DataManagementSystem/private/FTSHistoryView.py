@@ -51,15 +51,15 @@ class FTSHistoryView( object ):
   @staticmethod
   def viewDesc():
     """ view description """
-    return { "Fields": { "`SourceSE`": "`FTSJob`.`SourceSE`",
-                          "`TargetSE`": "`FTSJob`.`TargetSE`",
-                          "`FTSJobs`": "COUNT(DISTINCT `FTSJob`.`FTSJobID`)",
-                          "`FTSServer`": "`FTSJob`.`FTSServer`",
-                          "`Status`": "`FTSJob`.`Status`",
-                          "`Files`": "SUM(`FTSJob`.`Files`)",
-                          "`Size`": "SUM(`FTSJob`.`Size`)",
-                          "`FailedFiles`": "SUM(`FTSJob`.`FailedFiles`)",
-                          "`FailedSize`": "SUM(`FTSJob`.`FailedSize`)" },
+    return { "Fields": {  "SourceSE": "`FTSJob`.`SourceSE`",
+                          "TargetSE": "`FTSJob`.`TargetSE`",
+                          "FTSJobs": "COUNT(DISTINCT `FTSJob`.`FTSJobID`)",
+                          "FTSServer": "`FTSJob`.`FTSServer`",
+                          "Status": "`FTSJob`.`Status`",
+                          "Files": "SUM(`FTSJob`.`Files`)",
+                          "Size": "SUM(`FTSJob`.`Size`)",
+                          "FailedFiles": "SUM(`FTSJob`.`FailedFiles`)",
+                          "FailedSize": "SUM(`FTSJob`.`FailedSize`)" },
              "SelectFrom" : "`FTSJob`",
              "Clauses": [ "`FTSJob`.`LastUpdate` > ( UTC_TIMESTAMP() - INTERVAL 3600 SECOND )" ],
              "GroupBy": [ "`SourceSE`", "`TargetSE`", "`Status`" ] }
