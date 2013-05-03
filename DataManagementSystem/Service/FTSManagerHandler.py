@@ -239,6 +239,21 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
+  types_getFTSHistory = []
+  @classmethod
+  def export_getFTSHistory( cls ):
+    """ get FTS history """
+    try:
+      ftsHistory = cls.__ftsDB.getFTSHistory()
+      if not ftsHistory["OK"]:
+        gLogger.error( ftsHistory["Message"] )
+        return ftsHistory
+      ftsHistory = ftsHistory["Value"]
+      return ftsHistory.toJSON()
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+
   @staticmethod
   def _ancestorSortKeys( tree, aKey = "Ancestor" ):
     """ sorting keys of replicationTree by its hopAncestor value

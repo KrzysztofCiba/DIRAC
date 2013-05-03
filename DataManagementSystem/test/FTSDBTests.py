@@ -72,31 +72,30 @@ class FTSDBTests( unittest.TestCase ):
     """ put, get, delete  methods """
     db = FTSDB()
 
-    ftsJob = FTSJob()
-    ftsJob.FTSGUID = str( uuid.uuid4() )
-    ftsJob.FTSServer = "https://fts.service.org"
-    ftsJob.Status = "Submitted"
-    ftsJob.SourceSE = "CERN-USER"
-    ftsJob.TargetSE = "RAL-USER"
     for ftsFile in self.ftsFileList:
-      ftsJob.addFile( ftsFile )
+      put = db.putFTSFile( ftsFile )
+      self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
-    print ftsJob.Files
-    print ftsJob.Size
+    for i in range( 100 ):
+      ftsJob = FTSJob()
+      ftsJob.FTSGUID = str( uuid.uuid4() )
+      ftsJob.FTSServer = "https://fts.service.org"
+      ftsJob.Status = "Submitted"
+      ftsJob.SourceSE = "CERN-USER"
+      ftsJob.TargetSE = "RAL-USER"
+      for ftsFile in self.ftsFileList:
+        ftsJob.addFile( ftsFile )
 
-    self.assertEqual( len( ftsJob ), len( self.ftsFileList ), "addFile error" )
+      self.assertEqual( len( ftsJob ), len( self.ftsFileList ), "addFile error" )
 
     put = db.putFTSJob( ftsJob )
-
-    print put
-
-
+    self.assertEqual( put["OK"], True, "putFTSJob failed" )
 
   def test03historyView( self ):
     """ history view """
     db = FTSDB()
     ret = db.getFTSHistory()
-    print ret
+    self.assertEqual( ret["OK"], True, "getFTSHistory failed" )
 
 
 # # tests execution

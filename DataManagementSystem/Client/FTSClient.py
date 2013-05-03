@@ -33,6 +33,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
 ########################################################################
@@ -167,6 +168,14 @@ class FTSClient( Client ):
     if not deleteJob["OK"]:
       self.log.error( deleteJob["Message"] )
     return deleteJob
+
+  def getFTSHistory(self):
+    """ get FTS history """
+    getFTSHistory = self.ftsManager().getFTSHistory()
+    if not getFTSHistory["OK"]:
+      self.log.error( getFTSHistory["Message"] )
+      return getFTSHistory
+    return S_OK( FTSHistoryView( getFTSHistory["Value"] ) )
 
   def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
     """ schedule lfn for FTS job
