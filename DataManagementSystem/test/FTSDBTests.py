@@ -48,7 +48,7 @@ class FTSDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/DBName', 'FTSDB' )
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/User', 'Dirac' )
 
-    self.ftsFileList = []
+    self.ftsFiles = []
     for i in range ( 100 ):
       ftsFile = FTSFile()
       ftsFile.FileID = i
@@ -58,9 +58,9 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
       ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       ftsFile.Status = "Waiting"
-      self.ftsFileList.append( ftsFile )
+      self.ftsFiles.append( ftsFile )
 
-    self.ftsJobList = []
+    self.ftsJobs = []
     for i in range( 100 ):
 
       ftsJob = FTSJob()
@@ -80,12 +80,12 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.Status = "Waiting"
 
       ftsJob.addFile( ftsFile )
-      self.ftsJobList.append( ftsJob )
+      self.ftsJobs.append( ftsJob )
 
   def tearDown( self ):
     """ clean up """
-    del self.ftsFileList
-    del self.ftsJoblist
+    del self.ftsFiles
+    del self.ftsJobs
 
   def test01Create( self ):
     """ test create tables and views """
@@ -98,12 +98,11 @@ class FTSDBTests( unittest.TestCase ):
 
     db = FTSDB()
 
-    for ftsFile in self.ftsFileList:
+    for ftsFile in self.ftsFiles:
       put = db.putFTSFile( ftsFile )
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
-    for ftsJob in self.ftsJobList:
-
+    for ftsJob in self.ftsJobs:
 
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )
