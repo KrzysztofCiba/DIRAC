@@ -25,10 +25,10 @@ __RCSID__ = "$Id $"
 
 # # imports
 import unittest
+import uuid
 from DIRAC import gConfig
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 # # SUT
 from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
 
@@ -72,7 +72,7 @@ class FTSDBTests( unittest.TestCase ):
     db = FTSDB()
 
     ftsJob = FTSJob()
-    ftsJob.FTSGUID = "1111-2222-33333333-4444-5555"
+    ftsJob.FTSGUID = str( uuid.uuid4() )
     ftsJob.Status = "Submitted"
     ftsJob.SourceSE = "CERN-USER"
     ftsJob.TargetSE = "RAL-USER"
