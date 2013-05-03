@@ -60,7 +60,7 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.Status = "Waiting"
       self.ftsFileList.append( ftsFile )
 
-    self.ftsJobs = []
+    self.ftsJobList = []
     for i in range( 100 ):
 
       ftsJob = FTSJob()
@@ -80,11 +80,12 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.Status = "Waiting"
 
       ftsJob.addFile( ftsFile )
-      self.ftsJobs.append( ftsJob )
+      self.ftsJobList.append( ftsJob )
 
   def tearDown( self ):
     """ clean up """
     del self.ftsFileList
+    del self.ftsJoblist
 
   def test01Create( self ):
     """ test create tables and views """
@@ -101,7 +102,9 @@ class FTSDBTests( unittest.TestCase ):
       put = db.putFTSFile( ftsFile )
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
-    for ftsJob in self.ftsJobs:
+    for ftsJob in self.ftsJobList:
+
+
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )
 

@@ -295,11 +295,13 @@ class FTSJob( Record ):
     """ in operator """
     return subFile in self.__files__
 
-  def __iadd__( self, subFile ):
+  def __iadd__( self, ftsFile ):
     """ += operator """
-    if subFile not in self:
-      self.__files__.append( subFile )
-      subFile._parent = self
+    if ftsFile not in self:
+      self.__files__.append( ftsFile )
+      ftsFile._parent = self
+      self.Files
+      self.Size
     return self
 
   def __add__( self, ftsFile ):
