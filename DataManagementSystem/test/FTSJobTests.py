@@ -87,6 +87,15 @@ class FTSJobTests( unittest.TestCase ):
     ftsJobXML = FTSJob.fromXML( XML["Value"] )
     self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True )
 
+    SQL = ftsJob.toSQL()
+    self.assertEqual( SQL["OK"], True, "SQL serialization error" )
+    self.assertEqual( SQL["Value"].startswith( "INSERT" ), True, "SQL serialization INSERT error" )
+
+    ftsJob.FTSJobID = 123456
+    SQL = ftsJob.toSQL()
+    self.assertEqual( SQL["OK"], True, "SQL serialization error" )
+    self.assertEqual( SQL["Value"].startswith( "UPDATE" ), True, "SQL serialization UPDATE error" )
+
   def test02Files( self ):
     """ FTSFiles arithmetic """
     ftsJob = FTSJob()

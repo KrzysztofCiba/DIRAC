@@ -395,14 +395,14 @@ class FTSJob( Record ):
     if self.FTSJobID:
       query.append( "UPDATE `FTSJob` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
-      query.append( " WHERE `FTSJobID`=%d;\n" % self.RequestID )
+      query.append( " WHERE `FTSJobID`=%d;\n" % self.FTSJobID )
     else:
       query.append( "INSERT INTO `FTSJob` " )
       columns = "(%s)" % ",".join( [ column for column, value in colVals ] )
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append( " VALUES %s;" % values )
-    return "".join( query )
+    return S_OK( "".join( query ) )
 
   @classmethod
   def fromXML( cls, element ):
