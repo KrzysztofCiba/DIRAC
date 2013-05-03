@@ -97,7 +97,10 @@ class FTSFile( Record ):
   @FTSGUID.setter
   def FTSGUID( self, value ):
     """ FTSGUID setter """
-    self.__data__["FTSGUID"] = value
+    if self._parent:
+      self.__data__["FTSGUID"] = self._preant.FTSGUID
+    else:
+      self.__data__["FTSGUID"] = value
 
   @property
   def OperationID( self ):

@@ -105,7 +105,11 @@ class FTSDBTests( unittest.TestCase ):
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )
 
-  def test03historyView( self ):
+    summary = db.getDBSummary()
+    print summary
+
+
+  def test03FTSHistory( self ):
     """ history view """
     db = FTSDB()
     ret = db.getFTSHistory()

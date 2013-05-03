@@ -195,10 +195,10 @@ class FTSDB( DB ):
   def deleteFTSJob( self ):
     pass
 
-  def selectFTSFiles( self, status = "Waiting" ):
-    """ select FTSJobFiles for submit """
+  def getFTSFiles( self, status = "Waiting" ):
+    """ select FTSFiles for submit """
     selectFiles = "SELECT * FROM `FTSFile` WHERE `Status` = '%s'" % status;
-    selectFiles = self._query( selectFiles )
+    selectFiles = self._transaction( selectFiles )
     if not selectFiles["OK"]:
       self.log.error( selectFiles["Message"] )
       return selectFiles
@@ -208,8 +208,7 @@ class FTSDB( DB ):
     query = self._transaction( [ "SELECT * FROM `FTSHistoryView`;" ] )
     if not query["OK"]:
       return query
-    query = query["Value"]
-    return S_OK( FTSHistoryView( query.values()[0][0] ) if query else FTSHistoryView() )
+    return S_OK( FTSHistoryView( query["Value"].values()[0][0] ) if query else FTSHistoryView() )
 
   def getDBSummary( self ):
     """ get DB summary """
@@ -241,7 +240,6 @@ class FTSDB( DB ):
       else:  # # FTSHistory
         retDict["FTSHistory"] = v
     return S_OK( retDict )
-
 
   def _getFTSJobProperties( self, ftsJobID, columnNames = None ):
     """ select :columnNames: from FTSJob table  """
