@@ -78,45 +78,90 @@ class FTSHistoryView( object ):
     """ source se getter """
     return self.__data__["SourceSE"]
 
+  @SourceSE.setter
+  def SourceSE( self, sourceSE ):
+    """ source se setter """
+    self.__data__["SourceSE"] = sourceSE
+
   @property
   def TargetSE( self ):
     """ target se getter """
     return self.__data__["TargetSE"]
+
+  @TargetSE.setter
+  def TargetSE( self, targetSE ):
+    """ target se setter """
+    self.__data__["TargetSE"] = targetSE
 
   @property
   def FTSJobs( self ):
     """ FTSJob count getter """
     return self.__data__["FTSJobs"]
 
+  @FTSJobs.setter
+  def FTSJobs( self, ftsJobs ):
+    """ FTSJob count setter """
+    self.__data__["FTSJobs"] = ftsJobs
+
   @property
   def FTSServer( self ):
     """ FTS server getter """
     return self.__data__["FTSServer"]
+
+  @FTSServer.setter
+  def FTSServer( self, ftsServer ):
+    """ FTS server setter """
+    self.__data__["FTSServer"] = ftsServer
 
   @property
   def Status( self ):
     """ status getter """
     return self.__data__["Status"]
 
+  @Status.setter
+  def Status( self, status ):
+    """ status setter """
+    self.__data__["Status"] = status
+
   @property
   def Files( self ):
     """ files getter """
     return self.__data__["Files"]
+
+  @Files.setter
+  def Files( self, files ):
+    """ files setter """
+    self.__data__["Files"] = files
 
   @property
   def Size( self ):
     """ size getter """
     return self.__data__["Size"]
 
+  @Size.setter
+  def Size( self, size ):
+    """ size setter """
+    self.__data__["Size"] = size
+
   @property
   def FailedFiles( self ):
     """ failed files getter """
     return self.__data__["FailedFiles"]
 
+  @FailedFiles.setter
+  def FailedFiles( self, failedFiles ):
+    """ failed files setter """
+    self.__data__["FailedFiles"] = failedFiles
+
   @property
   def FailedSize( self ):
     """ failed files size getter """
     return self.__data__["FailedSize"]
+
+  @FailedSize.setter
+  def FailedSize( self, failedSize ):
+    """ failed files size setter """
+    self.__data__["FailedSize"] = failedSize
 
   def toJSON( self ):
     """ serialize to JSON format """
