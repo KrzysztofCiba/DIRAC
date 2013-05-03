@@ -167,12 +167,12 @@ class FTSDB( DB ):
     if not ftsJobSQL["OK"]:
       return ftsJobSQL
     putJob = [ ftsJobSQL["Value"] ]
+    gLogger.always( putJob )
+
     for ftsFile in [ ftsFile.toSQL() for ftsFile in ftsJob ]:
       if not ftsFile["OK"]:
         return ftsFile
       putJob.append( ftsFile["Value"] )
-
-    gLogger.always( putJob )
 
     putJob = self._transaction( putJob )
     if not putJob["OK"]:

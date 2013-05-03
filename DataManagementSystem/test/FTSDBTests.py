@@ -74,11 +74,15 @@ class FTSDBTests( unittest.TestCase ):
 
     ftsJob = FTSJob()
     ftsJob.FTSGUID = str( uuid.uuid4() )
+    ftsJob.FTSServer = "https://fts.service.org"
     ftsJob.Status = "Submitted"
     ftsJob.SourceSE = "CERN-USER"
     ftsJob.TargetSE = "RAL-USER"
     for ftsFile in self.ftsFileList:
       ftsJob.addFile( ftsFile )
+
+    print ftsJob.Files
+    print ftsJob.Size
 
     self.assertEqual( len( ftsJob ), len( self.ftsFileList ), "addFile error" )
 
