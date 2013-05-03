@@ -171,6 +171,9 @@ class FTSDB( DB ):
       if not ftsFile["OK"]:
         return ftsFile
       putJob.append( ftsFile["Value"] )
+
+    gLogger.always( putJob )
+
     putJob = self._transaction( putJob )
     if not putJob["OK"]:
       self.log.error( putJob["Message"] )
