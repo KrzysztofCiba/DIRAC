@@ -71,6 +71,11 @@ class FTSDBTests( unittest.TestCase ):
     """ put, get, delete  methods """
     pass
 
+  def test03historyView( self ):
+    """ history view """
+    db = FTSDB()
+    ret = db.getFTSHistory()
+    print ret
 
 
 # # tests execution
