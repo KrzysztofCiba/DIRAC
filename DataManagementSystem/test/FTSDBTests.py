@@ -48,12 +48,15 @@ class FTSDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/DBName', 'FTSDB' )
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/User', 'Dirac' )
 
-    self.ftsFileList = [ FTSFile() ] * 100
-    for i, ftsFile in enumerate ( self.ftsFileList ) :
+    self.ftsFileList = []
+    for i in range ( 100 ):
+      ftsFile = FTSFile()
       ftsFile.FileID = i
+      ftsFile.OperationID = 9999
       ftsFile.LFN = "/a/b/c/%d" % i
       ftsFile.Size = 10
       ftsFile.Status = "Waiting"
+      self.ftsFileList.append( ftsFile )
 
   def tearDown( self ):
     """ clean up """
@@ -77,9 +80,10 @@ class FTSDBTests( unittest.TestCase ):
     for ftsFile in self.ftsFileList:
       ftsJob.addFile( ftsFile )
 
-    print len( ftsJob )
+    self.assertEqual( len( ftsJob ), len( self.ftsFileList ), "addFile error" )
 
     put = db.putFTSJob( ftsJob )
+
     print put
 
 
