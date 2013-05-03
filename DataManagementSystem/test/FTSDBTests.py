@@ -72,6 +72,7 @@ class FTSDBTests( unittest.TestCase ):
 
   def test02PutGetDelete( self ):
     """ put, get, delete  methods """
+
     db = FTSDB()
 
     for ftsFile in self.ftsFileList:
@@ -79,6 +80,7 @@ class FTSDBTests( unittest.TestCase ):
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
     for i in range( 100 ):
+
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
       ftsJob.FTSServer = "https://fts.service.org"
@@ -94,7 +96,6 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       ftsFile.Status = "Waiting"
       ftsJob.addFile( ftsFile )
-      self.assertEqual( len( ftsJob ), len( self.ftsFileList ), "addFile error" )
 
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )

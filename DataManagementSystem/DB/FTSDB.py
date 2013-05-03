@@ -209,9 +209,7 @@ class FTSDB( DB ):
     if not query["OK"]:
       return query
     query = query["Value"]
-    gLogger.always( query )
-    ftsHistoryView = FTSHistoryView( query.values()[0][0] )
-    return S_OK( ftsHistoryView )
+    return S_OK( FTSHistoryView( query.values()[0][0] ) if query else FTSHistoryView() )
 
   def getDBSummary( self ):
     """ get DB summary """
