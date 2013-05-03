@@ -153,6 +153,11 @@ class FTSDB( DB ):
     if not any( fileID, lfn ):
       return S_ERROR( "Missing fileID of lfn argument" )
 
+
+  def deleteFTSFile( self, fileID ):
+    """ """
+    pass
+
   def putFTSJob( self, ftsJob ):
     """ put FTSJob to the db
 
@@ -171,7 +176,7 @@ class FTSDB( DB ):
       self.log.error( putJob["Message"] )
     return putJob
 
-  def getFTSJob( self, ftsJobID ):
+  def getFTSJob( self, ftsJobID = None ):
     """ get FTSJob given FTSJobID """
     getFTSJob = self._transaction( self._getFTSJobProperties( ftsJobID ) )
     if not getFTSJob["OK"]:
@@ -179,6 +184,13 @@ class FTSDB( DB ):
       return getFTSJob
     getFTSJob = getFTSJob["Value"]
     connection = getFTSJob["connection"]
+
+  def peekFTSJob( self, ftsJobID = None ):
+    """ """
+    pass
+
+  def deleteFTSJob( self ):
+    pass
 
   def selectFTSFiles( self, status = "Waiting" ):
     """ select FTSJobFiles for submit """
@@ -188,16 +200,44 @@ class FTSDB( DB ):
       self.log.error( selectFiles["Message"] )
       return selectFiles
 
-
-
   def getFTSHistory( self ):
     """ query FTSHistoryView """
     query = self._query( self._getFTSHistoryProperties() )
     if not query["OK"]:
       return query
     ftsHistoryView = None
-
     return S_OK( ftsHistoryView )
+
+  def getDBSummary( self ):
+    """ get DB summary """
+    # # this will be returned
+    retDict = { "FTSJob": {}, "FTSFile": {}, "FTSHistory": {} }
+    transQueries = { "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
+                "SELECT `Status`, COUNT(`Status`) FROM `FTSFile` GROUP BY `Status`;" : "FTSFile",
+                "SELECT * FROM `FTSHistoryView`;" : "FTSHistory" }
+    ret = self._transaction( transQueries.keys() )
+    if not ret["OK"]:
+      self.log.error( "getDBSummary: %s" % ret["Message"] )
+      return ret
+    ret = ret["Value"]
+    for k, v in ret.items():
+      if transQueries[k] == "FTSJob":
+        for aDict in v:
+          status = aDict.get( "Status" )
+          count = aDict.get( "COUNT(`Status`)" )
+          if status not in retDict["FTSJob"]:
+            retDict["FTSJob"][status] = 0
+          retDict["FTSJOb"][status] += count
+      elif transQueries[k] == "FTSFile":
+        for aDict in v:
+          status = aDict.get( "Status" )
+          count = aDict.get( "COUNT(`Status`)" )
+          if status not in retDict["FTSFile"]:
+            retDict["FTSFile"][status] = 0
+          retDict["FTSFile"][status] += count
+      else:  # # FTSHistory
+        retDict["FTSHistory"] = v
+    return S_OK( retDict )
 
 
   def _getFTSJobProperties( self, ftsJobID, columnNames = None ):

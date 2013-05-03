@@ -44,29 +44,6 @@ from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 gFTSDB = None
 gFTSStrategy = None
 
-# def initializeFTSManagerHandler( serviceInfo ):
-#  """ initialize handler """
-#  global gFTSDB
-#  global gFTSStrategy
-#
-#  # # create FTSDB
-#  from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
-#  gFTSDB = FTSDB()
-
-#  # # create FTSStrategy when needed
-#  #ftsMode = FTSManagerHandler.svr_getCSOption( "FTSMode", False )
-#  #gLogger.info( "FTS is %s" % { True: "enabled", False: "disabled"}[ftsMode] )
-
-#  #if ftsMode:
-#  #  csPath = getServiceSection( "DataManagement/FTSManager" )
-#  #  if not csPath["OK"]:
-#  #    gLogger.error( csPath["Message"] )
-# #    return csPath
-#  #  csPath = "%s/%s" % ( csPath["Value"], "FTSStrategy" )
-#  #  gFTSStrategy = FTSStrategy( csPath )
-
-#  return S_OK()
-
 ########################################################################
 class FTSManagerHandler( RequestHandler ):
   """
@@ -79,7 +56,6 @@ class FTSManagerHandler( RequestHandler ):
   __storageFactory = None
   # # replica manager
   __replicaManager = None
-
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
@@ -101,7 +77,6 @@ class FTSManagerHandler( RequestHandler ):
       gFTSStrategy = FTSStrategy( csPath )
     return S_OK()
 
-
   @classmethod
   def ftsValidator( cls ):
     """ FTSValidator instance getter """
@@ -122,7 +97,6 @@ class FTSManagerHandler( RequestHandler ):
     if not cls.__replicaManager:
       cls.__replicaManager = ReplicaManager()
     return cls.__replicaManager
-
 
   types_ftsSchedule = [ DictType, ListType, ListType ]
   def export_ftsSchedule( self, fileJSON, sourceSEs, targetSEs ):
@@ -195,7 +169,7 @@ class FTSManagerHandler( RequestHandler ):
     if not getFile["OK"]:
       gLogger.error( "getFTSFile: %s" % getFile["Message"] )
       return getFile
-    # # serilize
+    # # serialize
     if getFile["Value"]:
       getFile = getFile["Value"].toXML( True )
       if not getFile["OK"]:

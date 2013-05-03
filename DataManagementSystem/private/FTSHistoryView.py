@@ -25,7 +25,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSHistoryView class.
 
 # # imports
-
+from DIRAC import S_OK
 
 ########################################################################
 class FTSHistoryView( object ):
@@ -112,4 +112,8 @@ class FTSHistoryView( object ):
   def FailedSize( self ):
     """ failed files size getter """
     return self.__data__["FailedSize"]
+
+  def toJSON( self ):
+    """ serialize to JSON format """
+    return S_OK( self.__data__ )
 
