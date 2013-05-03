@@ -51,15 +51,13 @@ class FTSDBTests( unittest.TestCase ):
     self.ftsFileList = [ FTSFile() ] * 100
     for i, ftsFile in enumerate ( self.ftsFileList ) :
       ftsFile.FileID = i
-      ftsFile.LFN = "/a/b/c"
+      ftsFile.LFN = "/a/b/c/%d" % i
       ftsFile.Size = 10
       ftsFile.Status = "Waiting"
-
 
   def tearDown( self ):
     """ clean up """
     del self.ftsFileList
-
 
   def test01Create( self ):
     """ test create tables and views """
@@ -78,6 +76,8 @@ class FTSDBTests( unittest.TestCase ):
     ftsJob.TargetSE = "RAL-USER"
     for ftsFile in self.ftsFileList:
       ftsJob.addFile( ftsFile )
+
+    print len( ftsJob )
 
     put = db.putFTSJob( ftsJob )
     print put

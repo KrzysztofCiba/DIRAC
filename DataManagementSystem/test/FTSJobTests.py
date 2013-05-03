@@ -91,10 +91,14 @@ class FTSJobTests( unittest.TestCase ):
     self.assertEqual( SQL["OK"], True, "SQL serialization error" )
     self.assertEqual( SQL["Value"].startswith( "INSERT" ), True, "SQL serialization INSERT error" )
 
+    print SQL["Value"]
+
     ftsJob.FTSJobID = 123456
     SQL = ftsJob.toSQL()
     self.assertEqual( SQL["OK"], True, "SQL serialization error" )
     self.assertEqual( SQL["Value"].startswith( "UPDATE" ), True, "SQL serialization UPDATE error" )
+
+    print SQL["Value"]
 
   def test02Files( self ):
     """ FTSFiles arithmetic """

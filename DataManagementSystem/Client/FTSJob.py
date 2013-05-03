@@ -208,7 +208,6 @@ class FTSJob( Record ):
     else:
       self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status == "Failed" ] )
 
-
   @property
   def CreationTime( self ):
     """ creation time getter """
@@ -394,7 +393,7 @@ class FTSJob( Record ):
     query = []
     if self.FTSJobID:
       query.append( "UPDATE `FTSJob` SET " )
-      query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
+      query.append( ",".join( [ "%s=%s" % item for item in colVals  ] ) )
       query.append( " WHERE `FTSJobID`=%d;\n" % self.FTSJobID )
     else:
       query.append( "INSERT INTO `FTSJob` " )
@@ -402,6 +401,7 @@ class FTSJob( Record ):
       values = "(%s)" % ",".join( [ value for column, value in colVals ] )
       query.append( columns )
       query.append( " VALUES %s;" % values )
+
     return S_OK( "".join( query ) )
 
   @classmethod
