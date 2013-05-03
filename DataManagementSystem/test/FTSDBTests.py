@@ -55,6 +55,8 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.OperationID = 9999
       ftsFile.LFN = "/a/b/c/%d" % i
       ftsFile.Size = 10
+      ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
+      ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       ftsFile.Status = "Waiting"
       self.ftsFileList.append( ftsFile )
 
@@ -73,8 +75,6 @@ class FTSDBTests( unittest.TestCase ):
     db = FTSDB()
 
     for ftsFile in self.ftsFileList:
-      ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
-      ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       put = db.putFTSFile( ftsFile )
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
