@@ -229,7 +229,7 @@ class FTSDB( DB ):
           count = aDict.get( "COUNT(`Status`)" )
           if status not in retDict["FTSJob"]:
             retDict["FTSJob"][status] = 0
-          retDict["FTSJOb"][status] += count
+          retDict["FTSJob"][status] += count
       elif transQueries[k] == "FTSFile":
         for aDict in v:
           status = aDict.get( "Status" )
