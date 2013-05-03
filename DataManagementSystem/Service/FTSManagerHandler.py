@@ -142,7 +142,7 @@ class FTSManagerHandler( RequestHandler ):
       return tree
     tree = tree["Value"]
     # # sort by ancestor
-    sortedKeys = self.ancestorSortKeys( tree, "Ancestor" )
+    sortedKeys = self._ancestorSortKeys( tree, "Ancestor" )
     if not sortedKeys["OK"]:
       gLogger.warn( "unable to sort replication tree by Ancestor: %s" % sortedKeys["Message"] )
       sortedKeys = tree.keys()
@@ -155,7 +155,7 @@ class FTSManagerHandler( RequestHandler ):
       repDict = tree[channelID]
       gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
                                                                           repDict["SourceSE"], repDict["TargetSE"] ) )
-      transferSURLs = self._getTransferURL( repDict, sourceSEs )
+      transferSURLs = self._getTransferURLs( repDict, sourceSEs, {} )
       if not transferSURLs["OK"]:
         return transferSURLs
       sourceSURL, targetSURL, fileStatus = transferSURLs["Value"]
@@ -206,12 +206,12 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def export_putFTSFile( cls, ftsFileXML ):
     """ put FTSFile into FTSDB """
-    ftsFile = FTSFile.fromXML()
+    ftsFile = FTSFile.fromXML( ftsFileXML )
     if not ftsFile["OK"]:
       gLogger.error( ftsFile["Message"] )
       return ftsFile
     ftsFile = ftsFile["Value"]
-    isValid = cls.ftsValdator().validate( ftsFile )
+    isValid = cls.ftsValidator().validate( ftsFile )
     if not isValid["OK"]:
       gLogger.error( isValid["Message"] )
       return isValid
@@ -238,12 +238,12 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def export_putFTSJob( cls, ftsJobXML ):
     """ put FTSLfn into FTSDB """
-    ftsJob = FTSJob.fromXML()
+    ftsJob = FTSJob.fromXML( ftsJobXML )
     if not ftsJob["OK"]:
       gLogger.error( ftsJob["Message"] )
       return ftsJob
     ftsJob = ftsJob["Value"]
-    isValid = cls.ftsValdator().validate( ftsJob )
+    isValid = cls.ftsValidator().validate( ftsJob )
     if not isValid["OK"]:
       gLogger.error( isValid["Message"] )
       return isValid
