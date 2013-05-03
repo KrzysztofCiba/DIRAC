@@ -69,11 +69,11 @@ class FTSManagerHandler( RequestHandler ):
     if not connect["OK"]:
       gLogger.error( connect["Message"] )
       return connect
-    checkTables = cls.__ftsDB._checkTables( self )
+    checkTables = cls.__ftsDB._checkTables()
 
     if not checkTables["OK"] and not checkTables["Message"] == "The requested table already exist":
       return checkTables
-    checkViews = cls.__ftsDB._checkViews( self )
+    checkViews = cls.__ftsDB._checkViews()
     if not checkViews["OK"]:
       return checkViews
 
