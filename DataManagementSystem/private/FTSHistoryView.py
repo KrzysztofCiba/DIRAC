@@ -41,7 +41,7 @@ class FTSHistoryView( object ):
     :param self: self reference
     """
     fromDict = fromDict if fromDict else {}
-    self.__data__ = dict.fromkeys( self.viewDesc()["Columns"].keys(), None )
+    self.__data__ = dict.fromkeys( self.viewDesc()["Fields"].keys(), None )
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown FTSHistoryView attribute '%s'" % key )
