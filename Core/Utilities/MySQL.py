@@ -712,7 +712,7 @@ class MySQL:
   def _createViews( self, viewsDict, force = False ):
     """ create view based on query
 
-    :param dict viewDict: { 'ViewName': "Columns" : { "`a`": `tblA.a`, "`sumB`" : "SUM(`tblB.b`)" }
+    :param dict viewDict: { 'ViewName': "Fields" : { "`a`": `tblA.a`, "`sumB`" : "SUM(`tblB.b`)" }
                                         "SelectFrom" : "tblA join tblB on tblA.id = tblB.id",
                                         "Clauses" : [ "`tblA.a` > 10", "`tblB.Status` = 'foo'" ] ## WILL USE AND CLAUSE
                                         "GroupBy": [ "`a`" ],
@@ -726,7 +726,7 @@ class MySQL:
         viewQuery = [ "CREATE OR REPLACE VIEW `%s`.`%s` AS" % ( self.__dbName, viewName ) ]
 
         columns = ",".join( [ "%s AS %s" % ( colDef, colName )
-                             for colName, colDef in  viewDict.get( "Columns", {} ).items() ] )
+                             for colName, colDef in  viewDict.get( "Fields", {} ).items() ] )
         tables = viewDict.get( "SelectFrom", "" )
         if columns and tables:
           viewQuery.append( "SELECT %s FROM %s" % ( columns, tables ) )

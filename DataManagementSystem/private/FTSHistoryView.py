@@ -51,7 +51,7 @@ class FTSHistoryView( object ):
   @staticmethod
   def viewDesc():
     """ view description """
-    return { "Columns": { "`SourceSE`": "`FTSJob`.`SourceSE`",
+    return { "Fields": { "`SourceSE`": "`FTSJob`.`SourceSE`",
                           "`TargetSE`": "`FTSJob`.`TargetSE`",
                           "`FTSJobs`": "COUNT(DISTINCT `FTSJob`.`FTSJobID`)",
                           "`FTSServer`": "`FTSJob`.`FTSServer`",
