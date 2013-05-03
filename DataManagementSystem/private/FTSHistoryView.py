@@ -14,6 +14,9 @@
 
     last hour history of FTS transfers as read from FTSHistoryView
     this one is read-only!!!
+
+    TODO: re-think, is completely wrong
+
 """
 
 __RCSID__ = "$Id $"
