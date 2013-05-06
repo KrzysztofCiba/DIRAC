@@ -11,7 +11,7 @@
     :synopsis: replication strategy for FTS transfers
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    replication strategy for FTS transfers
+    replication strategy for all FTS transfers
 """
 
 __RCSID__ = "$Id $"
@@ -33,28 +33,27 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
-# from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping
 
 class FTSGraph( Graph ):
   """
   .. class:: FTSGraph
 
-  graph holding FTS channels (edges) and sites (nodes)
+  graph holding FTS transfers (edges) and sites (nodes)
   """
   def __init__( self, name, nodes = None, edges = None ):
     """ c'tor """
     Graph.__init__( self, name, nodes, edges )
 
-  def findChannel( self, fromSE, toSE ):
-    """ find channel between :fromSE: and :toSE: """
+  def findRoute( self, fromSE, toSE ):
+    """ find route between :fromSE: and :toSE: """
     for edge in self.edges():
       if fromSE in edge.fromNode.SEs and toSE in edge.toNode.SEs:
         return S_OK( edge )
-    return S_ERROR( "FTSGraph: unable to find FTS channel between '%s' and '%s'" % ( fromSE, toSE ) )
+    return S_ERROR( "FTSGraph: unable to find FTS route between '%s' and '%s'" % ( fromSE, toSE ) )
 
-class LCGSite( Node ):
+class FTSSite( Node ):
   """
-  .. class:: LCGSite
+  .. class:: FTSSite
 
   not too much here, inherited to change the name
   """
@@ -62,9 +61,11 @@ class LCGSite( Node ):
     """ c'tor """
     Node.__init__( self, name, rwAttrs, roAttrs )
 
-class FTSChannel( Edge ):
+class FTSRoute( Edge ):
   """
-  .. class:: FTSChannel
+  .. class:: FTSRoute
+  
+  class representing transfers between sites
   """
   def __init__( self, fromNode, toNode, rwAttrs = None, roAttrs = None ):
     """ c'tor """
@@ -93,6 +94,8 @@ class FTSStrategy( object ):
   """
   .. class:: FTSStrategy
 
+  helper class to create replication forrest for a given file and it's replicas using 
+  several different strategies
   """
   # # make it singleton
   __metaclass__ = DIRACSingleton
@@ -182,33 +185,33 @@ class FTSStrategy( object ):
       siteName = site
       if '.' in site:
         siteName = site.split( '.' )[1]
-      graph.addNode( LCGSite( siteName, { "SEs" : rwDict["Value"] } ) )
+      graph.addNode( FTSSite( siteName, { "SEs" : rwDict["Value"] } ) )
     # # channels { channelID : { "Files" : long , Size = long, "ChannelName" : str,
     # #                          "Source" : str, "Destination" : str ,
     # #                          "ChannelName" : str, "Status" : str  } }
     # # bandwidths { channelID { "Throughput" : float, "Fileput" : float,
     # #                           "SucessfulFiles" : long, "FailedFiles" : long  } }
     # # channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
-    for channelID, channelDict in channels.items():
-      sourceName = channelDict["Source"]
-      destName = channelDict["Destination"]
-      fromNode = graph.getNode( sourceName )
-      toNode = graph.getNode( destName )
-      if fromNode and toNode:
-        rwAttrs = { "status" : channels[channelID]["Status"],
-                    "files" : channelDict["Files"],
-                    "size" : channelDict["Size"],
-                    "successfulAttempts" : bandwithds[channelID]["SuccessfulFiles"],
-                    "failedAttempts" : bandwithds[channelID]["FailedFiles"],
-                    "distinctFailedFiles" : failedFiles.get( channelID, 0 ),
-                    "fileput" : bandwithds[channelID]["Fileput"],
-                    "throughput" : bandwithds[channelID]["Throughput"] }
-        roAttrs = { "channelID" : channelID,
-                    "channelName" : channelDict["ChannelName"],
-                    "acceptableFailureRate" : self.acceptableFailureRate,
-                    "acceptableFailedFiles" : self.acceptableFailedFiles,
-                    "schedulingType" : self.schedulingType }
-        ftsChannel = FTSChannel( fromNode, toNode, rwAttrs, roAttrs )
+    #for channelID, channelDict in channels.items():
+    #  sourceName = channelDict["Source"]
+    #  destName = channelDict["Destination"]
+    #  fromNode = graph.getNode( sourceName )
+    #  toNode = graph.getNode( destName )
+    #  if fromNode and toNode:
+    #    rwAttrs = { "status" : channels[channelID]["Status"],
+    #                "files" : channelDict["Files"],
+    #                "size" : channelDict["Size"],
+    #                "successfulAttempts" : bandwithds[channelID]["SuccessfulFiles"],
+    #                "failedAttempts" : bandwithds[channelID]["FailedFiles"],
+    #                "distinctFailedFiles" : failedFiles.get( channelID, 0 ),
+    #                "fileput" : bandwithds[channelID]["Fileput"],
+    #                "throughput" : bandwithds[channelID]["Throughput"] }
+    #    roAttrs = { "channelID" : channelID,
+    #                "channelName" : channelDict["ChannelName"],
+    #                "acceptableFailureRate" : self.acceptableFailureRate,
+    #                "acceptableFailedFiles" : self.acceptableFailedFiles,
+    #                "schedulingType" : self.schedulingType }
+        ftsChannel = FTSRoute( fromNode, toNode, rwAttrs, roAttrs )
         graph.addEdge( ftsChannel )
     self.lastRssUpdate = datetime.datetime.now()
     self.ftsGraph = graph
