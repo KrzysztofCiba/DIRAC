@@ -52,14 +52,15 @@ class FTSDBTests( unittest.TestCase ):
     self.ftsFiles = []
     for i in range ( 100 ):
       ftsFile = FTSFile()
-      ftsFile.FileID = i
+      ftsFile.FileID = i + 1
       ftsFile.OperationID = 9999
       ftsFile.LFN = "/a/b/c/%d" % i
       ftsFile.Size = 10
+      ftsFile.SourceSE = "CERN-USER"
+      ftsFile.TargetSE = "PIC-USER"
       ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
       ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       ftsFile.Status = "Waiting"
-
       self.ftsFiles.append( ftsFile )
 
     ses = ["CERN-USER", "RAL-USER", "PIC-USER", "GRIDKA-USER", "CNAF-USER" ]
@@ -73,7 +74,7 @@ class FTSDBTests( unittest.TestCase ):
       ftsJob.FTSGUID = str( uuid.uuid4() )
       ftsJob.FTSServer = "https://fts.service.org"
       ftsJob.Status = statuses[ i % len( statuses ) ]
-      ftsJob.SourceSE = ses[ i % len( ses )]
+      ftsJob.SourceSE = ses[ i % len( ses ) ]
       ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
 
       ftsFile = FTSFile()
