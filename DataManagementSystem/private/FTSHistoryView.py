@@ -13,12 +13,9 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     last hour history of FTS transfers as read from FTSHistoryView
-    this one is read-only!!!
-
-    TODO: re-think, is completely wrong
-
 """
-
+# for properties
+# pylint: disable=E0211,W0612,W0142,E1101,E0102
 __RCSID__ = "$Id $"
 
 # #

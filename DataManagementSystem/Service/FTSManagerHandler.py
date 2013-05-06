@@ -243,13 +243,41 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def export_getFTSJob( cls, ftsJobID ):
     """ read FTSJob for processing given FTSJobID """
-    pass
+    try:
+      getFTSJob = cls.__ftsDB.getFTSJob( ftsJobID )
+      if not getFTSJob["OK"]:
+        gLogger.error( getFTSJob["Error"] )
+        return getFTSJob
+      getFTSJob = getFTSJob["Value"]
+      if not getFTSJob:
+        return S_OK()
+      toJSON = getFTSJob.toJSON()
+      if not toJSON["OK"]:
+        gLogger.error( toJSON["Message"] )
+      return toJSON
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
 
   types_peekFTSJob = [ LongType ]
   @classmethod
   def export_peekFTSJob( cls, ftsJobID ):
     """ peek FTSJob given ftsJobID """
-    pass
+    try:
+      peekFTSJob = cls.__ftsDB.peekFTSJob( ftsJobID )
+      if not peekFTSJob["OK"]:
+        gLogger.error( peekFTSJob["Error"] )
+        return peekFTSJob
+      peekFTSJob = peekFTSJob["Value"]
+      if not peekFTSJob:
+        return S_OK()
+      toJSON = peekFTSJob.toJSON()
+      if not toJSON["OK"]:
+        gLogger.error( toJSON["Message"] )
+      return toJSON
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
 
 
   types_getFTSJobIDs = [ ListType ]
