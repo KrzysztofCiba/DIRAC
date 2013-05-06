@@ -188,6 +188,26 @@ class FTSManagerHandler( RequestHandler ):
         gLogger.error( getFile["Message"] )
     return getFile
 
+  types_peekFTSFile = [ LongType ]
+  @classmethod
+  def export_peekFTSFile( cls, ftsFileID ):
+    """ peek FTSFile given FTSFileID """
+    try:
+      peekFile = cls.__ftsDB.peekFTSFile( ftsFileID )
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+
+    if not peekFile["OK"]:
+      gLogger.error( "peekFTSFile: %s" % peekFile["Message"] )
+      return peekFile
+    # # serialize
+    if peekFile["Value"]:
+      peekFile = peekFile["Value"].toXML( True )
+      if not peekFile["OK"]:
+        gLogger.error( peekFile["Message"] )
+    return peekFile
+
   types_putFTSFile = [ StringTypes ]
   @classmethod
   def export_putFTSFile( cls, ftsFileXML ):
@@ -275,6 +295,19 @@ class FTSManagerHandler( RequestHandler ):
       if not toJSON["OK"]:
         gLogger.error( toJSON["Message"] )
       return toJSON
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+
+  types_deleteFTSJob = [ LongType ]
+  @classmethod
+  def export_deleteFTSJob( cls, ftsJobID ):
+    """ delete FTSJob given FTSJobID """
+    try:
+      deleteFTSJob = cls.__ftsDB.deleteFTSJob( ftsJobID )
+      if not deleteFTSJob["OK"]:
+        gLogger.error( deleteFTSJob["Message"] )
+      return deleteFTSJob
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )

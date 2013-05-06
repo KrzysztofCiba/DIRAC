@@ -171,7 +171,6 @@ class FTSDB( DB ):
     """ delete FTSFile given FTSFileID """
     delete = "DELETE FROM `FTSFile` WHERE `FTSFileID` = %s;" % ftsFileID
     delete = self._transaction( [ delete ] )
-    gLogger.always( delete )
     if not delete["OK"]:
       self.log.error( delete["Message"] )
     return delete
@@ -235,8 +234,6 @@ class FTSDB( DB ):
     """ delete FTSJob given ftsJobID """
     delete = "DELETE FROM `FTSJob` WHERE `FTSJobID` = %s;" % ftsJobID
     delete = self._transaction( [ delete ] )
-    gLogger.always( delete )
-
     if not delete["OK"]:
       self.log.error( delete["Message"] )
     return delete
