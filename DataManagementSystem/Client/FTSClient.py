@@ -169,15 +169,17 @@ class FTSClient( Client ):
       self.log.error( deleteJob["Message"] )
     return deleteJob
 
-  def getFTSJobIDs( self, statusList = [ "Submitted", "Ready", "Active" ] ):
+  def getFTSJobIDs( self, statusList = None ):
     """ get list of FTSJobIDs for a given status list """
+    statusList = statusList if statusList else [ "Submitted", "Ready", "Active" ]
     ftsJobIDs = self.ftsManager().getFTSJobIDs( statusList )
     if not ftsJobIDs["OK"]:
       self.log.error( ftsJobIDs["Message"] )
     return ftsJobIDs
 
-  def getFTSFileIDs( self, statusList = [ "Waiting" ] ):
+  def getFTSFileIDs( self, statusList = None ):
     """ get list of FTSFileIDs for a given status list """
+    statusList = statusList if statusList else [ "Waiting" ]
     ftsFileIDs = self.ftsManager().getFTSFileIDs( statusList )
     if not ftsFileIDs["OK"]:
       self.log.error( ftsFileIDs["Message"] )
