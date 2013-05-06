@@ -200,22 +200,13 @@ class FTSDB( DB ):
       return selectFiles
 
     selectFiles = selectFiles["Value"]
-    for record in selectFiles.values():
-      gLogger.always( record )
+    ftsFiles = [ FTSFile( item ) for item in selectFiles.values()[0] ]
+    gLogger.always( ftsFiles )
 
+    for ftsFile in ftsFiles:
+      ftsJob.addFile( ftsFile )
 
-    # select = self._transaction( selectQueries )
-
-    # if not select["OK"]:
-    #  self.log.error( select["Message"] )
-    #  return select
-
-    # select = select["Value"]
-    # if not select:
-    #  return S_OK()
-
-    # gLogger.always( select )
-    return S_OK()
+    return S_OK( ftsJob )
 
 
 
