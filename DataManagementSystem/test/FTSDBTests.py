@@ -180,6 +180,9 @@ class FTSDBTests( unittest.TestCase ):
       self.assertEqual( delete["OK"], True, "deleleFTSJob failed" )
 
     summary = db.getDBSummary()
+
+    print summary
+
     self.assertEqual( summary["OK"], True, "getDBSummary failed" )
     self.assertEqual( "FTSJob" in summary["Value"], True, "getDBSummary FTSJob missing" )
     self.assertEqual( summary["Value"]["FTSJob"], [], "getDBSummary.FTSJob wrong value returned" )
