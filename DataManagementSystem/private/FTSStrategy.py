@@ -96,7 +96,7 @@ class FTSStrategy( object ):
   # # make it singleton
   __metaclass__ = DIRACSingleton
   # # list of supported strategies
-  __supportetStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
+  supportetStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
 
   def __init__( self, csPath = None ):
     """c'tor
@@ -115,7 +115,7 @@ class FTSStrategy( object ):
 
     # # CS options
     self.log.info( "Supported strategies = %s" % ", ".join( self.supportedStrategies ) )
-    self.sigma = gConfig.getValue( "%s/%s" % ( self.csPath, "HopSigma" ), 0.0 )
+    self.sigma = gConfig.getValue( "%s/%s" % ( self.csPath, "HopSigma" ), 5 )
     self.log.info( "HopSigma = %s" % self.sigma )
     self.schedulingType = gConfig.getValue( "%s/%s" % ( self.csPath, "SchedulingType" ), "File" )
     self.log.info( "SchedulingType = %s" % self.schedulingType )
