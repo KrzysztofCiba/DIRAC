@@ -158,6 +158,7 @@ class FTSDB( DB ):
       self.log.error( select["Message"] )
       return select
     select = select["Value"]
+
     gLogger.always( select )
 
     return S_OK()
@@ -168,6 +169,7 @@ class FTSDB( DB ):
 
   def deleteFTSFile( self, ftsFileID ):
     """ delete FTSFile given FTSFileID """
+
     pass
 
   def putFTSJob( self, ftsJob ):
@@ -201,17 +203,13 @@ class FTSDB( DB ):
     getJob = getJob["Value"]
     if not getJob:
       return S_OK()
-    gLogger.always( getJob )
-
     ftsJob = FTSJob( getJob.values()[0][0] )
     selectFiles = self._transaction( [ "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s';" % ftsJob.FTSGUID ] )
     if not selectFiles["OK"]:
       self.log.error( selectFiles["Message"] )
       return selectFiles
-
     selectFiles = selectFiles["Value"]
     ftsFiles = [ FTSFile( item ) for item in selectFiles.values()[0] ]
-
     for ftsFile in ftsFiles:
       ftsJob.addFile( ftsFile )
 
