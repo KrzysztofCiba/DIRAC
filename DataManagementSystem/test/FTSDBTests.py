@@ -105,7 +105,7 @@ class FTSDBTests( unittest.TestCase ):
     self.assertEqual( db._checkViews( True )["OK"], True, "views creation error" )
 
   def test02PutGetDelete( self ):
-    """ put, get, delete  methods """
+    """ put, get, peek methods """
 
     db = FTSDB()
 
@@ -113,16 +113,19 @@ class FTSDBTests( unittest.TestCase ):
       put = db.putFTSFile( ftsFile )
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
-    for i in range( 1, 201 ):
+    for i in range( 1, 101 ):
       peek = db.peekFTSFile( i )
       self.assertEqual( peek["OK"], True, "peekFTSFile failed" )
-      # self.assertEqual()
+      self.assertEqual( isinstance( peek["Value"], FTSFile ), True, "peekFTSFile wrong value" )
 
+    for i in range( 1, 101 ):
+      get = db.getFTSFile( i )
+      self.assertEqual( get["OK"], True, "getFTSFile failed" )
+      self.assertEqual( isinstance( get["Value"], FTSFile ), True, "getFTSFile wrong value" )
 
     for ftsJob in self.ftsJobs:
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )
-
 
     for i in range( 1, 101 ):
       peek = db.peekFTSJob( i )
@@ -162,6 +165,29 @@ class FTSDBTests( unittest.TestCase ):
     ftsFileIDs = db.getFTSFileIDs( ["Waiting"] )
     self.assertEqual( ftsFileIDs["OK"], True, "getFTSFileIDs error" )
     self.assertEqual( type( ftsFileIDs["Value"] ), list, "getFTSFileIDs wrong value returned" )
+
+
+  def test05Delete( self ):
+    """ delete files and jobs """
+    db = FTSDB()
+
+    for i in range( 1, 101 ):
+      delete = db.deleteFTSFile( i )
+      self.assertEqual( delete["OK"], True, "deleleFTSFile failed" )
+
+    for i in range( 1, 101 ):
+      delete = db.deleteFTSJob( i )
+      self.assertEqual( delete["OK"], True, "deleleFTSJob failed" )
+
+    summary = db.getDBSummary()
+    self.assertEqual( summary["OK"], True, "getDBSummary failed" )
+    self.assertEqual( "FTSJob" in summary["Value"], True, "getDBSummary FTSJob missing" )
+    self.assertEqual( summary["Value"]["FTSJob"], [], "getDBSummary.FTSJob wrong value returned" )
+    self.assertEqual( "FTSFile" in summary["Value"], True, "getDBSummary FTSFile missing" )
+    self.assertEqual( summary["Value"]["FTSFile"], True, "getDBSummary.FTSFile wrong value returned" )
+
+    self.assertEqual( "FTSHistory" in summary["Value"], True, "getDBSummary FTSHistory missing" )
+
 
 
 
