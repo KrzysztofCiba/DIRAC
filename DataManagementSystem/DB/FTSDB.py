@@ -29,6 +29,8 @@ from MySQLdb import Error as MySQLdbError
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.LockRing import LockRing
+from DIRAC.Core.Utilities.List import stringListToString
+# # ORMs
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
@@ -196,6 +198,14 @@ class FTSDB( DB ):
   def deleteFTSJob( self, ftsJobID ):
     """ delete FTSJob given ftsJobID """
     pass
+
+  def getFTSJobIDs( self, statusList = [ "Submitted", "Active", "Ready" ] ):
+    """ get FTSJobIDs for  a given status list """
+    query = "SELECT `FTSJobID` FROM `FTSJob` WHERE `Status` IN (%s);" % stringListToString( statusList )
+    query = self._query( query )
+    gLogger.always( query )
+
+
 
   def getFTSFiles( self, status = "Waiting" ):
     """ select FTSFiles for submit """

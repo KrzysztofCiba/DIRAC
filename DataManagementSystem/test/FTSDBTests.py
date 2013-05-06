@@ -110,12 +110,19 @@ class FTSDBTests( unittest.TestCase ):
     summary = db.getDBSummary()
     print summary
 
-
   def test03FTSHistory( self ):
     """ history view """
     db = FTSDB()
     ret = db.getFTSHistory()
     self.assertEqual( ret["OK"], True, "getFTSHistory failed" )
+
+
+  def test04GetFTSJobIDs( self ):
+    """ get ftsjob ids """
+    db = FTSDB()
+    ftsJobIDs = db.getFTSJobIDs( [ "Submitted" ] )
+    print ftsJobIDs
+
 
 
 # # tests execution

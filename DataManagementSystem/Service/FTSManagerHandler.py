@@ -251,6 +251,13 @@ class FTSManagerHandler( RequestHandler ):
     """ peek FTSJob given ftsJobID """
     pass
 
+
+  types_getFTSJobIDs = [ ListType ]
+  @classmethod
+  def export_getFTSJobIDs( cls, statusList ):
+    """ get FTSJobIDs for a given status list """
+    pass
+
   types_getFTSHistory = []
   @classmethod
   def export_getFTSHistory( cls ):
