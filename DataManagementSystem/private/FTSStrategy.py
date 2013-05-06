@@ -29,7 +29,7 @@ import datetime
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
@@ -144,7 +144,7 @@ class FTSStrategy( object ):
                                 "Swarm" : self.swarm }
 
     # #  own RSS client
-    self.rssClient = ResourceStatusClient()
+    self.rssClient = ResourceStatus()
     # # resources helper
     self.resources = Resources()
 
