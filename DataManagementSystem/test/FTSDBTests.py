@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: FTSDBTests
-    =======================
+    ================
 
     .. module: FTSDBTests
     :synopsis: unittests for FTSDB
@@ -60,6 +60,8 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.Status = "Waiting"
       self.ftsFiles.append( ftsFile )
 
+    ses = ["CERN-USER", "RAL-USER", "PIC-USER", "GRIDKA-USER", "CNAF-USER" ]
+
     self.ftsJobs = []
     for i in range( 100 ):
 
@@ -67,8 +69,8 @@ class FTSDBTests( unittest.TestCase ):
       ftsJob.FTSGUID = str( uuid.uuid4() )
       ftsJob.FTSServer = "https://fts.service.org"
       ftsJob.Status = "Submitted"
-      ftsJob.SourceSE = "CERN-USER"
-      ftsJob.TargetSE = "RAL-USER"
+      ftsJob.SourceSE = ses[ i % len( ses )]
+      ftsJob.TargetSE = ses[ i + 1 % len( ses ) ]
 
       ftsFile = FTSFile()
       ftsFile.FileID = i * 100
@@ -115,13 +117,15 @@ class FTSDBTests( unittest.TestCase ):
     db = FTSDB()
     ret = db.getFTSHistory()
     self.assertEqual( ret["OK"], True, "getFTSHistory failed" )
+    print ret
 
 
   def test04GetFTSJobIDs( self ):
     """ get ftsjob ids """
     db = FTSDB()
     ftsJobIDs = db.getFTSJobIDs( [ "Submitted" ] )
-    print ftsJobIDs
+    self.assertEqual( ftsJobIDs["OK"], True, "getFTSJobIDs error" )
+    self.assertEqual( ftsJobIDs["Value"], range( 1, 101 ), "getFTSJobIDs value mismatch" )
 
 
 
