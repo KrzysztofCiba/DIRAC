@@ -157,11 +157,11 @@ class FTSDB( DB ):
     if not select["OK"]:
       self.log.error( select["Message"] )
       return select
-    select = select["Value"]
-
-    gLogger.always( select )
-
-    return S_OK()
+    select = select["Value"].values()
+    if not select:
+      return S_OK()
+    ftsFile = FTSFile( select[0] )
+    return S_OK( ftsFile )
 
   def peekFTSFile( self, ftsFileID ):
     """ peek FTSFile """
