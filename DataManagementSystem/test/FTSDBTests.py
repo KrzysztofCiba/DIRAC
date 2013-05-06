@@ -70,7 +70,7 @@ class FTSDBTests( unittest.TestCase ):
       ftsJob.FTSServer = "https://fts.service.org"
       ftsJob.Status = "Submitted"
       ftsJob.SourceSE = ses[ i % len( ses )]
-      ftsJob.TargetSE = ses[ i + 1 % len( ses ) ]
+      ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
 
       ftsFile = FTSFile()
       ftsFile.FileID = i * 100
