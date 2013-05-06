@@ -110,6 +110,9 @@ class FTSDBTests( unittest.TestCase ):
       put = db.putFTSFile( ftsFile )
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
+    for i in range( 1, 101 ):
+      peek = db.peekFTSFile( i )
+
     for ftsJob in self.ftsJobs:
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )

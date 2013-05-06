@@ -162,7 +162,9 @@ class FTSDB( DB ):
 
     return S_OK()
 
-
+  def peekFTSFile( self, ftsFileID ):
+    """ peek FTSFile """
+    return self.getFTSFile( ftsFileID )
 
   def deleteFTSFile( self, ftsFileID ):
     """ delete FTSFile given FTSFileID """
