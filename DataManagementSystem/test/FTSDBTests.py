@@ -62,14 +62,16 @@ class FTSDBTests( unittest.TestCase ):
       self.ftsFiles.append( ftsFile )
 
     ses = ["CERN-USER", "RAL-USER", "PIC-USER", "GRIDKA-USER", "CNAF-USER" ]
+    statuses = [ "Submitted", "Active", "Ready", "FinishedDirty" ]
 
     self.ftsJobs = []
-    for i in range( 100 ):
+    for i in range( 200 ):
+
 
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
       ftsJob.FTSServer = "https://fts.service.org"
-      ftsJob.Status = "Submitted"
+      ftsJob.Status = statuses[ i % len( statuses ) ]
       ftsJob.SourceSE = ses[ i % len( ses )]
       ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
 
