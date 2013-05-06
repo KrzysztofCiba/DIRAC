@@ -171,7 +171,7 @@ class FTSDBTests( unittest.TestCase ):
     """ delete files and jobs """
     db = FTSDB()
 
-    for i in range( 1, 101 ):
+    for i in range( 1, 201 ):
       delete = db.deleteFTSFile( i )
       self.assertEqual( delete["OK"], True, "deleleFTSFile failed" )
 
