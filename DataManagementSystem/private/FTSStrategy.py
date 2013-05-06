@@ -166,11 +166,11 @@ class FTSStrategy( object ):
     graph = FTSGraph( "sites" )
 
     sites = getSites()
-    if not getSites["OK"]:
-      self.log.error( getSites["Message"] )
-      return getSites
-    getSites = getSites["Value"]
-    self.log.always( getSites )
+    if not sites["OK"]:
+      self.log.error( sites["Message"] )
+      return sites
+    sites = sites["Value"]
+    self.log.always( sites )
 
     sitesDict = {}  # getStorageElementSiteMapping()
     if not sitesDict["OK"]:
