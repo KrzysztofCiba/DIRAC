@@ -64,10 +64,10 @@ class FTSDBTests( unittest.TestCase ):
     ses = ["CERN-USER", "RAL-USER", "PIC-USER", "GRIDKA-USER", "CNAF-USER" ]
     statuses = [ "Submitted", "Active", "Ready", "FinishedDirty" ]
 
+    self.submitted = 0
+
     self.ftsJobs = []
     for i in range( 200 ):
-
-
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
       ftsJob.FTSServer = "https://fts.service.org"
@@ -86,6 +86,7 @@ class FTSDBTests( unittest.TestCase ):
 
       ftsJob.addFile( ftsFile )
       self.ftsJobs.append( ftsJob )
+    self.submitted = len( [ i for i in self.ftsJobs if i.Status == "Submitted" ] )
 
   def tearDown( self ):
     """ clean up """
@@ -129,7 +130,7 @@ class FTSDBTests( unittest.TestCase ):
     db = FTSDB()
     ftsJobIDs = db.getFTSJobIDs( [ "Submitted" ] )
     self.assertEqual( ftsJobIDs["OK"], True, "getFTSJobIDs error" )
-    self.assertEqual( ftsJobIDs["Value"], range( 1, 101 ), "getFTSJobIDs value mismatch" )
+    self.assertEqual( len( ftsJobIDs["Value"] ), self.submitted, "getFTSJobIDs wrong value returned" )
 
 
 
