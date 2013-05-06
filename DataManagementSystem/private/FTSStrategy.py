@@ -32,7 +32,7 @@ from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getResourceTypes
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSites, getResourceTypes
 # from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping
 
 class FTSGraph( Graph ):
@@ -145,6 +145,9 @@ class FTSStrategy( object ):
 
     # #  own RSS client
     self.rssClient = ResourceStatusClient()
+    # # resources helper
+    self.resources = Resources()
+
     # # create fts graph
     self.setup()
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
@@ -165,23 +168,26 @@ class FTSStrategy( object ):
 
     graph = FTSGraph( "sites" )
 
-    sites = getSites()
-    if not sites["OK"]:
-      self.log.error( sites["Message"] )
-      return sites
-    sites = sites["Value"]
-    self.log.always( sites )
+    res = self.resources.getEligibleResources( "Storage" )
+    self.log.always( res )
 
-    for site in sites:
-      ses = getResourceTypes( site, "Storage" )
-      if not ses["OK"]:
-        self.log.error( ses["Message"] )
-        return ses
-      ses = ses["Value"]
-      self.log.always( ses )
+    # sites = getSites()
+    # if not sites["OK"]:
+    #  self.log.error( sites["Message"] )
+    #  return sites
+    # sites = sites["Value"]
+    # self.log.always( sites )
+
+    # for site in sites:
+    #  ses = getResourceTypes( site, "Storage" )
+    # #  if not ses["OK"]:
+    #    self.log.error( ses["Message"] )
+    #    return ses
+    #  ses = ses["Value"]
+    #  self.log.always( ses )
 
 
-    sitesDict = {}  # getStorageElementSiteMapping()
+    sitesDict = { "OK" : False, "Message" : "TODO" }  # getStorageElementSiteMapping()
     if not sitesDict["OK"]:
       self.log.error( sitesDict["Message"] )
       return sitesDict
