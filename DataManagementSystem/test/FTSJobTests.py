@@ -91,8 +91,6 @@ class FTSJobTests( unittest.TestCase ):
     self.assertEqual( SQL["OK"], True, "SQL serialization error" )
     self.assertEqual( SQL["Value"].startswith( "INSERT" ), True, "SQL serialization INSERT error" )
 
-    print SQL["Value"]
-
     ftsJob.FTSJobID = 123456
     SQL = ftsJob.toSQL()
     self.assertEqual( SQL["OK"], True, "SQL serialization error" )
@@ -115,6 +113,7 @@ class FTSJobTests( unittest.TestCase ):
     self.assertEqual( len( ftsJob ), 2 )
     self.assertEqual( ftsJob.Files, 2 )
     self.assertEqual( ftsJob.Size, 19 )
+
 
 # # test execution
 if __name__ == "__main__":
