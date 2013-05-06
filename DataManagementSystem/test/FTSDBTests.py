@@ -109,29 +109,35 @@ class FTSDBTests( unittest.TestCase ):
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
 
     for ftsJob in self.ftsJobs:
-
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )
 
     summary = db.getDBSummary()
-    print summary
+    self.assertEqual( summary["OK"], True, "getDBSummary failed" )
+    self.assertEqual( "FTSJob" in summary["Value"], True, "getDBSummary FTSJob missing" )
+    self.assertEqual( "FTSFile" in summary["Value"], True, "getDBSummary FTSFile missing" )
+    self.assertEqual( "FTSHistory" in summary["Value"], True, "getDBSummary FTSHistory missing" )
+
 
   def test03FTSHistory( self ):
     """ history view """
     db = FTSDB()
-
     ret = db.getFTSHistory()
     self.assertEqual( ret["OK"], True, "getFTSHistory failed" )
     for ftsHistory in ret["Value"]:
       self.assertEqual( isinstance( ftsHistory, FTSHistoryView ), True, "getFTSHistory wrong instance" )
 
-  def test04GetFTSJobIDs( self ):
+  def test04GetFTSIDs( self ):
     """ get ftsjob ids """
     db = FTSDB()
-
     ftsJobIDs = db.getFTSJobIDs( [ "Submitted" ] )
     self.assertEqual( ftsJobIDs["OK"], True, "getFTSJobIDs error" )
     self.assertEqual( len( ftsJobIDs["Value"] ), self.submitted, "getFTSJobIDs wrong value returned" )
+
+    ftsFileIDs = db.getFTSFileIDs( ["Waiting"] )
+    self.assertEqual( ftsFileIDs["OK"], True, "getFTSFileIDs error" )
+    self.assertEqual( type( ftsFileIDs["Value"] ), list, "getFTSFileIDs wrong value returned" )
+
 
 
 # # tests execution
