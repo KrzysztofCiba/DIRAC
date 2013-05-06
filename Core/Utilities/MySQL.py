@@ -719,7 +719,7 @@ class MySQL:
                                         "OrderBy": [ "`b` DESC" ] }
     """
     if force:
-      gLogger.always( viewsDict )
+      gLogger.debug( viewsDict )
 
       for viewName, viewDict in viewsDict.items():
 
@@ -745,7 +745,7 @@ class MySQL:
 
         viewQuery.append( ";" )
         viewQuery = " ".join( viewQuery )
-        self.log.always( "`%s` VIEW QUERY IS: %s" % ( viewName, viewQuery ) )
+        self.log.debug( "`%s` VIEW QUERY IS: %s" % ( viewName, viewQuery ) )
         createView = self._query( viewQuery )
         if not createView["OK"]:
           gLogger.error( createView["Message"] )
