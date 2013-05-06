@@ -153,11 +153,13 @@ class FTSStrategy( object ):
 
     # # create fts graph
     self.setup()
+
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
-  def setup( self, channels = None, bandwithds = None, failedFiles = None ):
+  def setup( self, ftsHistoryViews = None ):
     """ prepare fts graph
 
+    :param dict ftsHistoryViews: list with FTShistoryViews entries
     :param dict channels: { channelID : { "Files" : long , Size = long, "ChannelName" : str,
                                           "Source" : str, "Destination" : str , "ChannelName" : str, "Status" : str  } }
     :param dict bandwidths: { channelID { "Throughput" : float, "Fileput" : float, "SucessfulFiles" : long, "FailedFiles" : long  } }
@@ -165,10 +167,12 @@ class FTSStrategy( object ):
 
     channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
     """
-    channels = channels if channels else {}
-    bandwithds = bandwithds if bandwithds else {}
-    failedFiles = failedFiles if failedFiles else {}
+    #channels = channels if channels else {}
+    #bandwithds = bandwithds if bandwithds else {}
+    #failedFiles = failedFiles if failedFiles else {}
+    ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else [] 
 
+    ## build graph
     graph = FTSGraph( "sites" )
 
     sitesDict = self.resources.getEligibleResources( "Storage" )
@@ -182,10 +186,8 @@ class FTSStrategy( object ):
       rwDict = self.__getRWAccessForSE( ses )
       if not rwDict["OK"]:
         return rwDict
-      siteName = site
-      if '.' in site:
-        siteName = site.split( '.' )[1]
-      graph.addNode( FTSSite( siteName, { "SEs" : rwDict["Value"] } ) )
+      graph.addNode( FTSSite( site, { "SEs" : rwDict["Value"] } ) )
+      
     # # channels { channelID : { "Files" : long , Size = long, "ChannelName" : str,
     # #                          "Source" : str, "Destination" : str ,
     # #                          "ChannelName" : str, "Status" : str  } }
@@ -211,8 +213,7 @@ class FTSStrategy( object ):
     #                "acceptableFailureRate" : self.acceptableFailureRate,
     #                "acceptableFailedFiles" : self.acceptableFailedFiles,
     #                "schedulingType" : self.schedulingType }
-        ftsChannel = FTSRoute( fromNode, toNode, rwAttrs, roAttrs )
-        graph.addEdge( ftsChannel )
+        graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
     self.lastRssUpdate = datetime.datetime.now()
     self.ftsGraph = graph
     return S_OK()
@@ -225,18 +226,18 @@ class FTSStrategy( object ):
     if rwAccess:
       try:
         self.graphLock.acquire()
-        for lcgSite in self.ftsGraph.nodes():
-          rwDict = self.__getRWAccessForSE( lcgSite.SEs.keys() )
+        for site in self.ftsGraph.nodes():
+          rwDict = self.__getRWAccessForSE( site.SEs.keys() )
           if not rwDict["OK"]:
             continue
-        lcgSite.SEs = rwDict["Value"]
+        site.SEs = rwDict["Value"]
       finally:
         self.graphLock.release()
     # # update channels size and files
     if replicationTree:
       try:
         self.graphLock.acquire()
-        for channel in self.ftsGraph.edges():
+        for route in self.ftsGraph.edges():
           if channel.channelID in replicationTree:
             channel.size += size
             channel.files += 1
