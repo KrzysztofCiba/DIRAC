@@ -77,10 +77,12 @@ class FTSDBTests( unittest.TestCase ):
       ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
 
       ftsFile = FTSFile()
-      ftsFile.FileID = i * 100
+      ftsFile.FileID = i + 1
       ftsFile.OperationID = 9999
       ftsFile.LFN = "/a/b/c/%d" % i
       ftsFile.Size = 10
+      ftsFile.SourceSE = ftsJob.SourceSE
+      ftsFile.TargetSE = ftsJob.TargetSE
       ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
       ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       ftsFile.Status = "Waiting"

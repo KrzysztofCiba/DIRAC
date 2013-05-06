@@ -151,7 +151,7 @@ class FTSDB( DB ):
     return putFTSFile
 
   def getFTSFile( self, ftsFileID ):
-    """ read FTSFile from db """
+    """ read FTSFile from db given FTSFileID """
     select = "SELECT * FROM `FTSFile` WHERE `FTSFileID` = %s;" % ftsFileID
     select = self._transaction( [ select ] )
     if not select["OK"]:
@@ -164,13 +164,16 @@ class FTSDB( DB ):
     return S_OK( ftsFile )
 
   def peekFTSFile( self, ftsFileID ):
-    """ peek FTSFile """
+    """ peek FTSFile given FTSFileID """
     return self.getFTSFile( ftsFileID )
 
   def deleteFTSFile( self, ftsFileID ):
     """ delete FTSFile given FTSFileID """
-
-    pass
+    delete = "DELETE FROM `FTSFile` WHERE `FTSFileID` = %s;" % ftsFileID
+    delete = self._query( delete )
+    if not delete["OK"]:
+      self.log.error( delete["Message"] )
+    return delete
 
   def putFTSJob( self, ftsJob ):
     """ put FTSJob to the db (INSERT or UPDATE)
@@ -229,8 +232,11 @@ class FTSDB( DB ):
 
   def deleteFTSJob( self, ftsJobID ):
     """ delete FTSJob given ftsJobID """
-
-    pass
+    delete = "DELETE FROM `FTSJob` WHERE `FTSJobID` = %s;" % ftsJobID
+    delete = self._query( delete )
+    if not delete["OK"]:
+      self.log.error( delete["Message"] )
+    return delete
 
   def getFTSJobIDs( self, statusList = [ "Submitted", "Active", "Ready" ] ):
     """ get FTSJobIDs for  a given status list """
@@ -265,8 +271,8 @@ class FTSDB( DB ):
     # # this will be returned
     retDict = { "FTSJob": {}, "FTSFile": {}, "FTSHistory": {} }
     transQueries = { "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
-                "SELECT `Status`, COUNT(`Status`) FROM `FTSFile` GROUP BY `Status`;" : "FTSFile",
-                "SELECT * FROM `FTSHistoryView`;" : "FTSHistory" }
+                     "SELECT `Status`, COUNT(`Status`) FROM `FTSFile` GROUP BY `Status`;" : "FTSFile",
+                     "SELECT * FROM `FTSHistoryView`;" : "FTSHistory" }
     ret = self._transaction( transQueries.keys() )
     if not ret["OK"]:
       self.log.error( "getDBSummary: %s" % ret["Message"] )
