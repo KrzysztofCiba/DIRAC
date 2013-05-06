@@ -128,7 +128,7 @@ class FTSDBTests( unittest.TestCase ):
       self.assertEqual( isinstance( ftsHistory, FTSHistoryView ), True, "getFTSHistory wrong instance" )
 
   def test04GetFTSIDs( self ):
-    """ get ftsjob ids """
+    """ get ids """
     db = FTSDB()
     ftsJobIDs = db.getFTSJobIDs( [ "Submitted" ] )
     self.assertEqual( ftsJobIDs["OK"], True, "getFTSJobIDs error" )

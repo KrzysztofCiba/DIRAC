@@ -161,7 +161,7 @@ class FTSDB( DB ):
     pass
 
   def putFTSJob( self, ftsJob ):
-    """ put FTSJob to the db
+    """ put FTSJob to the db (INSERT or UPDATE)
 
     :param FTSJob ftsJob: FTSJob instance
     """
@@ -169,8 +169,6 @@ class FTSDB( DB ):
     if not ftsJobSQL["OK"]:
       return ftsJobSQL
     putJob = [ ftsJobSQL["Value"] ]
-
-    gLogger.always( putJob )
 
     for ftsFile in [ ftsFile.toSQL() for ftsFile in ftsJob ]:
       if not ftsFile["OK"]:
