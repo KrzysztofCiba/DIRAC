@@ -158,7 +158,7 @@ class FTSDB( DB ):
       self.log.error( select["Message"] )
       return select
     select = select["Value"]
-    gLogger.always( select )
+    gLogger.always( select.values() )
     if not select:
       return S_OK()
     # ftsFile = FTSFile( select[0] )
