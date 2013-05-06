@@ -234,9 +234,7 @@ class FTSFile( Record ):
   @Error.setter
   def Error( self, value ):
     """ error setter """
-    if type( value ) != str:
-      raise TypeError( "Error has to be a string!" )
-    self.__data__["Error"] = value[255:]
+    self.__data__["Error"] = str( value )[255:] if value else ""
 
   @property
   def Status( self ):
