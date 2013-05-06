@@ -206,7 +206,8 @@ class FTSDB( DB ):
     if not query["OK"]:
       self.log.error( query["Message"] )
       return query
-    return S_OK( list( query["Value"] ) )
+    # # convert to list of longs
+    return S_OK( [ item[0] for item in query["Value"] ] )
 
   def getFTSFiles( self, status = "Waiting" ):
     """ select FTSFiles for submit """
