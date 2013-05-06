@@ -109,7 +109,7 @@ class FTSHistoryView( object ):
   @FTSJobs.setter
   def FTSJobs( self, ftsJobs ):
     """ FTSJob count setter """
-    self.__data__["FTSJobs"] = ftsJobs if ftsJobs else 0
+    self.__data__["FTSJobs"] = long( ftsJobs ) if ftsJobs else 0
 
   @property
   def FTSServer( self ):
@@ -139,7 +139,7 @@ class FTSHistoryView( object ):
   @Files.setter
   def Files( self, files ):
     """ files setter """
-    self.__data__["Files"] = files if files else 0
+    self.__data__["Files"] = long( files ) if files else 0
 
   @property
   def Size( self ):
@@ -149,7 +149,7 @@ class FTSHistoryView( object ):
   @Size.setter
   def Size( self, size ):
     """ size setter """
-    self.__data__["Size"] = size if size else 0
+    self.__data__["Size"] = long( size ) if size else 0
 
   @property
   def FailedFiles( self ):
@@ -159,7 +159,7 @@ class FTSHistoryView( object ):
   @FailedFiles.setter
   def FailedFiles( self, failedFiles ):
     """ failed files setter """
-    self.__data__["FailedFiles"] = failedFiles if failedFiles else 0
+    self.__data__["FailedFiles"] = long( failedFiles ) if failedFiles else 0
 
   @property
   def FailedSize( self ):
@@ -169,7 +169,7 @@ class FTSHistoryView( object ):
   @FailedSize.setter
   def FailedSize( self, failedSize ):
     """ failed files size setter """
-    self.__data__["FailedSize"] = failedSize if failedSize else 0
+    self.__data__["FailedSize"] = long( failedSize ) if failedSize else 0
 
   def toJSON( self ):
     """ serialize to JSON format """
