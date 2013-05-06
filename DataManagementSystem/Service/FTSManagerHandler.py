@@ -239,17 +239,35 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
+  types_getFTSJob = [ LongType ]
+  @classmethod
+  def export_getFTSJob( cls, ftsJobID ):
+    """ read FTSJob for processing given FTSJobID """
+    pass
+
+  types_peekFTSJob = [ LongType ]
+  @classmethod
+  def export_peekFTSJob( cls, ftsJobID ):
+    """ peek FTSJob given ftsJobID """
+    pass
+
   types_getFTSHistory = []
   @classmethod
   def export_getFTSHistory( cls ):
-    """ get FTS history """
+    """ get last hour FTS history snapshot """
     try:
       ftsHistory = cls.__ftsDB.getFTSHistory()
       if not ftsHistory["OK"]:
         gLogger.error( ftsHistory["Message"] )
         return ftsHistory
       ftsHistory = ftsHistory["Value"]
-      return ftsHistory.toJSON()
+      history = []
+      for ftsHistory in ftsHistory["Value"]:
+        ftsHistory = ftsHistory.toJSON()
+        if not ftsHistory["OK"]:
+          return ftsHistory
+        history.append( ftsHistory )
+      return S_OK( history )
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
