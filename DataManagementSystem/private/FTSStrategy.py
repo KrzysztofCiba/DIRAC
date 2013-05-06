@@ -547,13 +547,13 @@ class FTSStrategy( object ):
     rwDict = dict.fromkeys( seList )
     for se in rwDict:
       rwDict[se] = { "read" : False, "write" : False  }
-    rAccess = self.rssClient.getStorageElementStatuses( seList, statusType = "ReadAccess" )
+    rAccess = self.rssClient.getStorageElementStatuses( seList )
     if not rAccess["OK"]:
       self.log.error( rAccess["Message"] )
       return rAccess["Message"]
     rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active",
                                                                                                      "Degraded" ) ]
-    wAccess = self.rssClient.getStorageElementStatuses( seList, statusType = "WriteAccess" )
+    wAccess = self.rssClient.getStorageElementStatuses( seList )
     if not wAccess["OK"]:
       self.log.error( wAccess["Message"] )
       return wAccess["Message"]
