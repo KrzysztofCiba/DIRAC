@@ -45,6 +45,11 @@ class FTSHistoryView( object ):
     """
     fromDict = fromDict if fromDict else {}
     self.__data__ = dict.fromkeys( self.viewDesc()["Fields"].keys(), None )
+    self.__data__["Files"] = 0
+    self.__data__["Size"] = 0
+    self.__data__["FailedFiles"] = 0
+    self.__data__["FailedSize"] = 0
+    self.__data__["FTSJobs"] = 0
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown FTSHistoryView attribute '%s'" % key )
@@ -104,7 +109,7 @@ class FTSHistoryView( object ):
   @FTSJobs.setter
   def FTSJobs( self, ftsJobs ):
     """ FTSJob count setter """
-    self.__data__["FTSJobs"] = ftsJobs
+    self.__data__["FTSJobs"] = ftsJobs if ftsJobs else 0
 
   @property
   def FTSServer( self ):
