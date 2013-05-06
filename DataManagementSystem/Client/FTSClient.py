@@ -169,13 +169,27 @@ class FTSClient( Client ):
       self.log.error( deleteJob["Message"] )
     return deleteJob
 
-  def getFTSHistory(self):
-    """ get FTS history """
+  def getFTSJobIDs( self, statusList = [ "Submitted", "Ready", "Active" ] ):
+    """ get list of FTSJobIDs for a given status list """
+    ftsJobIDs = self.ftsManager().getFTSJobIDs( statusList )
+    if not ftsJobIDs["OK"]:
+      self.log.error( ftsJobIDs["Message"] )
+    return ftsJobIDs
+
+  def getFTSHistory( self ):
+    """ get FTS history snapshot """
     getFTSHistory = self.ftsManager().getFTSHistory()
     if not getFTSHistory["OK"]:
       self.log.error( getFTSHistory["Message"] )
       return getFTSHistory
-    return S_OK( FTSHistoryView( getFTSHistory["Value"] ) )
+    getFTSHistory = getFTSHistory["Value"]
+    history = []
+    for ftsHistory in getFTSHistory:
+      ftsHistory = FTSHistoryView( ftsHistory )
+      if not ftsHistory["OK"]:
+        return ftsHistory
+      history.append( ftsHistory["Value"] )
+    return S_OK( history )
 
   def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
     """ schedule lfn for FTS job

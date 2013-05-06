@@ -203,9 +203,10 @@ class FTSDB( DB ):
     """ get FTSJobIDs for  a given status list """
     query = "SELECT `FTSJobID` FROM `FTSJob` WHERE `Status` IN (%s);" % stringListToString( statusList )
     query = self._query( query )
-    gLogger.always( query )
-
-
+    if not query["OK"]:
+      self.log.error( query["Message"] )
+      return query
+    return S_OK( list( query["Value"] ) )
 
   def getFTSFiles( self, status = "Waiting" ):
     """ select FTSFiles for submit """
