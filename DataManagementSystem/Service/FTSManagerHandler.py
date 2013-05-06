@@ -82,10 +82,7 @@ class FTSManagerHandler( RequestHandler ):
 
     if cls.ftsMode:
       csPath = getServiceSection( "DataManagement/FTSManager" )
-      if not csPath["OK"]:
-        gLogger.error( csPath["Message"] )
-        return csPath
-      csPath = "%s/%s" % ( csPath["Value"], "FTSStrategy" )
+      csPath = "%s/%s" % ( csPath, "FTSStrategy" )
       gFTSStrategy = FTSStrategy( csPath )
     return S_OK()
 
