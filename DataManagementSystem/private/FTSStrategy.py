@@ -32,7 +32,7 @@ from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources, getSites, getResourceTypes
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 # from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getStorageElementSiteMapping
 
 class FTSGraph( Graph ):
@@ -168,26 +168,7 @@ class FTSStrategy( object ):
 
     graph = FTSGraph( "sites" )
 
-    res = self.resources.getEligibleResources( "Storage" )
-    self.log.always( res )
-
-    # sites = getSites()
-    # if not sites["OK"]:
-    #  self.log.error( sites["Message"] )
-    #  return sites
-    # sites = sites["Value"]
-    # self.log.always( sites )
-
-    # for site in sites:
-    #  ses = getResourceTypes( site, "Storage" )
-    # #  if not ses["OK"]:
-    #    self.log.error( ses["Message"] )
-    #    return ses
-    #  ses = ses["Value"]
-    #  self.log.always( ses )
-
-
-    sitesDict = { "OK" : False, "Message" : "TODO" }  # getStorageElementSiteMapping()
+    sitesDict = self.resources.getEligibleResources( "Storage" )
     if not sitesDict["OK"]:
       self.log.error( sitesDict["Message"] )
       return sitesDict
