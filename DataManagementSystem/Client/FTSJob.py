@@ -45,6 +45,11 @@ class FTSJob( Record ):
 
   class describing one FTS job
   """
+  # # final states
+  __finalStates = ( "Canceled", "Failed", "Finished", "FinishedDirty" )
+  # # initial and transfer ongoing states
+  __transStates = ( "Submitted", "Ready", "Active" )
+
 
   def __init__( self, fromDict = None ):
     """c'tor
@@ -159,7 +164,7 @@ class FTSJob( Record ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    reStatus = re.compile( "Submitted|Ready|Staging|Canceled|Active|Failed|Finished|FinishedDirty" )
+    reStatus = re.compile( "Submitted|Ready|Staging|Canceled|Active|Failed|Finished|FinishedDirty|Assigned" )
     if not reStatus.match( value ):
       raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
     self.__data__["Status"] = value

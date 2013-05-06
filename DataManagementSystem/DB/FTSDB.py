@@ -150,10 +150,18 @@ class FTSDB( DB ):
       self.log.error( putFTSFile["Message"] )
     return putFTSFile
 
-  def getFTSFile( self, fileID = None, lfn = None ):
+  def getFTSFile( self, ftsFileID ):
     """ read FTSFile from db """
-    if not any( fileID, lfn ):
-      return S_ERROR( "Missing fileID of lfn argument" )
+    select = "SELECT * FROM `FTSFile` WHERE `FTSFileID` = %s;" % ftsFileID
+    select = self._query( select )
+    if not select["OK"]:
+      self.log.error( select["Message"] )
+      return select
+    select = select["Value"]
+    gLogger.always( select )
+
+    return S_OK()
+
 
 
   def deleteFTSFile( self, ftsFileID ):
@@ -201,11 +209,11 @@ class FTSDB( DB ):
 
     selectFiles = selectFiles["Value"]
     ftsFiles = [ FTSFile( item ) for item in selectFiles.values()[0] ]
-    gLogger.always( ftsFiles )
 
     for ftsFile in ftsFiles:
       ftsJob.addFile( ftsFile )
 
+    # # TODO: re-think if we need this one
     # if not readOnly:
     #  setAssigned = "UPDATE `FTSJob` SET `Status`='Assigned' WHERE `FTSJobID` = %s;" % ftsJobID
     #  setAssigned = self._query( setAssigned )
@@ -215,13 +223,13 @@ class FTSDB( DB ):
 
     return S_OK( ftsJob )
 
-
   def peekFTSJob( self, ftsJobID = None ):
     """ read FTSJob given FTSJobID """
     return self.getFTSJob( ftsJobID, readOnly = True )
 
   def deleteFTSJob( self, ftsJobID ):
     """ delete FTSJob given ftsJobID """
+
     pass
 
   def getFTSJobIDs( self, statusList = [ "Submitted", "Active", "Ready" ] ):
