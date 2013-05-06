@@ -12,7 +12,10 @@
     :synopsis: cleaning old FTS
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    Cleaning of the procesed requests in TransferDB.
+    Cleaning of the processed requests in TransferDB.
+
+
+    TODO: refactor, change db to FTSDB
 """
 
 __RCSID__ = "$Id $"

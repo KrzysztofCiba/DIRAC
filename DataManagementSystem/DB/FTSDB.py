@@ -154,8 +154,8 @@ class FTSDB( DB ):
       return S_ERROR( "Missing fileID of lfn argument" )
 
 
-  def deleteFTSFile( self, fileID ):
-    """ """
+  def deleteFTSFile( self, ftsFileID ):
+    """ delete FTSFile given FTSFileID """
     pass
 
   def putFTSJob( self, ftsJob ):
@@ -167,6 +167,7 @@ class FTSDB( DB ):
     if not ftsJobSQL["OK"]:
       return ftsJobSQL
     putJob = [ ftsJobSQL["Value"] ]
+
     gLogger.always( putJob )
 
     for ftsFile in [ ftsFile.toSQL() for ftsFile in ftsJob ]:
@@ -179,7 +180,7 @@ class FTSDB( DB ):
       self.log.error( putJob["Message"] )
     return putJob
 
-  def getFTSJob( self, ftsJobID = None ):
+  def getFTSJob( self, ftsJobID = None, readOnly = False ):
     """ get FTSJob given FTSJobID """
     getFTSJob = self._transaction( self._getFTSJobProperties( ftsJobID ) )
     if not getFTSJob["OK"]:
@@ -189,15 +190,16 @@ class FTSDB( DB ):
     connection = getFTSJob["connection"]
 
   def peekFTSJob( self, ftsJobID = None ):
-    """ """
-    pass
+    """ read FTSJob given FTSJobID """
+    return self.getFTSJob( ftsJobID, readOnly = True )
 
-  def deleteFTSJob( self ):
+  def deleteFTSJob( self, ftsJobID ):
+    """ delete FTSJob given ftsJobID """
     pass
 
   def getFTSFiles( self, status = "Waiting" ):
     """ select FTSFiles for submit """
-    selectFiles = "SELECT * FROM `FTSFile` WHERE `Status` = '%s'" % status;
+    selectFiles = "SELECT * FROM `FTSFile` WHERE `Status` = '%s';" % status;
     selectFiles = self._transaction( selectFiles )
     if not selectFiles["OK"]:
       self.log.error( selectFiles["Message"] )

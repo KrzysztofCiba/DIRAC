@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: RemoveReplica
-    =======================
+    ===================
 
     .. module: RemoveReplica
     :synopsis: removeReplica operation handler
