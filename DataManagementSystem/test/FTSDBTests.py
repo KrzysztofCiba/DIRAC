@@ -112,6 +112,13 @@ class FTSDBTests( unittest.TestCase ):
       put = db.putFTSJob( ftsJob )
       self.assertEqual( put["OK"], True, "putFTSJob failed" )
 
+
+    for i in range( 1, 101 ):
+      get = db.getFTSJob( i )
+      self.assertEqual( get["OK"], True, "getFTSJob failed" )
+      print get
+
+
     summary = db.getDBSummary()
     self.assertEqual( summary["OK"], True, "getDBSummary failed" )
     self.assertEqual( "FTSJob" in summary["Value"], True, "getDBSummary FTSJob missing" )

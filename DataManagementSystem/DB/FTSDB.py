@@ -187,7 +187,13 @@ class FTSDB( DB ):
       self.log.error( getFTSJob["Message"] )
       return getFTSJob
     getFTSJob = getFTSJob["Value"]
+    if not getFTSJob:
+      return S_OK()
+    gLogger.always( getFTSJob )
+    ftsJob = FTSJob()
     connection = getFTSJob["connection"]
+
+
 
   def peekFTSJob( self, ftsJobID = None ):
     """ read FTSJob given FTSJobID """
