@@ -96,7 +96,7 @@ class FTSStrategy( object ):
   # # make it singleton
   __metaclass__ = DIRACSingleton
   # # list of supported strategies
-  supportetStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
+  __supportedStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
 
   def __init__( self, csPath = None ):
     """c'tor
