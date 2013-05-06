@@ -200,8 +200,8 @@ class FTSDB( DB ):
       return selectFiles
 
     selectFiles = selectFiles["Value"]
-    self.log.always( selectFiles )
-    # for record in selectFiles:
+    for record in selectFiles.values():
+      gLogger.always( record )
 
 
     # select = self._transaction( selectQueries )
