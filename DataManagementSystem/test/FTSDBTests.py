@@ -29,7 +29,7 @@ import uuid
 from DIRAC import gConfig
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
-from DIRAC.DataManagementSystem.private.FTSHistorView import FTSHistoryView
+from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 # # SUT
 from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
 
