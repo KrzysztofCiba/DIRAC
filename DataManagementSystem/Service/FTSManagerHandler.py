@@ -279,12 +279,31 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
-
   types_getFTSJobIDs = [ ListType ]
   @classmethod
-  def export_getFTSJobIDs( cls, statusList ):
+  def export_getFTSJobIDs( cls, statusList = [ "Submitted", "Ready", "Active" ] ):
     """ get FTSJobIDs for a given status list """
-    pass
+    try:
+      getFTSJobIDs = cls.__ftsDB.getFTSJobIDs( statusList )
+      if not getFTSJobIDs["OK"]:
+        gLogger.error( getFTSJobIDs["Message"] )
+      return getFTSJobIDs
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+
+  types_getFTSFilesIDs = [ ListType ]
+  @classmethod
+  def export_getFTSFileIDs( cls, statusList = [ "Waiting" ] ):
+    """ get FTSFilesIDs for a given status list """
+    try:
+      getFTSFileIDs = cls.__ftsDB.getFTSFileIDs( statusList )
+      if not getFTSFileIDs["OK"]:
+        gLogger.error( getFTSFileIDs["Message"] )
+      return getFTSFileIDs
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
 
   types_getFTSHistory = []
   @classmethod

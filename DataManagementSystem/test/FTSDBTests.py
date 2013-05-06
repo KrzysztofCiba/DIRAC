@@ -119,19 +119,19 @@ class FTSDBTests( unittest.TestCase ):
   def test03FTSHistory( self ):
     """ history view """
     db = FTSDB()
+
     ret = db.getFTSHistory()
     self.assertEqual( ret["OK"], True, "getFTSHistory failed" )
     for ftsHistory in ret["Value"]:
       self.assertEqual( isinstance( ftsHistory, FTSHistoryView ), True, "getFTSHistory wrong instance" )
-      print ftsHistory.toJSON()
 
   def test04GetFTSJobIDs( self ):
     """ get ftsjob ids """
     db = FTSDB()
+
     ftsJobIDs = db.getFTSJobIDs( [ "Submitted" ] )
     self.assertEqual( ftsJobIDs["OK"], True, "getFTSJobIDs error" )
     self.assertEqual( len( ftsJobIDs["Value"] ), self.submitted, "getFTSJobIDs wrong value returned" )
-
 
 
 # # tests execution

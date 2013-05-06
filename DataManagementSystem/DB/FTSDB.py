@@ -209,13 +209,14 @@ class FTSDB( DB ):
     # # convert to list of longs
     return S_OK( [ item[0] for item in query["Value"] ] )
 
-  def getFTSFiles( self, status = "Waiting" ):
-    """ select FTSFiles for submit """
-    selectFiles = "SELECT * FROM `FTSFile` WHERE `Status` = '%s';" % status;
-    selectFiles = self._transaction( selectFiles )
-    if not selectFiles["OK"]:
-      self.log.error( selectFiles["Message"] )
-      return selectFiles
+  def getFTSFileIDs( self, statusList = [ "Waiting" ] ):
+    """ select FTSFileIDs for a given status list """
+    query = "SELECT * FROM `FTSFile` WHERE `Status` IN (%s);" % stringListToString( statusList );
+    query = self._query( query )
+    if not query["OK"]:
+      self.log.error( query["Message"] )
+      return query
+    return S_OK( [ item[0] for item in query["Value"] ] )
 
   def getFTSHistory( self ):
     """ query FTSHistoryView, return list of FTSHistoryViews """

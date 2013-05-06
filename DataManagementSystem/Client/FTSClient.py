@@ -176,6 +176,13 @@ class FTSClient( Client ):
       self.log.error( ftsJobIDs["Message"] )
     return ftsJobIDs
 
+  def getFTSFileIDs( self, statusList = [ "Waiting" ] ):
+    """ get list of FTSFileIDs for a given status list """
+    ftsFileIDs = self.ftsManager().getFTSFileIDs( statusList )
+    if not ftsFileIDs["OK"]:
+      self.log.error( ftsFileIDs["Message"] )
+    return ftsFileIDs
+
   def getFTSHistory( self ):
     """ get FTS history snapshot """
     getFTSHistory = self.ftsManager().getFTSHistory()
