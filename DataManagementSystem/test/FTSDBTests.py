@@ -59,6 +59,7 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
       ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       ftsFile.Status = "Waiting"
+
       self.ftsFiles.append( ftsFile )
 
     ses = ["CERN-USER", "RAL-USER", "PIC-USER", "GRIDKA-USER", "CNAF-USER" ]
@@ -83,6 +84,7 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
       ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       ftsFile.Status = "Waiting"
+      ftsFile.FTSGUID = ftsJob.FTSGUID
 
       ftsJob.addFile( ftsFile )
       self.ftsJobs.append( ftsJob )
