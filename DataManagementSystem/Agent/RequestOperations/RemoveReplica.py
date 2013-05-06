@@ -106,7 +106,7 @@ class RemoveReplica( BaseOperation ):
       # # update removal status for successful files
       removalOK = [ opFile for opFile in bulkRemoval.values() if not opFile.Error ]
       for opFile in removalOK:
-        removalStatus[lfn][targetSE] = ""
+        removalStatus[opFile.LFN][targetSE] = ""
       gMonitor.addMark( "RemoveReplicaOK", len( removalOK ) )
 
       # # 2nd step - process the rest again
