@@ -200,7 +200,7 @@ class FTSDB( DB ):
       return selectFiles
 
     selectFiles = selectFiles["Value"]
-    self.log.alwats( selectFiles )
+    self.log.always( selectFiles )
     # for record in selectFiles:
 
 
