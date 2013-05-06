@@ -153,7 +153,7 @@ class FTSDB( DB ):
   def getFTSFile( self, ftsFileID ):
     """ read FTSFile from db """
     select = "SELECT * FROM `FTSFile` WHERE `FTSFileID` = %s;" % ftsFileID
-    select = self._query( select )
+    select = self._transaction( [ select ] )
     if not select["OK"]:
       self.log.error( select["Message"] )
       return select
