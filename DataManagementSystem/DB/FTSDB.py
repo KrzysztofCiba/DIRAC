@@ -182,16 +182,21 @@ class FTSDB( DB ):
 
   def getFTSJob( self, ftsJobID = None, readOnly = False ):
     """ get FTSJob given FTSJobID """
-    getFTSJob = self._transaction( self._getFTSJobProperties( ftsJobID ) )
-    if not getFTSJob["OK"]:
-      self.log.error( getFTSJob["Message"] )
-      return getFTSJob
-    getFTSJob = getFTSJob["Value"]
-    if not getFTSJob:
+
+    selectQueries = [ "SELECT * FROM `FTSJob` WHERE `FTSJobID` = %s;" % ftsJobID,
+                      "SELECT * FROM `FTSFile` WHERE `FTSJobID` = %s;" % ftsJobID ]
+    select = self._transaction( selectQueries )
+
+    if not select["OK"]:
+      self.log.error( select["Message"] )
+      return select
+
+    select = select["Value"]
+    if not select:
       return S_OK()
-    gLogger.always( getFTSJob )
-    ftsJob = FTSJob()
-    connection = getFTSJob["connection"]
+
+    gLogger.always( select )
+    return S_OK()
 
 
 
