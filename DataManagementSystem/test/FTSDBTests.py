@@ -29,6 +29,7 @@ import uuid
 from DIRAC import gConfig
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.private.FTSHistorView import FTSHistoryView
 # # SUT
 from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
 
@@ -117,8 +118,9 @@ class FTSDBTests( unittest.TestCase ):
     db = FTSDB()
     ret = db.getFTSHistory()
     self.assertEqual( ret["OK"], True, "getFTSHistory failed" )
-    print ret
-
+    for ftsHistory in ret["Value"]:
+      self.assertEqual( isinstance( ftsHistory, FTSHistoryView ), True, "getFTSHistory wrong instance" )
+      print ftsHistory.toJSON()
 
   def test04GetFTSJobIDs( self ):
     """ get ftsjob ids """
