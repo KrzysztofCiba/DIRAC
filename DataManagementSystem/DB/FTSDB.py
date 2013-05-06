@@ -193,6 +193,17 @@ class FTSDB( DB ):
       return S_OK()
     gLogger.always( getJob )
 
+    ftsJob = FTSJob( getJob["Value"][0] )
+    selectFiles = self._transaction( [ "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s';" % ftsJob.FTSGUID ] )
+    if not selectFiles["OK"]:
+      self.log.error( selectFiles["Message"] )
+      return selectFiles
+
+    selectFiles = selectFiles["Value"]
+    self.log.alwats( selectFiles )
+    # for record in selectFiles:
+
+
     # select = self._transaction( selectQueries )
 
     # if not select["OK"]:
