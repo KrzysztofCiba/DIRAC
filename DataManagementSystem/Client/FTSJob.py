@@ -85,7 +85,7 @@ class FTSJob( Record ):
                "Files": "INTEGER NOT NULL",
                "FailedFiles": "INTEGER DEFAULT 0",
                "FailedSize": "INTEGER DEFAULT 0",
-               "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty' ) DEFAULT 'Submitted'",
+               "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty', 'Assigned' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",

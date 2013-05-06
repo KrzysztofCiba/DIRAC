@@ -116,9 +116,16 @@ class FTSDBTests( unittest.TestCase ):
 
 
     for i in range( 1, 101 ):
+      peek = db.peekFTSJob( i )
+      self.assertEqual( peek["OK"], True, "peekFTSJob failed" )
+      self.assertEqual( isinstance( peek["Value"], FTSJob ), True, "peekFTSJob wrong value returned" )
+      self.assertEqual( len( peek["Value"] ), 1, "peekFTSJob wrong number of files " )
+
+    for i in range( 1, 101 ):
       get = db.getFTSJob( i )
       self.assertEqual( get["OK"], True, "getFTSJob failed" )
-      print get
+      self.assertEqual( isinstance( get["Value"], FTSJob ), True, "getFTSJob wrong value returned" )
+      self.assertEqual( len( get["Value"] ), 1, "getFTSJob wrong number of files " )
 
 
     summary = db.getDBSummary()

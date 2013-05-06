@@ -206,8 +206,14 @@ class FTSDB( DB ):
     for ftsFile in ftsFiles:
       ftsJob.addFile( ftsFile )
 
-    return S_OK( ftsJob )
+    # if not readOnly:
+    #  setAssigned = "UPDATE `FTSJob` SET `Status`='Assigned' WHERE `FTSJobID` = %s;" % ftsJobID
+    #  setAssigned = self._query( setAssigned )
+    #  if not setAssigned["OK"]:
+    #    self.log.error( setAssigned["Message"] )
+    #    return setAssigned
 
+    return S_OK( ftsJob )
 
 
   def peekFTSJob( self, ftsJobID = None ):
