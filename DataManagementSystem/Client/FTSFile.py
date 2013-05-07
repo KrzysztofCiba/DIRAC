@@ -204,7 +204,7 @@ class FTSFile( Record ):
   @SourceSURL.setter
   def SourceSURL( self, value ):
     """ source SURL getter """
-    self.__data__["SourceSURL"] = value[:255]
+    self.__data__["SourceSURL"] = value[:255] if value else ""
 
   @property
   def TargetSE( self ):
@@ -224,7 +224,7 @@ class FTSFile( Record ):
   @TargetSURL.setter
   def TargetSURL( self, value ):
     """ target SURL getter """
-    self.__data__["TargetSURL"] = value[:255]
+    self.__data__["TargetSURL"] = value[:255] if value else ""
 
   @property
   def Error( self ):
@@ -234,7 +234,7 @@ class FTSFile( Record ):
   @Error.setter
   def Error( self, value ):
     """ error setter """
-    self.__data__["Error"] = str( value )[255:] if value else ""
+    self.__data__["Error"] = str( value )[:255] if value else ""
 
   @property
   def Status( self ):

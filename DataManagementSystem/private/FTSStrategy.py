@@ -218,7 +218,6 @@ class FTSStrategy( object ):
 
       route = graph.findRoute( fromNode, toNode )
       # # route is there, update
-
       # # TODO: check status
       if route["OK"]:
 

@@ -5,6 +5,8 @@
     =================
 
     Helper class to perform FTS job submission and monitoring.
+
+    TODO: obsolete
 """
 ## imports
 import os
