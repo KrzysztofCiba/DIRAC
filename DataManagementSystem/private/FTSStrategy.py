@@ -72,7 +72,9 @@ class FTSGraph( Graph ):
       rwDict = dict.fromkeys( ses )
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
-      self.addNode( FTSSite( site, { "SEs" : rwDict["Value"] } ) )
+      node = FTSSite( site, { "SEs" : rwDict } )
+      node.updateRWAccess()
+      self.addNode( node )
 
       for ftsHistory in ftsHistoryViews:
         sourceSE = ftsHistory.SourceSE
