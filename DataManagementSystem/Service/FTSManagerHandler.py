@@ -38,10 +38,9 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
-from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy, FTSGraph
+from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
-gFTSGraph = None
 
 ########################################################################
 class FTSManagerHandler( RequestHandler ):
@@ -86,6 +85,9 @@ class FTSManagerHandler( RequestHandler ):
     gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:
+      # # every 10 minutes update RW access
+      gThreadScheduler.addPeriodicTask( 600, cls.updateRWAccess() )
+      # # every hour reset FTS graph
       gThreadScheduler.addPeriodicTask( 3600, cls.updateFTSStrategy() )
     return S_OK()
 
@@ -95,13 +97,13 @@ class FTSManagerHandler( RequestHandler ):
     ftsHistory = cls.__ftsDB.getFTSHistory()
     if not ftsHistory["OK"]:
       return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
-    cls.ftsStrategy().updateFTSGraph( ftsHistory["Value"] )
+    cls.ftsStrategy().resetGraph( ftsHistory["Value"] )
     return S_OK()
 
   @classmethod
-  def ftsGraph( cls ):
-    if not cls.__ftsGraph:
-      cls.__ftsGraph = FTSGraph()
+  def updateRWAccess( cls ):
+    """ update RW access for SEs """
+    return cls.ftsStrategy().updateRWAccess()
 
   @classmethod
   def ftsStrategy( cls ):

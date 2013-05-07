@@ -77,7 +77,7 @@ class FTSRoute( Edge ):
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
     return 0.0
-  
+
 class FTSGraph( Graph ):
   """
   .. class:: FTSGraph
@@ -102,7 +102,7 @@ class FTSGraph( Graph ):
     self.schedulingType = schedulingType
     self.initialize( ftsHistoryViews )
     self.updateRWAccess()
-    
+
   def initialize( self, ftsHistoryViews = None ):
     """ pass """
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
@@ -129,7 +129,7 @@ class FTSGraph( Graph ):
                     "schedulingType": self.schedulingType }
         route = FTSRoute( siteA, siteB, rwAttrs, roAttrs )
         self.addEdge( route )
-                      
+
     for ftsHistory in ftsHistoryViews:
       sourceSE = ftsHistory.SourceSE
       targetSE = ftsHistory.TargetSE
@@ -164,7 +164,7 @@ class FTSGraph( Graph ):
                      "acceptableFailureRate": self.acceptableFailureRate,
                      "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
-        
+
         self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
 
   def rssClient( self ):
@@ -214,7 +214,7 @@ class FTSGraph( Graph ):
         return S_OK( edge )
     return S_ERROR( "FTSGraph: unable to find FTS route between '%s' and '%s'" % ( fromSE, toSE ) )
 
-  
+
 ########################################################################
 class FTSStrategy( object ):
   """
@@ -242,7 +242,7 @@ class FTSStrategy( object ):
   # # scheduling type
   schedulingType = "File"
 
-  def __init__( self, csPath = None ):
+  def __init__( self, csPath = None, ftsHistoryViews = None ):
     """c'tor
 
     :param self: self reference
@@ -250,6 +250,8 @@ class FTSStrategy( object ):
     """
     # ## config path
     self.csPath = csPath
+    # # history views
+    ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
     # # own sub logger
     self.log = gLogger.getSubLogger( "FTSStrategy", child = True )
     self.log.setLevel( gConfig.getValue( self.csPath + "/LogLevel", "DEBUG" ) )
@@ -274,6 +276,10 @@ class FTSStrategy( object ):
                                 "DynamicThroughput" : self.dynamicThroughput,
                                 "Simple" : self.simple,
                                 "Swarm" : self.swarm }
+
+    self.ftsGraph = FTSGraph( ftsHistoryViews, self.acceptableFailureRate,
+                              self.acceptableFailedFiles, self.schedulingType )
+
     # # if we land here everything is OK
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
@@ -286,22 +292,30 @@ class FTSStrategy( object ):
     return cls.__graphLock
 
   @classmethod
-  def ftsGraph( cls, ftsHistoryViews = None ):
-    """ prepare fts graph
-
-    :param dict ftsHistoryViews: list with FTShistoryViews entries
-    """
-    if not cls.__ftsGraph:
-      cls.__ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, cls.acceptableFailureRate,
-                                 cls.acceptableFailedFiles, cls.schedulingType )
-    return cls.__ftsGraph
-  
-  @classmethod
-  def resetGraph( cls, ftsHistoryViews ):
+  def resetGraph( self, ftsHistoryViews ):
     """ reset graph """
-    cls.__ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, cls.acceptableFailureRate,
-                               cls.acceptableFailedFiles, cls.schedulingType )
+    ftsGraph = None
+    try:
+      self.graphLock().acquire()
+      ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, self.acceptableFailureRate,
+                           self.acceptableFailedFiles, self.schedulingType )
+      if ftsGraph:
+        self.ftsGraph = ftsGraph
+    finally:
+      self.graphLock().release()
+    return S_OK()
 
+  def updateRWAccess( self ):
+    """ update RW access in FTS graph """
+    updateRWAccess = S_OK()
+    try:
+      self.graphLock().acquire()
+      updateRWAccess = self.ftsGraph.updateRWAccess()
+      if not updateRWAccess["OK"]:
+        self.log.error( updateRWAccess["Message"] )
+    finally:
+      self.graphLock().release()
+    return updateRWAccess
 
   def addTreeToGraph( self, replicationTree = None, size = 0.0 ):
     """ update rw access for nodes (sites) and size anf files for edges (channels) """
@@ -310,7 +324,7 @@ class FTSStrategy( object ):
     if replicationTree:
       try:
         self.graphLock().acquire()
-        for route in self.ftsGraph().edges():
+        for route in self.ftsGraph.edges():
           if route.name in replicationTree:
             route.size += size
             route.files += 1
