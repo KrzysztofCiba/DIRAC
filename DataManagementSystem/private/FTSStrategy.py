@@ -161,7 +161,7 @@ class FTSStrategy( object ):
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
   @classmethod
-  def grapLock( cls ):
+  def graphLock( cls ):
     """ get graph lock """
     if not cls.__graphLock:
       cls.__graphLock = LockRing().getLock( "FTSGraphLock" )
