@@ -89,7 +89,7 @@ class FTSManagerHandler( RequestHandler ):
       csPath = "%s/%s" % ( csPath, "FTSStrategy" )
       # # get FTSHistory
       gFTSStrategy = FTSStrategy( csPath )
-      gThreadScheduler.addPeriodicTask( 10, gFTSStrategy.updateRW() )
+      gThreadScheduler.addPeriodicTask( 10, cls.updateFTSStrategy() )
     return S_OK()
 
   @classmethod
