@@ -271,7 +271,9 @@ class FTSStrategy( object ):
   @classmethod
   def updateRW( cls ):
     """ update ftsGraph for RW access """
+    gLogger.always( "updateRW: start" )
     if not cls.ftsGraph():
+      gLogger.always( "FTSGraph not initialized" )
       return S_ERROR( "ftsGraph not initialized" )
     try:
       cls.graphLock().acquire()
@@ -282,6 +284,7 @@ class FTSStrategy( object ):
       site.SEs = rwDict["Value"]
     finally:
       cls.graphLock().release()
+    gLogger.always( "updateRW: end" )
     return S_OK()
 
   def updateGraph( self, replicationTree = None, size = 0.0 ):
