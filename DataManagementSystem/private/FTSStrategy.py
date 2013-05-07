@@ -191,7 +191,11 @@ class FTSStrategy( object ):
   def ftsGraph( cls ):
     """ get FTS graph """
     if not cls.__ftsGraph:
-      cls.initialize()
+      graph = cls.initialize()
+      if not graph["OK"]:
+        gLogger.error( graph["Message"] )
+      else:
+        cls.__ftsGraph = graph["Value"]
     return cls.__ftsGraph
 
   @classmethod
@@ -230,19 +234,15 @@ class FTSStrategy( object ):
       failedFiles = ftsHistory.FailedFiles
       size = ftsHistory.Size
       failedSize = ftsHistory.FailedSize
-      # status = ftsHistory.Status
-
       fromNode = graph.findFTSSiteForSE( sourceSE )
       if not fromNode:
         return S_ERROR( "unable to find site for '%s' SE" % sourceSE )
       toNode = graph.findFTSSiteForSE( targetSE )
       if not toNode:
         return S_ERROR( "unable to find site for '%s' SE" % targetSE )
-
       route = graph.findRoute( fromNode, toNode )
       # # route is there, update
       if route["OK"]:
-
         route = route["Value"]
         route.files += files
         route.size += size
@@ -264,9 +264,7 @@ class FTSStrategy( object ):
                     "acceptableFailedFiles" : cls.acceptableFailedFiles,
                     "schedulingType" : cls.schedulingType }
         graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
-
-    cls.__ftsGraph = graph
-    return S_OK()
+    return S_OK( graph )
 
   @classmethod
   def updateRW( cls ):
