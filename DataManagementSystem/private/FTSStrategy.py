@@ -33,7 +33,6 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 # # from DMS
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
-# from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 
 class FTSGraph( Graph ):
   """
@@ -57,6 +56,8 @@ class FTSGraph( Graph ):
       if fromSE in edge.fromNode.SEs and toSE in edge.toNode.SEs:
         return S_OK( edge )
     return S_ERROR( "FTSGraph: unable to find FTS route between '%s' and '%s'" % ( fromSE, toSE ) )
+
+
 
 class FTSSite( Node ):
   """
@@ -127,8 +128,7 @@ class FTSStrategy( object ):
   # # scheduling type
   schedulingType = "File"
 
-
-  def __init__( self, csPath = None, ftsHistoryViews = None ):
+  def __init__( self, csPath = None ):
     """c'tor
 
     :param self: self reference
@@ -160,8 +160,6 @@ class FTSStrategy( object ):
                                 "DynamicThroughput" : self.dynamicThroughput,
                                 "Simple" : self.simple,
                                 "Swarm" : self.swarm }
-    # # if we're here FTSStrategy is ready except initialize
-    # self.initializeGraph( ftsHistoryViews )
     # # if we land here everything is OK
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
@@ -188,111 +186,78 @@ class FTSStrategy( object ):
     return cls.__graphLock
 
   @classmethod
-  def ftsGraph( cls ):
-    """ get FTS graph """
-    if not cls.__ftsGraph:
-      graph = cls.initializeGraph()
-      if not graph["OK"]:
-        gLogger.error( graph["Message"] )
-      else:
-        cls.__ftsGraph = graph["Value"]
-    return cls.__ftsGraph
-
-  @classmethod
-  def initializeGraph( cls, ftsHistoryViews = None ):
+  def ftsGraph( cls, ftsHistoryViews = None ):
     """ prepare fts graph
 
     :param dict ftsHistoryViews: list with FTShistoryViews entries
-    :param dict channels: { channelID : { "Files" : long , Size = long, "ChannelName" : str,
-                                          "Source" : str, "Destination" : str , "ChannelName" : str, "Status" : str  } }
-    :param dict bandwidths: { channelID { "Throughput" : float, "Fileput" : float, "SucessfulFiles" : long, "FailedFiles" : long  } }
-    :param dict failedFiles: { channelID : int }
-
-    channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
     """
-    ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
-    # # build graph
-    graph = FTSGraph( "FTSGraph" )
+    if not cls.__ftsGraph:
 
-    sitesDict = cls.resources().getEligibleResources( "Storage" )
-    if not sitesDict["OK"]:
-      return sitesDict
-    sitesDict = sitesDict["Value"]
+      ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
+      # # build graph
+      graph = FTSGraph( "FTSGraph" )
 
-    # # create nodes
-    for site, ses in sitesDict.items():
-      rwDict = cls.__getRWAccessForSE( ses )
-      if not rwDict["OK"]:
-        return rwDict
-      graph.addNode( FTSSite( site, { "SEs" : rwDict["Value"] } ) )
+      sitesDict = cls.resources().getEligibleResources( "Storage" )
+      if not sitesDict["OK"]:
+        return sitesDict
+      sitesDict = sitesDict["Value"]
 
-    for ftsHistory in ftsHistoryViews:
-      sourceSE = ftsHistory.SourceSE
-      targetSE = ftsHistory.TargetSE
-      files = ftsHistory.Files
-      failedFiles = ftsHistory.FailedFiles
-      size = ftsHistory.Size
-      failedSize = ftsHistory.FailedSize
-      fromNode = graph.findFTSSiteForSE( sourceSE )
-      if not fromNode:
-        return S_ERROR( "unable to find site for '%s' SE" % sourceSE )
-      toNode = graph.findFTSSiteForSE( targetSE )
-      if not toNode:
-        return S_ERROR( "unable to find site for '%s' SE" % targetSE )
-      route = graph.findRoute( fromNode, toNode )
-      # # route is there, update
-      if route["OK"]:
-        route = route["Value"]
-        route.files += files
-        route.size += size
-        route.failedSize += failedSize
-        route.successfulAttempts += files - failedFiles
-        route.failedAttempts += failedFiles
-        route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
-        route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
-      else:
-        # # route is missing, create a new one
-        rwAttrs = { "files": files, "size": size,
+      # # create nodes
+      for site, ses in sitesDict.items():
+        rwDict = cls.__getRWAccessForSE( ses )
+        if not rwDict["OK"]:
+          return rwDict
+        graph.addNode( FTSSite( site, { "SEs" : rwDict["Value"] } ) )
+
+      for ftsHistory in ftsHistoryViews:
+        sourceSE = ftsHistory.SourceSE
+        targetSE = ftsHistory.TargetSE
+        files = ftsHistory.Files
+        failedFiles = ftsHistory.FailedFiles
+        size = ftsHistory.Size
+        failedSize = ftsHistory.FailedSize
+        fromNode = graph.findFTSSiteForSE( sourceSE )
+        if not fromNode:
+          return S_ERROR( "unable to find site for '%s' SE" % sourceSE )
+        toNode = graph.findFTSSiteForSE( targetSE )
+        if not toNode:
+          return S_ERROR( "unable to find site for '%s' SE" % targetSE )
+        route = graph.findRoute( fromNode, toNode )
+        # # route is there, update
+        if route["OK"]:
+          route = route["Value"]
+          route.files += files
+          route.size += size
+          route.failedSize += failedSize
+          route.successfulAttempts += files - failedFiles
+          route.failedAttempts += failedFiles
+          route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
+          route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
+        else:
+          # # route is missing, create a new one
+          rwAttrs = { "files": files, "size": size,
                     "successfulAttempts": files - failedFiles,
                     "failedAttempts": failedFiles,
                     "failedSize": failedSize,
                     "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
                     "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
-        roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
+          roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
                     "acceptableFailureRate" : cls.acceptableFailureRate,
                     "acceptableFailedFiles" : cls.acceptableFailedFiles,
                     "schedulingType" : cls.schedulingType }
-        graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
-    return S_OK( graph )
+          graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
+      cls.__ftsGraph = graph
+    return cls.__ftsGraph
 
-  @classmethod
-  def updateRW( cls ):
-    """ update ftsGraph for RW access """
-    gLogger.always( "updateRW: start" )
-    if not cls.ftsGraph():
-      gLogger.always( "FTSGraph not initialized" )
-      return S_ERROR( "ftsGraph not initialized" )
-    try:
-      cls.graphLock().acquire()
-      for site in cls.ftsGraph.nodes():
-        rwDict = cls.__getRWAccessForSE( site.SEs.keys() )
-        if not rwDict["OK"]:
-          continue
-      site.SEs = rwDict["Value"]
-    finally:
-      cls.graphLock().release()
-    gLogger.always( "updateRW: end" )
-    return S_OK()
-
-  def updateGraph( self, replicationTree = None, size = 0.0 ):
+  def addTreeToGraph( self, replicationTree = None, size = 0.0 ):
     """ update rw access for nodes (sites) and size anf files for edges (channels) """
     replicationTree = replicationTree if replicationTree else {}
     size = size if size else 0.0
     if replicationTree:
       try:
         self.graphLock().acquire()
-        for route in self.ftsGraph.edges():
+        for route in self.ftsGraph().edges():
           if route.name in replicationTree:
             route.size += size
             route.files += 1
@@ -570,7 +535,7 @@ class FTSStrategy( object ):
       self.log.error( "replicationTree: %s" % tree["Message"] )
       return tree
     # # update graph edges
-    update = self.updateGraph( replicationTree = tree["Value"], size = size )
+    update = self.addTreeToGraph( replicationTree = tree["Value"], size = size )
     if not update["OK"]:
       self.log.error( "replicationTree: unable to update FTS graph: %s" % update["Message"] )
       return update

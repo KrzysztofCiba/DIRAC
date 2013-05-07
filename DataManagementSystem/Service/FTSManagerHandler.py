@@ -88,13 +88,20 @@ class FTSManagerHandler( RequestHandler ):
       csPath = getServiceSection( "DataManagement/FTSManager" )
       csPath = "%s/%s" % ( csPath, "FTSStrategy" )
       # # get FTSHistory
-      ftsHistory = cls.__ftsDB.getFTSHistory()
-      if not ftsHistory["OK"]:
-        return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
-      ftsHistory = ftsHistory["Value"]
-      gFTSStrategy = FTSStrategy( csPath, ftsHistory )
+      gFTSStrategy = FTSStrategy( csPath )
       gThreadScheduler.addPeriodicTask( 600, gFTSStrategy.updateRW() )
     return S_OK()
+
+  @classmethod
+  def updateFTSGraph( cls ):
+    """ update FTS graph in the FTSStrategy """
+    global gFTSStrategy
+    ftsHistory = cls.__ftsDB.getFTSHistory()
+    if not ftsHistory["OK"]:
+      return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
+    gFTSStrategy.updateFTSGraph( ftsHistory["Value"] )
+    return S_OK()
+
 
   @classmethod
   def ftsValidator( cls ):
