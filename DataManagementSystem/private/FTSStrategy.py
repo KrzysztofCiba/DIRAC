@@ -104,6 +104,7 @@ class FTSGraph( Graph ):
 
   def initialize( self, ftsHistoryViews = None ):
     """ pass """
+    gLogger.always( "initializing..." )
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
     sitesDict = self.resources().getEligibleResources( "Storage" )
     if not sitesDict["OK"]:
@@ -165,6 +166,7 @@ class FTSGraph( Graph ):
                     "schedulingType": self.schedulingType }
         self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
     self.updateRWAccess()
+    gLogger.always( "...done!" )
 
   def rssClient( self ):
     """ RSS client getter """
@@ -183,6 +185,7 @@ class FTSGraph( Graph ):
 
     :param list seList: SE list
     """
+    gLogger.always( "updating RW access..." )
     for site in self.nodes():
       seList = site.SEs.keys()
       rwDict = dict.fromkeys( seList )
@@ -198,6 +201,7 @@ class FTSGraph( Graph ):
           return wAccess
         rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
       site.SEs = rwDict
+    gLogger.always( "...done!" )
     return S_OK()
 
   def findFTSSiteForSE( self, se ):
