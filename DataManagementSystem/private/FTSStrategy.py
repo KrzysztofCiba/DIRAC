@@ -116,6 +116,10 @@ class FTSStrategy( object ):
   __ftsGraph = None
   # # lock
   __graphLock = None
+  # # resources
+  __resources = None
+  # # rss client
+  __rssClient = None
   # # acceptable failure rate
   acceptableFailureRate = 75
   # # acceptable failed files
