@@ -12,6 +12,8 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     replication strategy for all FTS transfers
+
+    todo: move out graph from ftsstrategy, build it standalone
 """
 
 __RCSID__ = "$Id: $"
@@ -40,9 +42,110 @@ class FTSGraph( Graph ):
 
   graph holding FTS transfers (edges) and sites (nodes)
   """
-  def __init__( self, name, nodes = None, edges = None ):
+  # # rss client
+  __rssClient = None
+  # # resources
+  __resources = None
+
+  def __init__( self,
+                name,
+                ftsHistoryViews = None,
+                acceptableFailureRate = 0.75,
+                acceptableFailedFiles = 5,
+                schedulingType = "Files" ):
     """ c'tor """
-    Graph.__init__( self, name, nodes, edges )
+    Graph.__init__( self, "FTSGraph" )
+    self.acceptableFailureRate = acceptableFailureRate
+    self.acceptableFailedFiles = acceptableFailedFiles
+    self.schedulingType = schedulingType
+    self.initilize( ftsHistoryViews )
+
+  def initilize( self, ftsHistoryViews = None ):
+    ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
+
+    sitesDict = self.resources().getEligibleResources( "Storage" )
+    if not sitesDict["OK"]:
+      return sitesDict
+    sitesDict = sitesDict["Value"]
+    # # create nodes
+    for site, ses in sitesDict.items():
+      rwDict = dict.fromkeys( ses )
+      for se in rwDict:
+        rwDict[se] = { "read": False, "write": False }
+      self.addNode( FTSSite( site, { "SEs" : rwDict["Value"] } ) )
+
+      for ftsHistory in ftsHistoryViews:
+        sourceSE = ftsHistory.SourceSE
+        targetSE = ftsHistory.TargetSE
+        files = ftsHistory.Files
+        failedFiles = ftsHistory.FailedFiles
+        size = ftsHistory.Size
+        failedSize = ftsHistory.FailedSize
+        fromNode = self.findFTSSiteForSE( sourceSE )
+        toNode = self.findFTSSiteForSE( targetSE )
+        if not fromNode or not toNode:
+          continue
+        route = self.findRoute( fromNode, toNode )
+        # # route is there, update
+        if route["OK"]:
+          route = route["Value"]
+          route.files += files
+          route.size += size
+          route.failedSize += failedSize
+          route.successfulAttempts += files - failedFiles
+          route.failedAttempts += failedFiles
+          route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
+          route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
+        else:
+          # # route is missing, create a new one
+          rwAttrs = { "files": files, "size": size,
+                      "successfulAttempts": files - failedFiles,
+                      "failedAttempts": failedFiles,
+                      "failedSize": failedSize,
+                      "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
+                      "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
+          roAttrs = { "routeName": "%s#%s" % ( fromNode.name, toNode.name ),
+                      "acceptableFailureRate": self.acceptableFailureRate,
+                      "acceptableFailedFiles": self.acceptableFailedFiles,
+                      "schedulingType": self.schedulingType }
+          self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
+
+  def rssClient( self ):
+    """ RSS client getter """
+    if not self.__rssClient:
+      self.__rssClient = ResourceStatus()
+    return self.__rssClient
+
+  def resources( self ):
+    """ resource helper getter """
+    if not self.__resources:
+      self.__resources = Resources()
+    return self.__resources
+
+  def updateRWAccess( self ):
+    """ get RSS R/W for :seList:
+
+    :param list seList: SE list
+    """
+    for site in self.nodes():
+      seList = site.SEs.keys()
+      rwDict = dict.fromkeys( seList )
+      for se in rwDict:
+        rwDict[se] = { "read": False, "write": False  }
+
+      for se in seList:
+        rAccess = self.rssClient().getStorageElementStatus( se, "ReadAccess" )
+        if not rAccess["OK"]:
+          return rAccess
+        rwDict[se]["read"] = True if rAccess["Value"] in ( "Active", "Degraded" ) else False
+
+        wAccess = self.rssClient().getStorageElementStatus( se, "WriteAccess" )
+        if not wAccess["OK"]:
+          return wAccess
+        rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
+
+      site.SEs = rwDict
+    return S_OK()
 
   def findFTSSiteForSE( self, se ):
     """ return FTSSite for a given SE """
@@ -56,8 +159,6 @@ class FTSGraph( Graph ):
       if fromSE in edge.fromNode.SEs and toSE in edge.toNode.SEs:
         return S_OK( edge )
     return S_ERROR( "FTSGraph: unable to find FTS route between '%s' and '%s'" % ( fromSE, toSE ) )
-
-
 
 class FTSSite( Node ):
   """
@@ -165,20 +266,6 @@ class FTSStrategy( object ):
 
 
   @classmethod
-  def rssClient( cls ):
-    """ get RSS client """
-    if not cls.__rssClient:
-      cls.__rssClient = ResourceStatus()
-    return cls.__rssClient
-
-  @classmethod
-  def resources( cls ):
-    """ get resources helper """
-    if not cls.__resources:
-      cls.__resources = Resources()
-    return cls.__resources
-
-  @classmethod
   def graphLock( cls ):
     """ get graph lock """
     if not cls.__graphLock:
@@ -186,68 +273,14 @@ class FTSStrategy( object ):
     return cls.__graphLock
 
   @classmethod
-  def ftsGraph( cls, ftsHistoryViews = None ):
+  def ftsGraph( cls, ftsHistoryViews = None, force = False ):
     """ prepare fts graph
 
     :param dict ftsHistoryViews: list with FTShistoryViews entries
     """
-
-    if not cls.__ftsGraph:
-
-      ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
-      # # build graph
-      graph = FTSGraph( "FTSGraph" )
-
-      sitesDict = cls.resources().getEligibleResources( "Storage" )
-      if not sitesDict["OK"]:
-        return sitesDict
-      sitesDict = sitesDict["Value"]
-
-      # # create nodes
-      for site, ses in sitesDict.items():
-        rwDict = cls.__getRWAccessForSE( ses )
-        if not rwDict["OK"]:
-          return rwDict
-        graph.addNode( FTSSite( site, { "SEs" : rwDict["Value"] } ) )
-
-      for ftsHistory in ftsHistoryViews:
-        sourceSE = ftsHistory.SourceSE
-        targetSE = ftsHistory.TargetSE
-        files = ftsHistory.Files
-        failedFiles = ftsHistory.FailedFiles
-        size = ftsHistory.Size
-        failedSize = ftsHistory.FailedSize
-        fromNode = graph.findFTSSiteForSE( sourceSE )
-        if not fromNode:
-          return S_ERROR( "unable to find site for '%s' SE" % sourceSE )
-        toNode = graph.findFTSSiteForSE( targetSE )
-        if not toNode:
-          return S_ERROR( "unable to find site for '%s' SE" % targetSE )
-        route = graph.findRoute( fromNode, toNode )
-        # # route is there, update
-        if route["OK"]:
-          route = route["Value"]
-          route.files += files
-          route.size += size
-          route.failedSize += failedSize
-          route.successfulAttempts += files - failedFiles
-          route.failedAttempts += failedFiles
-          route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
-          route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
-        else:
-          # # route is missing, create a new one
-          rwAttrs = { "files": files, "size": size,
-                    "successfulAttempts": files - failedFiles,
-                    "failedAttempts": failedFiles,
-                    "failedSize": failedSize,
-                    "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
-                    "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
-          roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
-                    "acceptableFailureRate" : cls.acceptableFailureRate,
-                    "acceptableFailedFiles" : cls.acceptableFailedFiles,
-                    "schedulingType" : cls.schedulingType }
-          graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
-      cls.__ftsGraph = graph
+    if not cls.__ftsGraph or force:
+      cls.__ftsGraph = FTSGraph( ftsHistoryViews, cls.acceptableFailureRate,
+                                 cls.acceptableFailedFiles, cls.schedulingType )
     return cls.__ftsGraph
 
   def addTreeToGraph( self, replicationTree = None, size = 0.0 ):
@@ -551,27 +584,3 @@ class FTSStrategy( object ):
     if self.chosenStrategy == self.numberOfStrategies:
       self.chosenStrategy = 0
     return chosenStrategy
-
-  @classmethod
-  def __getRWAccessForSE( cls, seList ):
-    """ get RSS R/W for :seList:
-
-    :param list seList: SE list
-    """
-    rwDict = dict.fromkeys( seList )
-    for se in rwDict:
-      rwDict[se] = { "read" : False, "write" : False  }
-
-    for se in seList:
-      rAccess = cls.rssClient().getStorageElementStatus( se, "ReadAccess" )
-      if not rAccess["OK"]:
-        return rAccess
-      rwDict[se]["read"] = True if rAccess["Value"] in ( "Active", "Degraded" ) else False
-
-      wAccess = cls.rssClient().getStorageElementStatus( se, "WriteAccess" )
-      if not wAccess["OK"]:
-        return wAccess
-      rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
-
-    return S_OK( rwDict )
-

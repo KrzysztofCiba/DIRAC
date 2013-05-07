@@ -89,19 +89,18 @@ class FTSManagerHandler( RequestHandler ):
       csPath = "%s/%s" % ( csPath, "FTSStrategy" )
       # # get FTSHistory
       gFTSStrategy = FTSStrategy( csPath )
-      gThreadScheduler.addPeriodicTask( 600, gFTSStrategy.updateRW() )
+      gThreadScheduler.addPeriodicTask( 10, gFTSStrategy.updateRW() )
     return S_OK()
 
   @classmethod
-  def updateFTSGraph( cls ):
+  def updateFTSStrategy( cls ):
     """ update FTS graph in the FTSStrategy """
     global gFTSStrategy
     ftsHistory = cls.__ftsDB.getFTSHistory()
     if not ftsHistory["OK"]:
       return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
-    gFTSStrategy.updateFTSGraph( ftsHistory["Value"] )
+    gFTSStrategy.ftsGraph( ftsHistory["Value"], True )
     return S_OK()
-
 
   @classmethod
   def ftsValidator( cls ):
