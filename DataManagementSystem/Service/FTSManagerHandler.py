@@ -38,11 +38,10 @@ from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
-from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
+from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy, FTSGraph
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
-# # global instance of FTSDB
-gFTSStrategy = None
+gFTSGraph = None
 
 ########################################################################
 class FTSManagerHandler( RequestHandler ):
@@ -58,12 +57,15 @@ class FTSManagerHandler( RequestHandler ):
   __replicaManager = None
   # # FTSDB
   __ftsDB = None
+  # # fts strategy
+  __ftsStrategy = None
+  # # fts graph
+  __ftsGraph = None
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
 
-    global gFTSStrategy
     from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
     cls.__ftsDB = FTSDB()
     # # connect
@@ -84,23 +86,32 @@ class FTSManagerHandler( RequestHandler ):
     gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:
-      # # get CS path
-      csPath = getServiceSection( "DataManagement/FTSManager" )
-      csPath = "%s/%s" % ( csPath, "FTSStrategy" )
-      # # get FTSHistory
-      gFTSStrategy = FTSStrategy( csPath )
-      gThreadScheduler.addPeriodicTask( 10, cls.updateFTSStrategy() )
+      gThreadScheduler.addPeriodicTask( 3600, cls.updateFTSStrategy() )
     return S_OK()
 
   @classmethod
   def updateFTSStrategy( cls ):
     """ update FTS graph in the FTSStrategy """
-    global gFTSStrategy
     ftsHistory = cls.__ftsDB.getFTSHistory()
     if not ftsHistory["OK"]:
       return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
-    gFTSStrategy.ftsGraph( ftsHistory["Value"], True )
+    cls.ftsStrategy().updateFTSGraph( ftsHistory["Value"] )
     return S_OK()
+
+  @classmethod
+  def ftsGraph( cls ):
+    if not cls.__ftsGraph:
+      cls.__ftsGraph = FTSGraph()
+
+  @classmethod
+  def ftsStrategy( cls ):
+    """ fts strategy getter """
+    if not cls.__ftsStrategy:
+      csPath = getServiceSection( "DataManagement/FTSManager" )
+      csPath = "%s/%s" % ( csPath, "FTSStrategy" )
+      cls.__ftsStrategy = FTSStrategy( csPath )
+
+    return cls.__ftsStrategy
 
   @classmethod
   def ftsValidator( cls ):
@@ -131,12 +142,8 @@ class FTSManagerHandler( RequestHandler ):
     :param list sourceSEs: source SEs
     :param list targetSEs: target SEs
     """
-    if not gFTSStrategy:
-      errMsg = "FTS mode is disabled or FTSStrategy could not be created"
-      gLogger.error( errMsg )
-      return S_ERROR( errMsg )
     size = fileJSON.get( "Size", 0 )
-    tree = gFTSStrategy.replicationTree( sourceSEs, targetSEs, size )
+    tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
     if not tree["OK"]:
       return tree
     tree = tree["Value"]

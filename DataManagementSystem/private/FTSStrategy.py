@@ -75,41 +75,52 @@ class FTSGraph( Graph ):
         rwDict[se] = { "read": False, "write": False }
       self.addNode( FTSSite( site, { "SEs" : rwDict } ) )
 
-      for ftsHistory in ftsHistoryViews:
-        sourceSE = ftsHistory.SourceSE
-        targetSE = ftsHistory.TargetSE
-        files = ftsHistory.Files
-        failedFiles = ftsHistory.FailedFiles
-        size = ftsHistory.Size
-        failedSize = ftsHistory.FailedSize
-        fromNode = self.findFTSSiteForSE( sourceSE )
-        toNode = self.findFTSSiteForSE( targetSE )
-        if not fromNode or not toNode:
-          continue
-        route = self.findRoute( fromNode, toNode )
-        # # route is there, update
-        if route["OK"]:
-          route = route["Value"]
-          route.files += files
-          route.size += size
-          route.failedSize += failedSize
-          route.successfulAttempts += files - failedFiles
-          route.failedAttempts += failedFiles
-          route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
-          route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
-        else:
-          # # route is missing, create a new one
-          rwAttrs = { "files": files, "size": size,
-                      "successfulAttempts": files - failedFiles,
-                      "failedAttempts": failedFiles,
-                      "failedSize": failedSize,
-                      "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
-                      "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
-          roAttrs = { "routeName": "%s#%s" % ( fromNode.name, toNode.name ),
-                      "acceptableFailureRate": self.acceptableFailureRate,
-                      "acceptableFailedFiles": self.acceptableFailedFiles,
-                      "schedulingType": self.schedulingType }
-          self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
+    for fromSite in self.nodes():
+      for toSite in self.nodes():
+        rwAttrs = { "files": 0, "size": 0, "successfulAttempts": 0,
+                    "failedAttempts": 0, "failedSize": 0,
+                    "fileput": 0.0, "throughput": 0.0  }
+        roAttrs = { "routeName": "%s#%s" % ( fromSite.name, toSite.name ),
+                     "acceptableFailureRate": self.acceptableFailureRate,
+                     "acceptableFailedFiles": self.acceptableFailedFiles,
+                    "schedulingType": self.schedulingType }
+        self.addEdge( FTSRoute( fromSite, toSite, rwAttrs, roAttrs  )
+                      
+    for ftsHistory in ftsHistoryViews:
+      sourceSE = ftsHistory.SourceSE
+      targetSE = ftsHistory.TargetSE
+      files = ftsHistory.Files
+      failedFiles = ftsHistory.FailedFiles
+      size = ftsHistory.Size
+      failedSize = ftsHistory.FailedSize
+      fromNode = self.findFTSSiteForSE( sourceSE )
+      toNode = self.findFTSSiteForSE( targetSE )
+      if not fromNode or not toNode:
+        continue
+      route = self.findRoute( fromNode, toNode )
+      # # route is there, update
+      if route["OK"]:
+        route = route["Value"]
+        route.files += files
+        route.size += size
+        route.failedSize += failedSize
+        route.successfulAttempts += files - failedFiles
+        route.failedAttempts += failedFiles
+        route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
+        route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
+      else:
+        # # route is missing, create a new one
+        rwAttrs = { "files": files, "size": size,
+                    "successfulAttempts": files - failedFiles,
+                    "failedAttempts": failedFiles,
+                    "failedSize": failedSize,
+                    "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
+                    "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
+        roAttrs = { "routeName": "%s#%s" % ( fromNode.name, toNode.name ),
+                     "acceptableFailureRate": self.acceptableFailureRate,
+                     "acceptableFailedFiles": self.acceptableFailedFiles,
+                    "schedulingType": self.schedulingType }
+        self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
 
   def rssClient( self ):
     """ RSS client getter """
@@ -274,15 +285,22 @@ class FTSStrategy( object ):
     return cls.__graphLock
 
   @classmethod
-  def ftsGraph( cls, ftsHistoryViews = None, force = False ):
+  def ftsGraph( cls, ftsHistoryViews = None ):
     """ prepare fts graph
 
     :param dict ftsHistoryViews: list with FTShistoryViews entries
     """
-    if not cls.__ftsGraph or force:
+    if not cls.__ftsGraph:
       cls.__ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, cls.acceptableFailureRate,
                                  cls.acceptableFailedFiles, cls.schedulingType )
     return cls.__ftsGraph
+  
+  @classmethod
+  def resetGraph( cls, ftsHistoryViews ):
+    """ reset graph """
+    cls.__ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, cls.acceptableFailureRate,
+                               cls.acceptableFailedFiles, cls.schedulingType )
+
 
   def addTreeToGraph( self, replicationTree = None, size = 0.0 ):
     """ update rw access for nodes (sites) and size anf files for edges (channels) """
