@@ -198,11 +198,12 @@ class FTSGraph( Graph ):
       for se in seList:
         rAccess = self.rssClient().getStorageElementStatus( se, "ReadAccess" )
         if not rAccess["OK"]:
-          gLogger.error()
+          self.log.error( rAccess["Message"] )
+          continue
         rwDict[se]["read"] = True if rAccess["Value"] in ( "Active", "Degraded" ) else False
         wAccess = self.rssClient().getStorageElementStatus( se, "WriteAccess" )
         if not wAccess["OK"]:
-          gLogger.error( wAccess["Message"] )
+          self.log.error( wAccess["Message"] )
           continue
         rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
       site.SEs = rwDict
