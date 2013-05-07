@@ -46,10 +46,9 @@ class FTSJob( Record ):
   class describing one FTS job
   """
   # # final states
-  __finalStates = ( "Canceled", "Failed", "Finished", "FinishedDirty" )
+  finalStates = ( "Canceled", "Failed", "Finished", "FinishedDirty" )
   # # initial and transfer ongoing states
-  __transStates = ( "Submitted", "Ready", "Active" )
-
+  transStates = ( "Submitted", "Ready", "Active" )
 
   def __init__( self, fromDict = None ):
     """c'tor

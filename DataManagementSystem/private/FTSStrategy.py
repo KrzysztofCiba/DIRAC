@@ -14,7 +14,7 @@
     replication strategy for all FTS transfers
 """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id: $"
 
 # #
 # @file FTSStrategy.py
@@ -33,6 +33,9 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
+# # from DMS
+from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
+from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 
 class FTSGraph( Graph ):
   """
@@ -43,6 +46,12 @@ class FTSGraph( Graph ):
   def __init__( self, name, nodes = None, edges = None ):
     """ c'tor """
     Graph.__init__( self, name, nodes, edges )
+
+  def findFTSSiteForSE( self, se ):
+    """ return FTSSite for a given SE """
+    for node in self.nodes():
+      if se in node:
+        return node
 
   def findRoute( self, fromSE, toSE ):
     """ find route between :fromSE: and :toSE: """
@@ -61,10 +70,14 @@ class FTSSite( Node ):
     """ c'tor """
     Node.__init__( self, name, rwAttrs, roAttrs )
 
+  def __contains__( self, se ):
+    """ check if SE is hosted at this site """
+    return se in self.SEs
+
 class FTSRoute( Edge ):
   """
   .. class:: FTSRoute
-  
+
   class representing transfers between sites
   """
   def __init__( self, fromNode, toNode, rwAttrs = None, roAttrs = None ):
@@ -94,7 +107,7 @@ class FTSStrategy( object ):
   """
   .. class:: FTSStrategy
 
-  helper class to create replication forrest for a given file and it's replicas using 
+  helper class to create replication forrest for a given file and it's replicas using
   several different strategies
   """
   # # make it singleton
@@ -167,13 +180,13 @@ class FTSStrategy( object ):
 
     channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
     """
-    #channels = channels if channels else {}
-    #bandwithds = bandwithds if bandwithds else {}
-    #failedFiles = failedFiles if failedFiles else {}
-    ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else [] 
+    # channels = channels if channels else {}
+    # bandwithds = bandwithds if bandwithds else {}
+    # failedFiles = failedFiles if failedFiles else {}
+    ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
-    ## build graph
-    graph = FTSGraph( "sites" )
+    # # build graph
+    graph = FTSGraph( "FTSGraph" )
 
     sitesDict = self.resources.getEligibleResources( "Storage" )
     if not sitesDict["OK"]:
@@ -187,14 +200,50 @@ class FTSStrategy( object ):
       if not rwDict["OK"]:
         return rwDict
       graph.addNode( FTSSite( site, { "SEs" : rwDict["Value"] } ) )
-      
+
+    for ftsHistory in ftsHistoryViews:
+      sourceSE = ftsHistory.SourceSE
+      targetSE = ftsHistory.TargetSE
+      files = ftsHistory.Files
+      failedFiles = ftsHistory.FailedFiles
+      size = ftsHistory.Size
+      failedSize = ftsHistory.FailedSize
+      status = ftsHistory.Status
+      fromNode = graph.findFTSSiteForSE( sourceSE )
+      if not fromNode:
+        return S_ERROR( "unable to find site for '%s' SE" % sourceSE )
+      toNode = graph.findFTSSiteForSE( targetSE )
+      if not toNode:
+        return S_ERROR( "unable to find site for '%s' SE" % targetSE )
+
+      rwAttrs = { "files" : files,
+                 "size" : size,
+                 "successfulAttempts" : files - failedFiles,
+                 "failedAttempts" : failedFiles,
+                 "fileput" : float( files / 3600.0 ),
+                 "throughput" : float( size / 3600.0 ) }
+      roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
+                  "acceptableFailureRate" : self.acceptableFailureRate,
+                  "acceptableFailedFiles" : self.acceptableFailedFiles,
+                  "schedulingType" : self.schedulingType }
+
+      rwAttrs = {}
+      roAttrs = {}
+
+      route = graph.findRoute( fromNode, toNode )
+      if route["OK"]:
+        route = route["Value"]
+      else:
+        route = FTSRoute( fromNode, toNode, rwAttrs, roAttrs )
+
+
     # # channels { channelID : { "Files" : long , Size = long, "ChannelName" : str,
     # #                          "Source" : str, "Destination" : str ,
     # #                          "ChannelName" : str, "Status" : str  } }
     # # bandwidths { channelID { "Throughput" : float, "Fileput" : float,
     # #                           "SucessfulFiles" : long, "FailedFiles" : long  } }
     # # channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
-    #for channelID, channelDict in channels.items():
+    # for channelID, channelDict in channels.items():
     #  sourceName = channelDict["Source"]
     #  destName = channelDict["Destination"]
     #  fromNode = graph.getNode( sourceName )

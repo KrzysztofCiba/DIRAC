@@ -4,35 +4,35 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/06 16:50:30
 ########################################################################
-
-""" :mod: FTSStrategyTests 
+""" :mod: FTSStrategyTests
     ======================
- 
+
     .. module: FTSStrategyTests
     :synopsis: unittests for FTSStrategy
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     unittests for FTSStrategy
 """
-
-__RCSID__ = "$Id $"
-
-##
+__RCSID__ = "$Id: $"
+# #
 # @file FTSStrategyTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/05/06 16:50:40
 # @brief Definition of FTSStrategyTests class.
 
-## imports 
+# # imports
 import unittest
-## SUT
+# # SUT
 from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
+# # helper classes
+from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
+
 
 ########################################################################
-class FTSStrategyTests(unittest.TestCase):
+class FTSStrategyTests( unittest.TestCase ):
   """
   .. class:: FTSStrategyTests
-  
+
   """
 
   def setUp( self ):
@@ -42,3 +42,8 @@ class FTSStrategyTests(unittest.TestCase):
   def tearDown( self ):
     """ test case tear down """
     pass
+
+
+# # test execution
+if __name__ == "__main__":
+  pass
