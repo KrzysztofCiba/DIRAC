@@ -61,6 +61,7 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
+
     global gFTSStrategy
     from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
     cls.__ftsDB = FTSDB()
@@ -73,7 +74,8 @@ class FTSManagerHandler( RequestHandler ):
 
     if not checkTables["OK"] and not checkTables["Message"] == "The requested table already exist":
       return checkTables
-    checkViews = cls.__ftsDB._checkViews()
+    # # always re-create views
+    checkViews = cls.__ftsDB._checkViews( True )
     if not checkViews["OK"]:
       return checkViews
 
@@ -81,9 +83,15 @@ class FTSManagerHandler( RequestHandler ):
     gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:
+      # # get CS path
       csPath = getServiceSection( "DataManagement/FTSManager" )
       csPath = "%s/%s" % ( csPath, "FTSStrategy" )
-      gFTSStrategy = FTSStrategy( csPath )
+      # # get FTSHistory
+      ftsHistory = cls.__ftsDB.getFTSHistory()
+      if not ftsHistory["OK"]:
+        return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
+      ftsHistory = ftsHistory["Value"]
+      gFTSStrategy = FTSStrategy( csPath, ftsHistory )
     return S_OK()
 
   @classmethod

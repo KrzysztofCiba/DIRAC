@@ -114,7 +114,7 @@ class FTSStrategy( object ):
   # # list of supported strategies
   __supportedStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
 
-  def __init__( self, csPath = None ):
+  def __init__( self, csPath = None, ftsHistoryViews = None ):
     """c'tor
 
     :param self: self reference
@@ -122,13 +122,11 @@ class FTSStrategy( object ):
     """
     # ## config path
     self.csPath = csPath
-
+    # # private lock for update
     self.graphLock = LockRing().getLock( "FTSGraphLock" )
-
     # # own sub logger
     self.log = gLogger.getSubLogger( "FTSStrategy", child = True )
     self.log.setLevel( gConfig.getValue( self.csPath + "/LogLevel", "DEBUG" ) )
-
     # # CS options
     self.log.info( "Supported strategies = %s" % ", ".join( self.supportedStrategies ) )
     self.sigma = gConfig.getValue( "%s/%s" % ( self.csPath, "HopSigma" ), 5 )
@@ -157,18 +155,17 @@ class FTSStrategy( object ):
                                 "DynamicThroughput" : self.dynamicThroughput,
                                 "Simple" : self.simple,
                                 "Swarm" : self.swarm }
-
     # #  own RSS client
     self.rssClient = ResourceStatus()
     # # resources helper
     self.resources = Resources()
-
-    # # create fts graph
-    self.setup()
+    # # if we're here FTSStrategy is ready except initialize
+    self.init = self.initialize( ftsHistoryViews )
 
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
-  def setup( self, ftsHistoryViews = None ):
+
+  def initialize( self, ftsHistoryViews = None ):
     """ prepare fts graph
 
     :param dict ftsHistoryViews: list with FTShistoryViews entries
@@ -179,9 +176,6 @@ class FTSStrategy( object ):
 
     channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
     """
-    # channels = channels if channels else {}
-    # bandwithds = bandwithds if bandwithds else {}
-    # failedFiles = failedFiles if failedFiles else {}
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
     # # build graph
@@ -218,26 +212,26 @@ class FTSStrategy( object ):
 
       route = graph.findRoute( fromNode, toNode )
       # # route is there, update
+
       # # TODO: check status
       if route["OK"]:
 
         route = route["Value"]
-
         route.files += files
         route.size += size
         route.failedSize += failedSize
         route.successfulAttempts += files - failedFiles
         route.failedAttempts += failedFiles
-        route.fileput = float( route.files - route.failedFiles ) / 3600.0
-        route.throughput = float( route.size - route.failedSize ) / 3600.0
+        route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
+        route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
       else:
         # # route is missing, create a new one
         rwAttrs = { "files": files, "size": size,
                     "successfulAttempts": files - failedFiles,
                     "failedAttempts": failedFiles,
                     "failedSize": failedSize,
-                    "fileput": float( files - failedFiles ) / 3600.0 ,
-                    "throughput": float( size - failedSize ) / 3600.0  }
+                    "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
+                    "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
         roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
                     "acceptableFailureRate" : self.acceptableFailureRate,
                     "acceptableFailedFiles" : self.acceptableFailedFiles,

@@ -87,6 +87,7 @@ class FTSJob( Record ):
                "SourceToken": "VARCHAR(255)",
                "Size": "INTEGER NOT NULL",
                "Files": "INTEGER NOT NULL",
+               "Completeness": "INTEGER NOT NULL DEFAULT 0",
                "FailedFiles": "INTEGER DEFAULT 0",
                "FailedSize": "INTEGER DEFAULT 0",
                "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty', 'Assigned' ) DEFAULT 'Submitted'",

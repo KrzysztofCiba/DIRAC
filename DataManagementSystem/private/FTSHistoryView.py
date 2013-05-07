@@ -34,6 +34,7 @@ class FTSHistoryView( object ):
 
   helper class for FTSManagerHandler to keep 1h history of FTS transfers
   """
+  INTERVAL = 3600
 
   def __init__( self, fromDict = None ):
     """c'tor
@@ -66,7 +67,7 @@ class FTSHistoryView( object ):
                           "FailedFiles": "SUM(`FTSJob`.`FailedFiles`)",
                           "FailedSize": "SUM(`FTSJob`.`FailedSize`)" },
              "SelectFrom" : "`FTSJob`",
-             "Clauses": [ "`FTSJob`.`LastUpdate` > ( UTC_TIMESTAMP() - INTERVAL 3600 SECOND )" ],
+             "Clauses": [ "`FTSJob`.`LastUpdate` > ( UTC_TIMESTAMP() - INTERVAL %s SECOND )" % FTSHistoryView.INTERVAL ],
              "GroupBy": [ "`SourceSE`", "`TargetSE`", "`Status`" ] }
 
   def __setattr__( self, name, value ):
