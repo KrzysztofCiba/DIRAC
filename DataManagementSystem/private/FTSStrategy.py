@@ -216,12 +216,11 @@ class FTSStrategy( object ):
       if not toNode:
         return S_ERROR( "unable to find site for '%s' SE" % targetSE )
 
-      rwAttrs = { "files" : files,
-                 "size" : size,
-                 "successfulAttempts" : files - failedFiles,
-                 "failedAttempts" : failedFiles,
-                 "fileput" : float( files / 3600.0 ),
-                 "throughput" : float( size / 3600.0 ) }
+      rwAttrs = { "files" : files, "size" : size,
+                  "successfulAttempts" : files - failedFiles,
+                  "failedAttempts" : failedFiles,
+                  "fileput" : float( files - failedFiles ) / 3600.0 ,
+                  "throughput" : float( size - failedSize ) / 3600.0  }
       roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
                   "acceptableFailureRate" : self.acceptableFailureRate,
                   "acceptableFailedFiles" : self.acceptableFailedFiles,
