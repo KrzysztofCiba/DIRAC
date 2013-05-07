@@ -58,10 +58,10 @@ class FTSGraph( Graph ):
     self.acceptableFailureRate = acceptableFailureRate
     self.acceptableFailedFiles = acceptableFailedFiles
     self.schedulingType = schedulingType
-    self.initilize( ftsHistoryViews )
+    self.initialize( ftsHistoryViews )
     self.updateRWAccess()
 
-  def initilize( self, ftsHistoryViews = None ):
+  def initialize( self, ftsHistoryViews = None ):
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
     sitesDict = self.resources().getEligibleResources( "Storage" )
@@ -280,7 +280,7 @@ class FTSStrategy( object ):
     :param dict ftsHistoryViews: list with FTShistoryViews entries
     """
     if not cls.__ftsGraph or force:
-      cls.__ftsGraph = FTSGraph( ftsHistoryViews, cls.acceptableFailureRate,
+      cls.__ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, cls.acceptableFailureRate,
                                  cls.acceptableFailedFiles, cls.schedulingType )
     return cls.__ftsGraph
 
