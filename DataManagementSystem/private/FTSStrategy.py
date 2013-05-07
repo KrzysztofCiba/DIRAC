@@ -113,9 +113,16 @@ class FTSStrategy( object ):
   # # list of supported strategies
   __supportedStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
   # # FTS graph
-  ftsGraph = None
+  __ftsGraph = None
   # # lock
   __graphLock = None
+  # # acceptable failure rate
+  acceptableFailureRate = 75
+  # # acceptable failed files
+  acceptableFailedFiles = 5
+  # # scheduling type
+  schedulingType = "File"
+
 
   def __init__( self, csPath = None, ftsHistoryViews = None ):
     """c'tor
@@ -149,14 +156,25 @@ class FTSStrategy( object ):
                                 "DynamicThroughput" : self.dynamicThroughput,
                                 "Simple" : self.simple,
                                 "Swarm" : self.swarm }
-    # #  own RSS client
-    self.rssClient = ResourceStatus()
-    # # resources helper
-    self.resources = Resources()
     # # if we're here FTSStrategy is ready except initialize
     self.init = self.initialize( ftsHistoryViews )
     # # if we land here everything is OK
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
+
+
+  @classmethod
+  def rssClient( cls ):
+    """ get RSS client """
+    if not cls.__rssClient:
+      cls.__rssClient = ResourceStatus()
+    return cls.__rssClient
+
+  @classmethod
+  def resources( cls ):
+    """ get resources helper """
+    if not cls.__resources:
+      cls.__resources = Resources()
+    return cls.__resources
 
   @classmethod
   def graphLock( cls ):
@@ -165,8 +183,15 @@ class FTSStrategy( object ):
       cls.__graphLock = LockRing().getLock( "FTSGraphLock" )
     return cls.__graphLock
 
+  @classmethod
+  def ftsGraph( cls ):
+    """ get FTS graph """
+    if not cls.__ftsGraph:
+      cls.initialize()
+    return cls.__ftsGraph
 
-  def initialize( self, ftsHistoryViews = None ):
+  @classmethod
+  def initialize( cls, ftsHistoryViews = None ):
     """ prepare fts graph
 
     :param dict ftsHistoryViews: list with FTShistoryViews entries
@@ -182,15 +207,14 @@ class FTSStrategy( object ):
     # # build graph
     graph = FTSGraph( "FTSGraph" )
 
-    sitesDict = self.resources.getEligibleResources( "Storage" )
+    sitesDict = cls.resources().getEligibleResources( "Storage" )
     if not sitesDict["OK"]:
-      self.log.error( sitesDict["Message"] )
       return sitesDict
     sitesDict = sitesDict["Value"]
 
     # # create nodes
     for site, ses in sitesDict.items():
-      rwDict = self.__getRWAccessForSE( ses )
+      rwDict = cls.__getRWAccessForSE( ses )
       if not rwDict["OK"]:
         return rwDict
       graph.addNode( FTSSite( site, { "SEs" : rwDict["Value"] } ) )
@@ -232,16 +256,19 @@ class FTSStrategy( object ):
                     "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
                     "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
         roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
-                    "acceptableFailureRate" : self.acceptableFailureRate,
-                    "acceptableFailedFiles" : self.acceptableFailedFiles,
-                    "schedulingType" : self.schedulingType }
+                    "acceptableFailureRate" : cls.acceptableFailureRate,
+                    "acceptableFailedFiles" : cls.acceptableFailedFiles,
+                    "schedulingType" : cls.schedulingType }
         graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
-    FTSStrategy.ftsGraph = graph
+
+    cls.__ftsGraph = graph
     return S_OK()
 
   @classmethod
   def updateRW( cls ):
     """ update ftsGraph for RW access """
+    if not cls.ftsGraph():
+      return S_ERROR( "ftsGraph not initialized" )
     try:
       cls.graphLock().acquire()
       for site in cls.ftsGraph.nodes():
@@ -555,7 +582,8 @@ class FTSStrategy( object ):
       self.chosenStrategy = 0
     return chosenStrategy
 
-  def __getRWAccessForSE( self, seList ):
+  @classmethod
+  def __getRWAccessForSE( cls, seList ):
     """ get RSS R/W for :seList:
 
     :param list seList: SE list
@@ -565,15 +593,13 @@ class FTSStrategy( object ):
       rwDict[se] = { "read" : False, "write" : False  }
 
     for se in seList:
-      rAccess = self.rssClient.getStorageElementStatus( se, "ReadAccess" )
+      rAccess = cls.rssClient().getStorageElementStatus( se, "ReadAccess" )
       if not rAccess["OK"]:
-        self.log.error( rAccess["Message"] )
         return rAccess
       rwDict[se]["read"] = True if rAccess["Value"] in ( "Active", "Degraded" ) else False
 
-      wAccess = self.rssClient.getStorageElementStatus( se, "WriteAccess" )
+      wAccess = cls.rssClient().getStorageElementStatus( se, "WriteAccess" )
       if not wAccess["OK"]:
-        self.log.error( wAccess["Message"] )
         return wAccess
       rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
 
