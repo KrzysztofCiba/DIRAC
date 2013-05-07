@@ -30,6 +30,7 @@ from types import DictType, LongType, ListType, StringTypes
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 # # from Resources
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 # # from DMS
@@ -92,6 +93,7 @@ class FTSManagerHandler( RequestHandler ):
         return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
       ftsHistory = ftsHistory["Value"]
       gFTSStrategy = FTSStrategy( csPath, ftsHistory )
+      gThreadScheduler.addPeriodicTask( 600, gFTSStrategy.updateRW() )
     return S_OK()
 
   @classmethod

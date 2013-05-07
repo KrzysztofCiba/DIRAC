@@ -24,7 +24,6 @@ __RCSID__ = "$Id: $"
 
 # # imports
 import random
-import datetime
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
@@ -34,7 +33,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 # # from DMS
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
-from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+# from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 
 class FTSGraph( Graph ):
   """
@@ -113,6 +112,10 @@ class FTSStrategy( object ):
   __metaclass__ = DIRACSingleton
   # # list of supported strategies
   __supportedStrategies = [ 'Simple', 'DynamicThroughput', 'Swarm', 'MinimiseTotalWait' ]
+  # # FTS graph
+  ftsGraph = None
+  # # lock
+  graphLock = None
 
   def __init__( self, csPath = None, ftsHistoryViews = None ):
     """c'tor
@@ -141,15 +144,10 @@ class FTSStrategy( object ):
     self.log.info( "AcceptableFailureRate = %s" % self.acceptableFailureRate )
     self.acceptableFailedFiles = gConfig.getValue( "%s/%s" % ( self.csPath, "AcceptableFailedFiles" ), 5 )
     self.log.info( "AcceptableFailedFiles = %s" % self.acceptableFailedFiles )
-    self.rwUpdatePeriod = gConfig.getValue( "%s/%s" % ( self.csPath, "RssRWUpdatePeriod" ), 600 )
-    self.log.info( "RSSUpdatePeriod = %s s" % self.rwUpdatePeriod )
-    self.rwUpdatePeriod = datetime.timedelta( seconds = self.rwUpdatePeriod )
     # # chosen strategy
     self.chosenStrategy = 0
     # # fts graph
     self.ftsGraph = None
-    # # timestamp for last update
-    self.lastRssUpdate = datetime.datetime.now()
     # dispatcher
     self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait,
                                 "DynamicThroughput" : self.dynamicThroughput,
@@ -163,7 +161,6 @@ class FTSStrategy( object ):
     self.init = self.initialize( ftsHistoryViews )
 
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
-
 
   def initialize( self, ftsHistoryViews = None ):
     """ prepare fts graph
@@ -201,7 +198,7 @@ class FTSStrategy( object ):
       failedFiles = ftsHistory.FailedFiles
       size = ftsHistory.Size
       failedSize = ftsHistory.FailedSize
-      status = ftsHistory.Status
+      # status = ftsHistory.Status
 
       fromNode = graph.findFTSSiteForSE( sourceSE )
       if not fromNode:
@@ -212,8 +209,6 @@ class FTSStrategy( object ):
 
       route = graph.findRoute( fromNode, toNode )
       # # route is there, update
-
-      # # TODO: check status
       if route["OK"]:
 
         route = route["Value"]
@@ -237,26 +232,27 @@ class FTSStrategy( object ):
                     "acceptableFailedFiles" : self.acceptableFailedFiles,
                     "schedulingType" : self.schedulingType }
         graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
-    self.lastRssUpdate = datetime.datetime.now()
     self.ftsGraph = graph
     return S_OK()
 
-  def updateGraph( self, rwAccess = False, replicationTree = None, size = 0.0 ):
+  @classmethod
+  def updateRW( cls ):
+    """ update ftsGraph for RW access """
+    try:
+      cls.graphLock.acquire()
+      for site in cls.ftsGraph.nodes():
+        rwDict = cls.__getRWAccessForSE( site.SEs.keys() )
+        if not rwDict["OK"]:
+          continue
+      site.SEs = rwDict["Value"]
+    finally:
+      cls.graphLock.release()
+    return S_OK()
+
+  def updateGraph( self, replicationTree = None, size = 0.0 ):
     """ update rw access for nodes (sites) and size anf files for edges (channels) """
     replicationTree = replicationTree if replicationTree else {}
     size = size if size else 0.0
-    # # update nodes rw access for SEs
-    if rwAccess:
-      try:
-        self.graphLock.acquire()
-        for site in self.ftsGraph.nodes():
-          rwDict = self.__getRWAccessForSE( site.SEs.keys() )
-          if not rwDict["OK"]:
-            continue
-        site.SEs = rwDict["Value"]
-      finally:
-        self.graphLock.release()
-    # # update channels size and files
     if replicationTree:
       try:
         self.graphLock.acquire()
@@ -521,22 +517,14 @@ class FTSStrategy( object ):
 
     :param str lfn: LFN
     :param list sourceSEs: list of sources SE names to use
-    :param list targetSEs: liost of target SE names to use
+    :param list targetSEs: list of target SE names to use
     :param long size: file size
     :param str strategy: strategy name
     """
-    # # update SEs rwAccess every rwUpdatePertion timedelta (default 300 s)
-    now = datetime.datetime.now()
-    if now - self.lastRssUpdate > self.rwUpdatePeriod:
-      update = self.updateGraph( rwAccess = True )
-      if not update["OK"]:
-        self.log.warn( "replicationTree: unable to update FTS graph: %s" % update["Message"] )
-      else:
-        self.lastRssUpdate = now
     # # get strategy
     strategy = strategy if strategy else self.__selectStrategy()
-    if strategy not in self.getSupportedStrategies():
-      return S_ERROR( "replicationTree: unsupported strategy '%s'" % strategy )
+    if strategy not in self.activeStrategies:
+      return S_ERROR( "replicationTree: inactive or unsupported strategy '%s'" % strategy )
 
     self.log.info( "replicationTree: strategy=%s sourceSEs=%s targetSEs=%s size=%s" % \
                      ( strategy, sourceSEs, targetSEs, size ) )
@@ -586,6 +574,4 @@ class FTSStrategy( object ):
       rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
 
     return S_OK( rwDict )
-
-
 
