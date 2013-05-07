@@ -62,6 +62,7 @@ class FTSJob( Record ):
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
     self.__data__["Status"] = "Submitted"
+    self.__data__["Completeness"] = 0
     self.__data__["FTSJobID"] = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
     fromDict = fromDict if fromDict else {}
@@ -132,6 +133,16 @@ class FTSJob( Record ):
   def FTSServer( self, url ):
     """ FTSServer getter """
     self.__data__["FTSServer"] = url
+
+  @property
+  def Completeness( self ):
+    """ completeness getter """
+    return self.__data__["Completeness"]
+
+  @Completeness.setter
+  def Completeness( self, value ):
+    """ completeness setter """
+    self.__data__["Completeness"] = int( value ) if value else 0
 
   @property
   def Error( self ):
