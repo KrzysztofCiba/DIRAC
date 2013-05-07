@@ -144,8 +144,6 @@ class FTSStrategy( object ):
     self.log.info( "AcceptableFailedFiles = %s" % self.acceptableFailedFiles )
     # # chosen strategy
     self.chosenStrategy = 0
-    # # fts graph
-    self.ftsGraph = None
     # dispatcher
     self.strategyDispatcher = { "MinimiseTotalWait" : self.minimiseTotalWait,
                                 "DynamicThroughput" : self.dynamicThroughput,
@@ -157,7 +155,7 @@ class FTSStrategy( object ):
     self.resources = Resources()
     # # if we're here FTSStrategy is ready except initialize
     self.init = self.initialize( ftsHistoryViews )
-
+    # # if we land here everything is OK
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
   @classmethod
@@ -166,6 +164,7 @@ class FTSStrategy( object ):
     if not cls.__graphLock:
       cls.__graphLock = LockRing().getLock( "FTSGraphLock" )
     return cls.__graphLock
+
 
   def initialize( self, ftsHistoryViews = None ):
     """ prepare fts graph
@@ -237,7 +236,7 @@ class FTSStrategy( object ):
                     "acceptableFailedFiles" : self.acceptableFailedFiles,
                     "schedulingType" : self.schedulingType }
         graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
-    self.ftsGraph = graph
+    FTSStrategy.ftsGraph = graph
     return S_OK()
 
   @classmethod
