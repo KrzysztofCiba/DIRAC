@@ -59,6 +59,7 @@ class FTSGraph( Graph ):
     self.acceptableFailedFiles = acceptableFailedFiles
     self.schedulingType = schedulingType
     self.initilize( ftsHistoryViews )
+    self.updateRWAccess()
 
   def initilize( self, ftsHistoryViews = None ):
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
@@ -72,9 +73,7 @@ class FTSGraph( Graph ):
       rwDict = dict.fromkeys( ses )
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
-      node = FTSSite( site, { "SEs" : rwDict } )
-      node.updateRWAccess()
-      self.addNode( node )
+      self.addNode( FTSSite( site, { "SEs" : rwDict } ) )
 
       for ftsHistory in ftsHistoryViews:
         sourceSE = ftsHistory.SourceSE
