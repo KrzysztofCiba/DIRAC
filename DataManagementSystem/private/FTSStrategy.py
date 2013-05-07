@@ -566,29 +566,25 @@ class FTSStrategy( object ):
   def __getRWAccessForSE( self, seList ):
     """ get RSS R/W for :seList:
 
-    TODO: crap, RSS has changed again!!!
-
     :param list seList: SE list
     """
     rwDict = dict.fromkeys( seList )
     for se in rwDict:
       rwDict[se] = { "read" : False, "write" : False  }
 
-    rAccess = self.rssClient.getStorageElementStatus( seList )
-    if not rAccess["OK"]:
-      self.log.error( rAccess["Message"] )
-      return rAccess["Message"]
-    rAccess = [ k for k, v in rAccess["Value"].items() if "ReadAccess" in v and v["ReadAccess"] in ( "Active",
-                                                                                                     "Degraded" ) ]
-    wAccess = self.rssClient.getStorageElementStatus( seList )
-    if not wAccess["OK"]:
-      self.log.error( wAccess["Message"] )
-      return wAccess["Message"]
-    wAccess = [ k for k, v in wAccess["Value"].items() if "WriteAccess" in v and v["WriteAccess"] in ( "Active",
-                                                                                                       "Degraded" ) ]
-    for se in rwDict:
-      rwDict[se]["read"] = se in rAccess
-      rwDict[se]["write"] = se in wAccess
+    for se in seList:
+      rAccess = self.rssClient.getStorageElementStatus( se, "ReadAccess" )
+      if not rAccess["OK"]:
+        self.log.error( rAccess["Message"] )
+        return rAccess["Message"]
+      rwDict[se]["read"] = True if rAccess["Value"] in ( "Active", "Degraded" ) else False
+
+      wAccess = self.rssClient.getStorageElementStatus( se, "WriteAccess" )
+      if not wAccess["OK"]:
+        self.log.error( wAccess["Message"] )
+        return wAccess["Message"]
+      rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
+
     return S_OK( rwDict )
 
 
