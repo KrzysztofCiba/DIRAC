@@ -101,7 +101,6 @@ class FTSGraph( Graph ):
     self.acceptableFailedFiles = acceptableFailedFiles
     self.schedulingType = schedulingType
     self.initialize( ftsHistoryViews )
-    self.updateRWAccess()
 
   def initialize( self, ftsHistoryViews = None ):
     """ pass """
@@ -164,8 +163,8 @@ class FTSGraph( Graph ):
                      "acceptableFailureRate": self.acceptableFailureRate,
                      "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
-
         self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
+    self.updateRWAccess()
 
   def rssClient( self ):
     """ RSS client getter """
@@ -277,7 +276,7 @@ class FTSStrategy( object ):
                                 "Simple" : self.simple,
                                 "Swarm" : self.swarm }
 
-    self.ftsGraph = FTSGraph( ftsHistoryViews, self.acceptableFailureRate,
+    self.ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, self.acceptableFailureRate,
                               self.acceptableFailedFiles, self.schedulingType )
 
     # # if we land here everything is OK
