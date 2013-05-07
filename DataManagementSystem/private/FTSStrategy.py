@@ -62,6 +62,7 @@ class FTSGraph( Graph ):
     self.updateRWAccess()
 
   def initialize( self, ftsHistoryViews = None ):
+    """ pass """
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
 
     sitesDict = self.resources().getEligibleResources( "Storage" )
@@ -75,16 +76,16 @@ class FTSGraph( Graph ):
         rwDict[se] = { "read": False, "write": False }
       self.addNode( FTSSite( site, { "SEs" : rwDict } ) )
 
-    for fromSite in self.nodes():
-      for toSite in self.nodes():
+    for siteA in self.nodes():
+      for siteB in self.nodes():
         rwAttrs = { "files": 0, "size": 0, "successfulAttempts": 0,
                     "failedAttempts": 0, "failedSize": 0,
-                    "fileput": 0.0, "throughput": 0.0  }
-        roAttrs = { "routeName": "%s#%s" % ( fromSite.name, toSite.name ),
-                     "acceptableFailureRate": self.acceptableFailureRate,
-                     "acceptableFailedFiles": self.acceptableFailedFiles,
+                    "fileput": 0.0, "throughput": 0.0 }
+        roAttrs = { "routeName": "%s#%s" % ( siteA.name, siteB.name ),
+                    "acceptableFailureRate": self.acceptableFailureRate,
+                    "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
-        self.addEdge( FTSRoute( fromSite, toSite, rwAttrs, roAttrs  )
+        self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs  )
                       
     for ftsHistory in ftsHistoryViews:
       sourceSE = ftsHistory.SourceSE
@@ -144,18 +145,15 @@ class FTSGraph( Graph ):
       rwDict = dict.fromkeys( seList )
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False  }
-
       for se in seList:
         rAccess = self.rssClient().getStorageElementStatus( se, "ReadAccess" )
         if not rAccess["OK"]:
           return rAccess
         rwDict[se]["read"] = True if rAccess["Value"] in ( "Active", "Degraded" ) else False
-
         wAccess = self.rssClient().getStorageElementStatus( se, "WriteAccess" )
         if not wAccess["OK"]:
           return wAccess
         rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
-
       site.SEs = rwDict
     return S_OK()
 
