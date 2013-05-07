@@ -191,7 +191,7 @@ class FTSStrategy( object ):
   def ftsGraph( cls ):
     """ get FTS graph """
     if not cls.__ftsGraph:
-      graph = cls.initialize()
+      graph = cls.initializeGraph()
       if not graph["OK"]:
         gLogger.error( graph["Message"] )
       else:
@@ -199,7 +199,7 @@ class FTSStrategy( object ):
     return cls.__ftsGraph
 
   @classmethod
-  def initialize( cls, ftsHistoryViews = None ):
+  def initializeGraph( cls, ftsHistoryViews = None ):
     """ prepare fts graph
 
     :param dict ftsHistoryViews: list with FTShistoryViews entries
