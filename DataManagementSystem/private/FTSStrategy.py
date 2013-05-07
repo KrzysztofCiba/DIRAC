@@ -161,7 +161,7 @@ class FTSStrategy( object ):
                                 "Simple" : self.simple,
                                 "Swarm" : self.swarm }
     # # if we're here FTSStrategy is ready except initialize
-    self.init = self.initialize( ftsHistoryViews )
+    # self.initializeGraph( ftsHistoryViews )
     # # if we land here everything is OK
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
