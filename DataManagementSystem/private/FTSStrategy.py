@@ -576,13 +576,13 @@ class FTSStrategy( object ):
       rAccess = self.rssClient.getStorageElementStatus( se, "ReadAccess" )
       if not rAccess["OK"]:
         self.log.error( rAccess["Message"] )
-        return rAccess["Message"]
+        return rAccess
       rwDict[se]["read"] = True if rAccess["Value"] in ( "Active", "Degraded" ) else False
 
       wAccess = self.rssClient.getStorageElementStatus( se, "WriteAccess" )
       if not wAccess["OK"]:
         self.log.error( wAccess["Message"] )
-        return wAccess["Message"]
+        return wAccess
       rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
 
     return S_OK( rwDict )
