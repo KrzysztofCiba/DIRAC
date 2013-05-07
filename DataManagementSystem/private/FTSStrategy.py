@@ -23,7 +23,6 @@ __RCSID__ = "$Id: $"
 # @brief Definition of FTSStrategy class.
 
 # # imports
-# # imports
 import random
 import datetime
 # # from DIRAC
