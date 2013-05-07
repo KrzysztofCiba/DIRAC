@@ -117,6 +117,7 @@ class FTSGraph( Graph ):
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
       ftsSite = FTSSite( site, {"SEs": rwDict } )
+      self.log.info( "adding %s" % ftsSite )
       self.addNode( ftsSite )
 
     for siteA in self.nodes():
@@ -129,9 +130,11 @@ class FTSGraph( Graph ):
                     "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
         route = FTSRoute( siteA, siteB, rwAttrs, roAttrs )
+        self.log.info( "adding %s" % route )
         self.addEdge( route )
 
     for ftsHistory in ftsHistoryViews:
+
       sourceSE = ftsHistory.SourceSE
       targetSE = ftsHistory.TargetSE
       files = ftsHistory.Files
