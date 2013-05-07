@@ -115,7 +115,7 @@ class FTSStrategy( object ):
   # # FTS graph
   ftsGraph = None
   # # lock
-  graphLock = None
+  __graphLock = None
 
   def __init__( self, csPath = None, ftsHistoryViews = None ):
     """c'tor
@@ -125,8 +125,6 @@ class FTSStrategy( object ):
     """
     # ## config path
     self.csPath = csPath
-    # # private lock for update
-    self.graphLock = LockRing().getLock( "FTSGraphLock" )
     # # own sub logger
     self.log = gLogger.getSubLogger( "FTSStrategy", child = True )
     self.log.setLevel( gConfig.getValue( self.csPath + "/LogLevel", "DEBUG" ) )
@@ -161,6 +159,13 @@ class FTSStrategy( object ):
     self.init = self.initialize( ftsHistoryViews )
 
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
+
+  @classmethod
+  def grapLock( cls ):
+    """ get graph lock """
+    if not cls.__graphLock:
+      cls.__graphLock = LockRing().getLock( "FTSGraphLock" )
+    return cls.__graphLock
 
   def initialize( self, ftsHistoryViews = None ):
     """ prepare fts graph
@@ -239,14 +244,14 @@ class FTSStrategy( object ):
   def updateRW( cls ):
     """ update ftsGraph for RW access """
     try:
-      cls.graphLock.acquire()
+      cls.graphLock().acquire()
       for site in cls.ftsGraph.nodes():
         rwDict = cls.__getRWAccessForSE( site.SEs.keys() )
         if not rwDict["OK"]:
           continue
       site.SEs = rwDict["Value"]
     finally:
-      cls.graphLock.release()
+      cls.graphLock().release()
     return S_OK()
 
   def updateGraph( self, replicationTree = None, size = 0.0 ):
@@ -255,13 +260,13 @@ class FTSStrategy( object ):
     size = size if size else 0.0
     if replicationTree:
       try:
-        self.graphLock.acquire()
+        self.graphLock().acquire()
         for route in self.ftsGraph.edges():
           if route.name in replicationTree:
             route.size += size
             route.files += 1
       finally:
-        self.graphLock.release()
+        self.graphLock().release()
     return S_OK()
 
   def simple( self, sourceSEs, targetSEs ):
