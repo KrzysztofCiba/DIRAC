@@ -209,6 +209,7 @@ class FTSStrategy( object ):
       size = ftsHistory.Size
       failedSize = ftsHistory.FailedSize
       status = ftsHistory.Status
+
       fromNode = graph.findFTSSiteForSE( sourceSE )
       if not fromNode:
         return S_ERROR( "unable to find site for '%s' SE" % sourceSE )
@@ -216,51 +217,33 @@ class FTSStrategy( object ):
       if not toNode:
         return S_ERROR( "unable to find site for '%s' SE" % targetSE )
 
-      rwAttrs = { "files" : files, "size" : size,
-                  "successfulAttempts" : files - failedFiles,
-                  "failedAttempts" : failedFiles,
-                  "fileput" : float( files - failedFiles ) / 3600.0 ,
-                  "throughput" : float( size - failedSize ) / 3600.0  }
-      roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
-                  "acceptableFailureRate" : self.acceptableFailureRate,
-                  "acceptableFailedFiles" : self.acceptableFailedFiles,
-                  "schedulingType" : self.schedulingType }
-
-      rwAttrs = {}
-      roAttrs = {}
-
       route = graph.findRoute( fromNode, toNode )
+      # # route is there, update
+
+      # # TODO: check status
       if route["OK"]:
+
         route = route["Value"]
+
+        route.files += files
+        route.size += size
+        route.failedSize += failedSize
+        route.successfulAttempts += files - failedFiles
+        route.failedAttempts += failedFiles
+        route.fileput = float( route.files - route.failedFiles ) / 3600.0
+        route.throughput = float( route.size - route.failedSize ) / 3600.0
       else:
-        route = FTSRoute( fromNode, toNode, rwAttrs, roAttrs )
-
-
-    # # channels { channelID : { "Files" : long , Size = long, "ChannelName" : str,
-    # #                          "Source" : str, "Destination" : str ,
-    # #                          "ChannelName" : str, "Status" : str  } }
-    # # bandwidths { channelID { "Throughput" : float, "Fileput" : float,
-    # #                           "SucessfulFiles" : long, "FailedFiles" : long  } }
-    # # channelInfo { channelName : { "ChannelID" : int, "TimeToStart" : float} }
-    # for channelID, channelDict in channels.items():
-    #  sourceName = channelDict["Source"]
-    #  destName = channelDict["Destination"]
-    #  fromNode = graph.getNode( sourceName )
-    #  toNode = graph.getNode( destName )
-    #  if fromNode and toNode:
-    #    rwAttrs = { "status" : channels[channelID]["Status"],
-    #                "files" : channelDict["Files"],
-    #                "size" : channelDict["Size"],
-    #                "successfulAttempts" : bandwithds[channelID]["SuccessfulFiles"],
-    #                "failedAttempts" : bandwithds[channelID]["FailedFiles"],
-    #                "distinctFailedFiles" : failedFiles.get( channelID, 0 ),
-    #                "fileput" : bandwithds[channelID]["Fileput"],
-    #                "throughput" : bandwithds[channelID]["Throughput"] }
-    #    roAttrs = { "channelID" : channelID,
-    #                "channelName" : channelDict["ChannelName"],
-    #                "acceptableFailureRate" : self.acceptableFailureRate,
-    #                "acceptableFailedFiles" : self.acceptableFailedFiles,
-    #                "schedulingType" : self.schedulingType }
+        # # route is missing, create a new one
+        rwAttrs = { "files": files, "size": size,
+                    "successfulAttempts": files - failedFiles,
+                    "failedAttempts": failedFiles,
+                    "failedSize": failedSize,
+                    "fileput": float( files - failedFiles ) / 3600.0 ,
+                    "throughput": float( size - failedSize ) / 3600.0  }
+        roAttrs = { "routeName" : "%s#%s" % ( fromNode.name, toNode.name ),
+                    "acceptableFailureRate" : self.acceptableFailureRate,
+                    "acceptableFailedFiles" : self.acceptableFailedFiles,
+                    "schedulingType" : self.schedulingType }
         graph.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
     self.lastRssUpdate = datetime.datetime.now()
     self.ftsGraph = graph
