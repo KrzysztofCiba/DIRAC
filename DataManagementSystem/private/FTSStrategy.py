@@ -97,11 +97,11 @@ class FTSGraph( Graph ):
                 schedulingType = "Files" ):
     """ c'tor """
     Graph.__init__( self, "FTSGraph" )
+    self.log = gLogger.getSubLogger( name, True )
     self.acceptableFailureRate = acceptableFailureRate
     self.acceptableFailedFiles = acceptableFailedFiles
     self.schedulingType = schedulingType
     self.initialize( ftsHistoryViews )
-    self.log = gLogger.getSubLogger( name, True )
 
   def initialize( self, ftsHistoryViews = None ):
     """ pass """
