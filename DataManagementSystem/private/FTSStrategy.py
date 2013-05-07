@@ -36,6 +36,48 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 # # from DMS
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
+class FTSSite( Node ):
+  """
+  .. class:: FTSSite
+
+  not too much here, inherited to change the name
+  """
+  def __init__( self, name, rwAttrs = None, roAttrs = None ):
+    """ c'tor """
+    Node.__init__( self, name, rwAttrs, roAttrs )
+
+  def __contains__( self, se ):
+    """ check if SE is hosted at this site """
+    return se in self.SEs
+
+class FTSRoute( Edge ):
+  """
+  .. class:: FTSRoute
+
+  class representing transfers between sites
+  """
+  def __init__( self, fromNode, toNode, rwAttrs = None, roAttrs = None ):
+    """ c'tor """
+    Edge.__init__( self, fromNode, toNode, rwAttrs, roAttrs )
+
+  @property
+  def timeToStart( self ):
+    """ get time to start for this channel """
+    successRate = 100.0
+    attempted = self.successfulAttempts + self.failedAttempts
+    if attempted:
+      successRate *= self.successfulAttempts / attempted
+    if successRate < self.acceptableFailureRate:
+      if self.distinctFailedFiles > self.acceptableFailedFiles:
+        return float( "inf" )
+    if self.status != "Active":
+      return float( "inf" )
+    transferSpeed = { "File" : self.fileput, "Throughput" : self.throughput }[self.schedulingType]
+    waitingTransfers = { "File" : self.files, "Throughput" : self.size }[self.schedulingType]
+    if transferSpeed:
+      return waitingTransfers / float( transferSpeed )
+    return 0.0
+  
 class FTSGraph( Graph ):
   """
   .. class:: FTSGraph
@@ -60,11 +102,10 @@ class FTSGraph( Graph ):
     self.schedulingType = schedulingType
     self.initialize( ftsHistoryViews )
     self.updateRWAccess()
-
+    
   def initialize( self, ftsHistoryViews = None ):
     """ pass """
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
-
     sitesDict = self.resources().getEligibleResources( "Storage" )
     if not sitesDict["OK"]:
       return sitesDict
@@ -74,7 +115,8 @@ class FTSGraph( Graph ):
       rwDict = dict.fromkeys( ses )
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
-      self.addNode( FTSSite( site, { "SEs" : rwDict } ) )
+      ftsSite = FTSSite( site, {"SEs": rwDict } )
+      self.addNode( ftsSite )
 
     for siteA in self.nodes():
       for siteB in self.nodes():
@@ -85,7 +127,8 @@ class FTSGraph( Graph ):
                     "acceptableFailureRate": self.acceptableFailureRate,
                     "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
-        self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs  )
+        route = FTSRoute( siteA, siteB, rwAttrs, roAttrs )
+        self.addEdge( route )
                       
     for ftsHistory in ftsHistoryViews:
       sourceSE = ftsHistory.SourceSE
@@ -121,6 +164,7 @@ class FTSGraph( Graph ):
                      "acceptableFailureRate": self.acceptableFailureRate,
                      "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
+        
         self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
 
   def rssClient( self ):
@@ -170,48 +214,7 @@ class FTSGraph( Graph ):
         return S_OK( edge )
     return S_ERROR( "FTSGraph: unable to find FTS route between '%s' and '%s'" % ( fromSE, toSE ) )
 
-class FTSSite( Node ):
-  """
-  .. class:: FTSSite
-
-  not too much here, inherited to change the name
-  """
-  def __init__( self, name, rwAttrs = None, roAttrs = None ):
-    """ c'tor """
-    Node.__init__( self, name, rwAttrs, roAttrs )
-
-  def __contains__( self, se ):
-    """ check if SE is hosted at this site """
-    return se in self.SEs
-
-class FTSRoute( Edge ):
-  """
-  .. class:: FTSRoute
-
-  class representing transfers between sites
-  """
-  def __init__( self, fromNode, toNode, rwAttrs = None, roAttrs = None ):
-    """ c'tor """
-    Edge.__init__( self, fromNode, toNode, rwAttrs, roAttrs )
-
-  @property
-  def timeToStart( self ):
-    """ get time to start for this channel """
-    successRate = 100.0
-    attempted = self.successfulAttempts + self.failedAttempts
-    if attempted:
-      successRate *= self.successfulAttempts / attempted
-    if successRate < self.acceptableFailureRate:
-      if self.distinctFailedFiles > self.acceptableFailedFiles:
-        return float( "inf" )
-    if self.status != "Active":
-      return float( "inf" )
-    transferSpeed = { "File" : self.fileput, "Throughput" : self.throughput }[self.schedulingType]
-    waitingTransfers = { "File" : self.files, "Throughput" : self.size }[self.schedulingType]
-    if transferSpeed:
-      return waitingTransfers / float( transferSpeed )
-    return 0.0
-
+  
 ########################################################################
 class FTSStrategy( object ):
   """
