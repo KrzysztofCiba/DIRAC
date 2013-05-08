@@ -98,13 +98,16 @@ class FTSGraph( Graph ):
     self.acceptableFailureRate = acceptableFailureRate
     self.acceptableFailedFiles = acceptableFailedFiles
     self.schedulingType = schedulingType
-    self.initialize( ftsHistoryViews )
+    self.initialize( ftsSites, ftsHistoryViews )
 
   def initialize( self, ftsSites = None, ftsHistoryViews = None ):
+
     """ initialize FTSGraph  """
-    self.log.always( "initializing..." )
+    self.log.always( "initializing FTS graph..." )
+
     ftsSites = ftsSites if ftsSites else []
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
+
     sitesDict = self.resources().getEligibleResources( "Storage" )
     if not sitesDict["OK"]:
       return sitesDict
@@ -283,7 +286,7 @@ class FTSStrategy( object ):
     self.log = gLogger.getSubLogger( "FTSStrategy", child = True )
     self.log.setLevel( gConfig.getValue( self.csPath + "/LogLevel", "DEBUG" ) )
     for ftsSite in ftsSites:
-      self.log.info( "FTSSite: %s ServerURI=%s" % ( ftsSite.Name, ftsSite.ServerURI ) )
+      self.log.info( "FTSSite: %-16s ServerURI=%s" % ( ftsSite.Name, ftsSite.ServerURI ) )
 
     # # CS options
     self.log.info( "Supported strategies = %s" % ", ".join( self.supportedStrategies ) )
