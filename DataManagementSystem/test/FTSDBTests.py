@@ -51,8 +51,8 @@ class FTSDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/User', 'Dirac' )
 
 
-    self.ftsSites = [ FTSSite( { "FTSServerURI": "foo://bar.ch/FTSService", "Name": "bar.ch" } ),
-                      FTSSite( { "FTSServerURI": "foo://baz.pl/FTSService", "Name": "baz.pl" } ) ]
+    self.ftsSites = [ FTSSite( { "ServerURI": "foo://bar.ch/FTSService", "Name": "bar.ch" } ),
+                      FTSSite( { "ServerURI": "foo://baz.pl/FTSService", "Name": "baz.pl" } ) ]
 
     self.ftsFiles = []
     for i in range ( 100 ):
