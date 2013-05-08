@@ -93,13 +93,13 @@ class FTSManagerHandler( RequestHandler ):
       # # every half an hour replace FTSGraph
       gThreadScheduler.addPeriodicTask( int( FTSHistoryView.INTERVAL / 2 ) , cls.updateFTSStrategy )
 
-      schedule = cls.ftsStrategy().replicationTree( ["CERN-USER", "RAL-USER"], ["PIC-USER"], 100 )
+      schedule = cls.ftsStrategy().replicationTree( ["CERN-USER", "RAL-USER"], ["PIC-USER"], 1000000 )
       gLogger.always( schedule )
-      schedule = cls.ftsStrategy().replicationTree( ["CERN-USER", "RAL-USER"], ["PIC-USER"], 100 )
+      schedule = cls.ftsStrategy().replicationTree( ["CERN-USER", "RAL-USER"], ["PIC-USER"], 1000000 )
       gLogger.always( schedule )
-      schedule = cls.ftsStrategy().replicationTree( ["CERN-USER", "RAL-USER"], ["PIC-USER"], 100 )
+      schedule = cls.ftsStrategy().replicationTree( ["CERN-USER", "RAL-USER"], ["PIC-USER"], 1000000 )
       gLogger.always( schedule )
-      schedule = cls.ftsStrategy().replicationTree( ["CERN-USER"], ["PIC-USER"], 100 )
+      schedule = cls.ftsStrategy().replicationTree( ["RAL-USER", "CERN-USER"], ["PIC-USER"], 1000000 )
       gLogger.always( schedule )
 
 
