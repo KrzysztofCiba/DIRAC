@@ -29,6 +29,7 @@ import uuid
 from DIRAC import gConfig
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 # # SUT
 from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
@@ -48,6 +49,10 @@ class FTSDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/Host', 'localhost' )
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/DBName', 'FTSDB' )
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/User', 'Dirac' )
+
+
+    self.ftsSites = [ FTSSite( { "FTSServerURI": "foo://bar.ch/FTSService", "Name": "bar.ch" } ),
+                      FTSSite( { "FTSServerURI": "foo://baz.pl/FTSService", "Name": "baz.pl" } ) ]
 
     self.ftsFiles = []
     for i in range ( 100 ):
@@ -97,6 +102,8 @@ class FTSDBTests( unittest.TestCase ):
     """ clean up """
     del self.ftsFiles
     del self.ftsJobs
+    del self.ftsSites
+
 
   def test01Create( self ):
     """ test create tables and views """
@@ -108,6 +115,10 @@ class FTSDBTests( unittest.TestCase ):
     """ put, get, peek methods """
 
     db = FTSDB()
+
+    for ftsSite in self.ftsSites:
+      put = db.putFTSSite( ftsSite )
+      self.assertEqual( put["OK"], True, "putFTSSite failed" )
 
     for ftsFile in self.ftsFiles:
       put = db.putFTSFile( ftsFile )

@@ -13,11 +13,7 @@
 
     class representing FTS site
 
-    TODO: re-think, do we need this one in FTSDB???
-    nope...
-
-    TODO: remove
-
+    we need this one to know which site is a part of FTS infrastructure
 
 """
 # for properties
@@ -44,6 +40,7 @@ class FTSSite( Record ):
   """
   .. class:: FTSSite
 
+  site with FTS infrastructure
   """
 
   def __init__( self, fromDict = None ):
@@ -66,8 +63,7 @@ class FTSSite( Record ):
     return { "Fields" :
              { "FTSSiteID": "INTEGER NOT NULL AUTO_INCREMENT",
                "Name": "VARCHAR(255) NOT NULL",
-               "ServerURI":  "VARCHAR(255)",
-               "SEs": "BLOB" },
+               "ServerURI":  "VARCHAR(255)" },
              "PrimaryKey": [ "FTSSiteID" ] }
 
   @property
@@ -99,20 +95,6 @@ class FTSSite( Record ):
   def ServerURI( self, value ):
     """ server uri setter """
     self.__data__["ServerURI"] = value
-
-  @property
-  def SEs( self ):
-    """ SEs getter """
-    return self.__data__["SEs"]
-
-  @SEs.setter
-  def SEs( self, value ):
-    """ SEs setter """
-    self.__data__["SEs"] = value
-
-  def getSEsTuple( self ):
-    """ return SEs as tuple """
-    return tuple( [ se.strip() for se in self.SEs.split( "," ) if se.strip() ] )
 
   def toXML( self, dumpToStr = False ):
     """ serialize FTS site to XML

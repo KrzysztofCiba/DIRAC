@@ -138,6 +138,32 @@ class FTSDB( DB ):
       cursor.close()
       return S_ERROR( str( error ) )
 
+  def putFTSSite( self, ftsSite ):
+    """ put FTS site into DB """
+    ftsSiteSQL = ftsSite.toSQL()
+    if not ftsSiteSQL["OK"]:
+      self.log.error( "putFTSSite: %s" % ftsSiteSQL["Message"] )
+      return ftsSiteSQL
+    ftsSiteSQL = ftsSiteSQL["Value"]
+    putFTSSite = self._transaction( ftsSiteSQL )
+    if not putFTSSite["OK"]:
+      self.log.error( putFTSSite["Message"] )
+    return putFTSSite
+
+  def getFTSSite( self, ftsSiteID ):
+    """ read """
+    pass
+
+  def getFTSSitesList( self ):
+    """ bulk read of FTS sites """
+    ftsSites = self._transaction( "SELECT * FROM `FTSSites`;" )
+    if not ftsSites["OK"]:
+      self.log.error( "getFTSSites: %s" % ftsSites["Message"] )
+      return ftsSites
+    ftsSites = ftsSites["Value"]
+    self.log.always( ftsSites )
+    return S_OK()
+
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """
     ftsFileSQL = ftsFile.toSQL()
