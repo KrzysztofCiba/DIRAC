@@ -148,7 +148,7 @@ class FTSDB( DB ):
       existing = existing["Value"]
       if existing:
         return S_ERROR( "putFTSSite: site of '%s' name is already defined at FTSSiteID = %s" % ( ftsSite.Name,
-                                                                                                 existing ) )
+                                                                                                 existing[0][0] ) )
     ftsSiteSQL = ftsSite.toSQL()
     if not ftsSiteSQL["OK"]:
       self.log.error( "putFTSSite: %s" % ftsSiteSQL["Message"] )
