@@ -86,10 +86,10 @@ class FTSManagerHandler( RequestHandler ):
     gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:
-      # # every 10 minutes update RW access
-      gThreadScheduler.addPeriodicTask( 30, cls.updateRWAccess )
-      # # every hour reset FTS graph
-      gThreadScheduler.addPeriodicTask( 60, cls.updateFTSStrategy )
+      # # every 10 minutes update RW access in FTSGraph
+      gThreadScheduler.addPeriodicTask( 600, cls.updateRWAccess )
+      # # every half an hour replace FTSGraph
+      gThreadScheduler.addPeriodicTask( int( FTSHistoryView.INTERVAL / 2 ) , cls.updateFTSStrategy )
     return S_OK()
 
   @classmethod
