@@ -12,8 +12,6 @@
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     replication strategy for all FTS transfers
-
-    todo: move out graph from ftsstrategy, build it standalone
 """
 
 __RCSID__ = "$Id: $"
@@ -214,7 +212,8 @@ class FTSGraph( Graph ):
     """ return FTSSite for a given SE """
     for node in self.nodes():
       if se in node:
-        return node
+        return S_OK( node )
+    return S_ERROR( "StorageElement %s not found" % se )
 
   def findRoute( self, fromSE, toSE ):
     """ find route between :fromSE: and :toSE: """
