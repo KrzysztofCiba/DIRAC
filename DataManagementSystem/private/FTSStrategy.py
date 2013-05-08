@@ -366,7 +366,7 @@ class FTSStrategy( object ):
       try:
         self.graphLock().acquire()
         for route in self.ftsGraph.edges():
-          if route.name in replicationTree:
+          if route.routeName in replicationTree:
             route.size += size
             route.files += 1
       finally:
