@@ -363,12 +363,14 @@ class FTSStrategy( object ):
     replicationTree = replicationTree if replicationTree else {}
     size = size if size else 0.0
     if replicationTree:
+      self.log.always( replicationTree )
       try:
         self.graphLock().acquire()
         for route in self.ftsGraph.edges():
           if route.routeName in replicationTree:
             route.size += size
             route.files += 1
+
       finally:
         self.graphLock().release()
     return S_OK()
