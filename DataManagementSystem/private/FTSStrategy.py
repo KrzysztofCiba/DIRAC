@@ -130,7 +130,7 @@ class FTSGraph( Graph ):
       self.log.info( "adding %s" % ftsSite.name )
       self.addNode( ftsSite )
 
-    self.log.info( "AAAAAAAAAAAAA sites=%s edges=%s" % ( len( self.nodes() ), len( self.enges() ) ) )
+    self.log.info( "AAAAAAAAAAAAA sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
 
 
     for siteA in self.nodes():
@@ -146,7 +146,7 @@ class FTSGraph( Graph ):
         self.log.info( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
         self.addEdge( route )
 
-    self.log.info( "BBBBBBBBBBBBBBBBB sites=%s edges=%s" % ( len( self.nodes() ), len( self.enges() ) ) )
+    self.log.info( "BBBBBBBBBBBBBBBBB sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
 
 
     for ftsHistory in ftsHistoryViews:
@@ -196,7 +196,7 @@ class FTSGraph( Graph ):
     self.updateRWAccess()
 
 
-    self.log.info( "CCCCCCCCCCCCCCCCCCCCCCC sites=%s edges=%s" % ( len( self.nodes() ), len( self.enges() ) ) )
+    self.log.info( "CCCCCCCCCCCCCCCCCCCCCCC sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
 
     self.log.always( "init done!" )
 
