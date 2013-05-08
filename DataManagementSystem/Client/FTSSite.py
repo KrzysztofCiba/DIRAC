@@ -50,7 +50,6 @@ class FTSSite( Record ):
     :param dict fromDict: data dict
     """
     Record.__init__( self )
-    self.__data__["Status"] = "Active"
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
