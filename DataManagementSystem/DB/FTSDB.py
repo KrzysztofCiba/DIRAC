@@ -151,8 +151,14 @@ class FTSDB( DB ):
     return putFTSSite
 
   def getFTSSite( self, ftsSiteID ):
-    """ read """
-    pass
+    """ read FTSSite given FTSSiteID """
+    getFTSSite = self._transaction( ["SELECT * FROM `FTSSite` WHERE `FTSSiteID`=%s" % int( ftsSiteID )] )
+    if not getFTSSite["OK"]:
+      self.log.error( "getFTSSite: %s" % getFTSSite["Message"] )
+      return getFTSSite
+    getFTSSite = getFTSSite["Value"]
+    self.log.always( getFTSSite )
+    return S_OK()
 
   def getFTSSitesList( self ):
     """ bulk read of FTS sites """
