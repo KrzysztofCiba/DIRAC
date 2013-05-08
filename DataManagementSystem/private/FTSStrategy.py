@@ -138,7 +138,15 @@ class FTSGraph( Graph ):
       size = ftsHistory.Size
       failedSize = ftsHistory.FailedSize
       fromNode = self.findFTSSiteForSE( sourceSE )
+      if not fromNode["OK"]:
+        self.log.error( "SourceSE %s not found in graph" % sourceSE )
+        continue
+      fromNode = fromNode["Value"]
       toNode = self.findFTSSiteForSE( targetSE )
+      if not toNode["OK"]:
+        self.log.error( "TargetSE %s not found in graph" % targetSE )
+        continue
+      toNode = toNode["Value"]
       if not fromNode or not toNode:
         continue
       route = self.findRoute( fromNode, toNode )
@@ -161,8 +169,8 @@ class FTSGraph( Graph ):
                     "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
                     "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
         roAttrs = { "routeName": "%s#%s" % ( fromNode.name, toNode.name ),
-                     "acceptableFailureRate": self.acceptableFailureRate,
-                     "acceptableFailedFiles": self.acceptableFailedFiles,
+                    "acceptableFailureRate": self.acceptableFailureRate,
+                    "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
         self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
     self.updateRWAccess()
@@ -298,17 +306,17 @@ class FTSStrategy( object ):
     return cls.__graphLock
 
   @classmethod
-  def resetGraph( self, ftsHistoryViews ):
+  def resetGraph( cls, ftsHistoryViews ):
     """ reset graph """
     ftsGraph = None
     try:
-      self.graphLock().acquire()
-      ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, self.acceptableFailureRate,
-                           self.acceptableFailedFiles, self.schedulingType )
+      cls.graphLock().acquire()
+      ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, cls.acceptableFailureRate,
+                           cls.acceptableFailedFiles, cls.schedulingType )
       if ftsGraph:
-        self.ftsGraph = ftsGraph
+        cls.ftsGraph = ftsGraph
     finally:
-      self.graphLock().release()
+      cls.graphLock().release()
     return S_OK()
 
   def updateRWAccess( self ):
