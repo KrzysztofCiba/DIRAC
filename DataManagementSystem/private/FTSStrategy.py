@@ -207,7 +207,7 @@ class FTSGraph( Graph ):
 
     :param list seList: SE list
     """
-    self.log.always( "updating RW access..." )
+    self.log.info( "updating RW access..." )
     for site in self.nodes():
       seList = site.SEs.keys()
       rwDict = dict.fromkeys( seList )
@@ -218,14 +218,15 @@ class FTSGraph( Graph ):
         if not rAccess["OK"]:
           self.log.error( rAccess["Message"] )
           continue
+        self.log.info( "read %s %s" % ( se , rAccess ) )
         rwDict[se]["read"] = True if rAccess["Value"] in ( "Active", "Degraded" ) else False
         wAccess = self.rssClient().getStorageElementStatus( se, "WriteAccess" )
         if not wAccess["OK"]:
           self.log.error( wAccess["Message"] )
           continue
+        self.log.info( "write %s %s" % ( se , wAccess ) )
         rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
       site.SEs = rwDict
-    self.log.always( " rw access update done!" )
     return S_OK()
 
   def findSiteForSE( self, se ):
