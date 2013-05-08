@@ -200,9 +200,9 @@ class FTSDBTests( unittest.TestCase ):
       delete = db.deleteFTSFile( i )
       self.assertEqual( delete["OK"], True, "deleleFTSFile failed" )
 
-    for i in range( 1, 201 ):
-      delete = db.deleteFTSJob( i )
-      self.assertEqual( delete["OK"], True, "deleleFTSJob failed" )
+    # for i in range( 1, 201 ):
+    #  delete = db.deleteFTSJob( i )
+    #  self.assertEqual( delete["OK"], True, "deleleFTSJob failed" )
 
     summary = db.getDBSummary()
     self.assertEqual( summary["OK"], True, "getDBSummary failed" )
