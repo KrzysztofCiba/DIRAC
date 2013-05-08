@@ -87,7 +87,7 @@ class FTSManagerHandler( RequestHandler ):
 
     if cls.ftsMode:
       # # every 10 minutes update RW access in FTSGraph
-      gThreadScheduler.addPeriodicTask( 600, cls.updateRWAccess )
+      gThreadScheduler.addPeriodicTask( 10, cls.updateRWAccess )
       # # every half an hour replace FTSGraph
       gThreadScheduler.addPeriodicTask( int( FTSHistoryView.INTERVAL / 2 ) , cls.updateFTSStrategy )
     return S_OK()

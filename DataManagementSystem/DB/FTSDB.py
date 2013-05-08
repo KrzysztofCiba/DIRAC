@@ -141,7 +141,7 @@ class FTSDB( DB ):
   def putFTSSite( self, ftsSite ):
     """ put FTS site into DB """
     if not ftsSite.FTSSiteID:
-      existing = self._query( "SELECT COUNT(*) FROM `FTSSite` WHERE `Name` = %s" % ftsSite.Name )
+      existing = self._query( "SELECT COUNT(*) FROM `FTSSite` WHERE `Name` = '%s'" % ftsSite.Name )
       if not existing["OK"]:
         self.log.error( "putFTSSite: %s" % existing["Message"] )
         return existing
@@ -322,10 +322,11 @@ class FTSDB( DB ):
   def getDBSummary( self ):
     """ get DB summary """
     # # this will be returned
-    retDict = { "FTSJob": {}, "FTSFile": {}, "FTSHistory": {} }
-    transQueries = { "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
+    retDict = { "FTSSite": {}, "FTSJob": {}, "FTSFile": {}, "FTSHistory": {} }
+    transQueries = { "SELECT COUNT(*) FROM `FTSSite`;": "FTSSite",
+                    "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
                      "SELECT `Status`, COUNT(`Status`) FROM `FTSFile` GROUP BY `Status`;" : "FTSFile",
-                     "SELECT * FROM `FTSHistoryView`;" : "FTSHistory" }
+                     "SELECT * FROM `FTSHistoryView`;": "FTSHistory" }
     ret = self._transaction( transQueries.keys() )
     if not ret["OK"]:
       self.log.error( "getDBSummary: %s" % ret["Message"] )
@@ -346,6 +347,8 @@ class FTSDB( DB ):
           if status not in retDict["FTSFile"]:
             retDict["FTSFile"][status] = 0
           retDict["FTSFile"][status] += count
+      elif transQueries[k] == "FTSSite":
+        retDict["FTSSite"] = v
       else:  # # FTSHistory
         retDict["FTSHistory"] = v
     return S_OK( retDict )
