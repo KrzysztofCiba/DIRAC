@@ -174,6 +174,7 @@ class FTSGraph( Graph ):
         route.failedAttempts += failedFiles
         route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
         route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
+        self.log.info( "fileput=%s" % route.fileput )
       else:
         # # route is missing, create a new one
         rwAttrs = { "files": files, "size": size,
