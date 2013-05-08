@@ -33,6 +33,7 @@ from DIRAC.Core.Utilities.List import stringListToString
 # # ORMs
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
 ########################################################################
@@ -64,8 +65,7 @@ class FTSDB( DB ):
   def getTableMeta():
     """ get db schema in a dict format """
     return dict( [ ( classDef.__name__, classDef.tableDesc() )
-                   for classDef in ( FTSJob, FTSFile ) ] )
-
+                   for classDef in ( FTSSite, FTSJob, FTSFile ) ] )
   @staticmethod
   def getViewMeta():
     """ return db views in dict format
@@ -158,8 +158,10 @@ class FTSDB( DB ):
       self.log.error( "getFTSSite: %s" % getFTSSite["Message"] )
       return getFTSSite
     getFTSSite = getFTSSite["Value"]
-
-    self.log.always( getFTSSite )
+    if getFTSSiteQuery in getFTSSite and getFTSSite[getFTSSiteQuery]:
+      getFTSSite = FTSSite( getFTSSite[getFTSSiteQuery][0] )
+      return S_OK( getFTSSite )
+    # # if we land here FTSSite does nor exist
     return S_OK()
 
   def getFTSSitesList( self ):
