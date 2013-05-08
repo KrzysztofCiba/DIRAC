@@ -275,11 +275,15 @@ class FTSStrategy( object ):
     """
     # ## config path
     self.csPath = csPath
+    # # fts sites
+    ftsSites = ftsSites if ftsSites else []
     # # history views
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
     # # own sub logger
     self.log = gLogger.getSubLogger( "FTSStrategy", child = True )
     self.log.setLevel( gConfig.getValue( self.csPath + "/LogLevel", "DEBUG" ) )
+    # #
+    self.log.info( "FTSSites: %s FTSHistoryViews = %s" % ( len( ftsSites ), len( ftsHistoryViews ) ) )
     # # CS options
     self.log.info( "Supported strategies = %s" % ", ".join( self.supportedStrategies ) )
     self.activeStrategies = gConfig.getValue( "%s/%s" % ( self.csPath, "ActiveStrategies" ), ["MinimiseTotalWait"] )
