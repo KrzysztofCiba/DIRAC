@@ -111,12 +111,13 @@ class FTSGraph( Graph ):
     sitesDict = sitesDict["Value"]
 
     ftsSitesNames = [ ftsSite.Name for ftsSite in ftsSites ]
+    self.log.always( ftsSitesNames )
 
     # # create nodes
     for site, ses in sitesDict.items():
 
       if site not in ftsSitesNames:
-        self.log.debug( "skipping site '%s', not defined as FTSSite" )
+        self.log.info( "skipping site '%s', not defined as FTSSite" )
         continue
 
       rwDict = dict.fromkeys( ses )
