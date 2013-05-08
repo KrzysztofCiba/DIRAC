@@ -151,12 +151,12 @@ class FTSGraph( Graph ):
       failedFiles = ftsHistory.FailedFiles
       size = ftsHistory.Size
       failedSize = ftsHistory.FailedSize
-      fromNode = self.findFTSSiteForSE( sourceSE )
+      fromNode = self.findSiteForSE( sourceSE )
       if not fromNode["OK"]:
         self.log.error( "SourceSE %s not found in graph" % sourceSE )
         continue
       fromNode = fromNode["Value"]
-      toNode = self.findFTSSiteForSE( targetSE )
+      toNode = self.findSiteForSE( targetSE )
       if not toNode["OK"]:
         self.log.error( "TargetSE %s not found in graph" % targetSE )
         continue
