@@ -66,8 +66,8 @@ class Route( Edge ):
     if successRate < self.acceptableFailureRate:
       if self.distinctFailedFiles > self.acceptableFailedFiles:
         return float( "inf" )
-    if self.status != "Active":
-      return float( "inf" )
+    # if self.status != "Active":
+    #  return float( "inf" )
     transferSpeed = { "File" : self.fileput, "Throughput" : self.throughput }[self.schedulingType]
     waitingTransfers = { "File" : self.files, "Throughput" : self.size }[self.schedulingType]
     if transferSpeed:
