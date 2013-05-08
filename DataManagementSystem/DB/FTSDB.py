@@ -152,11 +152,13 @@ class FTSDB( DB ):
 
   def getFTSSite( self, ftsSiteID ):
     """ read FTSSite given FTSSiteID """
-    getFTSSite = self._transaction( ["SELECT * FROM `FTSSite` WHERE `FTSSiteID`=%s" % int( ftsSiteID )] )
+    getFTSSiteQuery = "SELECT * FROM `FTSSite` WHERE `FTSSiteID`=%s" % int( ftsSiteID )
+    getFTSSite = self._transaction( [ getFTSSiteQuery ] )
     if not getFTSSite["OK"]:
       self.log.error( "getFTSSite: %s" % getFTSSite["Message"] )
       return getFTSSite
     getFTSSite = getFTSSite["Value"]
+
     self.log.always( getFTSSite )
     return S_OK()
 
