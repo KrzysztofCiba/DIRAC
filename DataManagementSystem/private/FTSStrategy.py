@@ -100,13 +100,14 @@ class FTSGraph( Graph ):
     self.initialize( ftsHistoryViews )
 
   def initialize( self, ftsHistoryViews = None ):
-    """ pass """
+    """ initialize FTSGraph  """
     self.log.always( "initializing..." )
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
     sitesDict = self.resources().getEligibleResources( "Storage" )
     if not sitesDict["OK"]:
       return sitesDict
     sitesDict = sitesDict["Value"]
+
     # # create nodes
     for site, ses in sitesDict.items():
       rwDict = dict.fromkeys( ses )
