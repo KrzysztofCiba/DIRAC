@@ -166,7 +166,7 @@ class FTSDB( DB ):
 
   def getFTSSitesList( self ):
     """ bulk read of FTS sites """
-    ftsSitesQuery = "SELECT * FROM `FTSSites`;"
+    ftsSitesQuery = "SELECT * FROM `FTSSite`;"
     ftsSites = self._transaction( [ ftsSitesQuery ] )
     if not ftsSites["OK"]:
       self.log.error( "getFTSSites: %s" % ftsSites["Message"] )
