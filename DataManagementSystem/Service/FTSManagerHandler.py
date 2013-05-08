@@ -35,6 +35,7 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 # # from DMS
 from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
@@ -190,6 +191,14 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
+  types_putFTSSite = [ StringTypes ]
+  @classmethod
+  def export_putFTSSite( cls, ftsSiteJSON ):
+    """ """
+    ftsSite = FTSSite( ftsSiteJSON )
+
+
+
   types_getFTSFile = [ LongType ]
   @classmethod
   def export_getFTSFile( cls, ftsFileID ):
@@ -230,11 +239,11 @@ class FTSManagerHandler( RequestHandler ):
         gLogger.error( peekFile["Message"] )
     return peekFile
 
-  types_putFTSFile = [ StringTypes ]
+  types_putFTSFile = [ DictType ]
   @classmethod
-  def export_putFTSFile( cls, ftsFileXML ):
+  def export_putFTSFile( cls, ftsFileJSON ):
     """ put FTSFile into FTSDB """
-    ftsFile = FTSFile.fromXML( ftsFileXML )
+    ftsFile = FTSFile( ftsFileJSON )
     if not ftsFile["OK"]:
       gLogger.error( ftsFile["Message"] )
       return ftsFile
@@ -262,15 +271,21 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
-  types_putFTSJob = [ StringTypes ]
+  types_putFTSJob = [ DictType ]
   @classmethod
-  def export_putFTSJob( cls, ftsJobXML ):
+  def export_putFTSJob( cls, ftsJobJSON ):
     """ put FTSLfn into FTSDB """
-    ftsJob = FTSJob.fromXML( ftsJobXML )
+    ftsFiles = []  # ftsJobJSON.get( "FTSFiles", [] )
+    if "FTSFiles" in ftsJobJSON:
+      ftsFiles = ftsJobJSON.get( "FTSFiles", [] )
+      del ftsJobJSON["FTSFiles"]
+    ftsJob = FTSJob( ftsJobJSON )
     if not ftsJob["OK"]:
       gLogger.error( ftsJob["Message"] )
       return ftsJob
     ftsJob = ftsJob["Value"]
+    for ftsFile in ftsFiles:
+      ftsJob.addFile( FTSFile( ftsFile ) )
     isValid = cls.ftsValidator().validate( ftsJob )
     if not isValid["OK"]:
       gLogger.error( isValid["Message"] )

@@ -33,6 +33,7 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
@@ -84,6 +85,8 @@ class FTSClient( Client ):
       cls.__requestClient = RequestClient()
     return cls.__requestClient
 
+
+
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into FTSDB
 
@@ -93,12 +96,12 @@ class FTSClient( Client ):
     if not isValid["OK"]:
       self.log.error( isValid["Message"] )
       return isValid
-    ftsFileXML = ftsFile.toXML( dumpToStr = True )
-    if not ftsFileXML["OK"]:
-      self.log.error( ftsFileXML["Message"] )
-      return ftsFileXML
-    ftsFileXML = ftsFileXML["Value"]
-    return self.ftsManager().putFTSFile( ftsFileXML )
+    ftsFileJSON = ftsFile.toJSON()
+    if not ftsFileJSON["OK"]:
+      self.log.error( ftsFileJSON["Message"] )
+      return ftsFileJSON
+    ftsFileJSON = ftsFileJSON["Value"]
+    return self.ftsManager().putFTSFile( ftsFileJSON )
 
   def getFTSFile( self, ftsFileID = None ):
     """ get FTSFile
@@ -136,11 +139,11 @@ class FTSClient( Client ):
     if not isValid["OK"]:
       self.log.error( isValid["Message"] )
       return isValid
-    ftsJobXML = ftsJob.toXML()
-    if not ftsJobXML["OK"]:
-      self.log.error( ftsJobXML["Message"] )
-      return ftsJobXML
-    return self.ftsManager().putFTSJob( ftsJobXML )
+    ftsJobJSON = ftsJob.toJSON()
+    if not ftsJobJSON["OK"]:
+      self.log.error( ftsJobJSON["Message"] )
+      return ftsJobJSON
+    return self.ftsManager().putFTSJob( ftsJobJSON )
 
   def getFTSJob( self, ftsJobID ):
     """ get FTS job
