@@ -130,6 +130,9 @@ class FTSGraph( Graph ):
       self.log.info( "adding %s" % ftsSite.name )
       self.addNode( ftsSite )
 
+    self.log.info( "AAAAAAAAAAAAA sites=%s edges=%s" % ( len( self.nodes() ), len( self.enges() ) ) )
+
+
     for siteA in self.nodes():
       for siteB in self.nodes():
         rwAttrs = { "files": 0, "size": 0, "successfulAttempts": 0,
@@ -143,8 +146,10 @@ class FTSGraph( Graph ):
         self.log.info( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
         self.addEdge( route )
 
-    for ftsHistory in ftsHistoryViews:
+    self.log.info( "BBBBBBBBBBBBBBBBB sites=%s edges=%s" % ( len( self.nodes() ), len( self.enges() ) ) )
 
+
+    for ftsHistory in ftsHistoryViews:
       sourceSE = ftsHistory.SourceSE
       targetSE = ftsHistory.TargetSE
       files = ftsHistory.Files
@@ -174,7 +179,7 @@ class FTSGraph( Graph ):
         route.failedAttempts += failedFiles
         route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
         route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
-        self.log.info( "fileput=%s" % route.fileput )
+        self.log.info( "AAAAAAAAAAAAAAAAAAAA fileput=%s" % route.fileput )
       else:
         # # route is missing, create a new one
         rwAttrs = { "files": files, "size": size,
@@ -189,6 +194,10 @@ class FTSGraph( Graph ):
                     "schedulingType": self.schedulingType }
         self.addEdge( Route( fromNode, toNode, rwAttrs, roAttrs ) )
     self.updateRWAccess()
+
+
+    self.log.info( "CCCCCCCCCCCCCCCCCCCCCCC sites=%s edges=%s" % ( len( self.nodes() ), len( self.enges() ) ) )
+
     self.log.always( "init done!" )
 
   def rssClient( self ):
@@ -364,7 +373,6 @@ class FTSStrategy( object ):
     replicationTree = replicationTree if replicationTree else {}
     size = size if size else 0.0
     if replicationTree:
-      self.log.always( replicationTree )
       try:
         self.graphLock().acquire()
         for route in self.ftsGraph.edges():
