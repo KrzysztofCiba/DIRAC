@@ -95,10 +95,14 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def updateFTSStrategy( cls ):
     """ update FTS graph in the FTSStrategy """
+    ftsSites = cls.__ftsDB.getFTSSitesList()
+    if not ftsSites["OK"]:
+      gLogger.warn( "unable to read FTSSites: %s" % ftsSites["Message"] )
+      return ftsSites
     ftsHistory = cls.__ftsDB.getFTSHistory()
     if not ftsHistory["OK"]:
       return S_ERROR( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
-    cls.ftsStrategy().resetGraph( ftsHistory["Value"] )
+    cls.ftsStrategy().resetGraph( ftsSites["Value"], ftsHistory["Value"] )
     return S_OK()
 
   @classmethod
@@ -112,7 +116,20 @@ class FTSManagerHandler( RequestHandler ):
     if not cls.__ftsStrategy:
       csPath = getServiceSection( "DataManagement/FTSManager" )
       csPath = "%s/%s" % ( csPath, "FTSStrategy" )
-      cls.__ftsStrategy = FTSStrategy( csPath )
+
+      ftsSites = cls.__ftsDB.getFTSSitesList()
+      if not ftsSites["OK"]:
+        gLogger.warn( "unable to read FTSSites: %s" % ftsSites["Message"] )
+        ftsSites["Value"] = []
+      ftsSites = ftsSites["Value"]
+
+      ftsHistory = cls.__ftsDB.getFTSDBHistory()
+      if not ftsHistory["OK"]:
+        gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
+        ftsHistory["Value"] = []
+      ftsHistory = ftsHistory["Value"]
+
+      cls.__ftsStrategy = FTSStrategy( csPath, ftsSites, ftsHistory )
 
     return cls.__ftsStrategy
 

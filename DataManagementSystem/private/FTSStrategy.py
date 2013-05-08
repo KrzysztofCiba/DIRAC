@@ -32,9 +32,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 # # from DMS
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
-class FTSSite( Node ):
+class Site( Node ):
   """
-  .. class:: FTSSite
+  .. class:: Site
 
   not too much here, inherited to change the name
   """
@@ -46,9 +46,9 @@ class FTSSite( Node ):
     """ check if SE is hosted at this site """
     return se in self.SEs
 
-class FTSRoute( Edge ):
+class Route( Edge ):
   """
-  .. class:: FTSRoute
+  .. class:: Route
 
   class representing transfers between sites
   """
@@ -87,6 +87,7 @@ class FTSGraph( Graph ):
 
   def __init__( self,
                 name,
+                ftsSites = None,
                 ftsHistoryViews = None,
                 acceptableFailureRate = 0.75,
                 acceptableFailedFiles = 5,
@@ -99,21 +100,29 @@ class FTSGraph( Graph ):
     self.schedulingType = schedulingType
     self.initialize( ftsHistoryViews )
 
-  def initialize( self, ftsHistoryViews = None ):
+  def initialize( self, ftsSites = None, ftsHistoryViews = None ):
     """ initialize FTSGraph  """
     self.log.always( "initializing..." )
+    ftsSites = ftsSites if ftsSites else []
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
     sitesDict = self.resources().getEligibleResources( "Storage" )
     if not sitesDict["OK"]:
       return sitesDict
     sitesDict = sitesDict["Value"]
 
+    ftsSitesNames = [ ftsSite.Name for ftsSite in ftsSites ]
+
     # # create nodes
     for site, ses in sitesDict.items():
+
+      if site not in ftsSitesNames:
+        self.log.debug( "skipping site '%s', not defined as FTSSite" )
+        continue
+
       rwDict = dict.fromkeys( ses )
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
-      ftsSite = FTSSite( site, {"SEs": rwDict } )
+      ftsSite = Site( site, {"SEs": rwDict } )
       self.log.info( "adding %s" % ftsSite )
       self.addNode( ftsSite )
 
@@ -126,7 +135,7 @@ class FTSGraph( Graph ):
                     "acceptableFailureRate": self.acceptableFailureRate,
                     "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
-        route = FTSRoute( siteA, siteB, rwAttrs, roAttrs )
+        route = Route( siteA, siteB, rwAttrs, roAttrs )
         self.log.info( "adding %s" % route )
         self.addEdge( route )
 
@@ -173,7 +182,7 @@ class FTSGraph( Graph ):
                     "acceptableFailureRate": self.acceptableFailureRate,
                     "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
-        self.addEdge( FTSRoute( fromNode, toNode, rwAttrs, roAttrs ) )
+        self.addEdge( Route( fromNode, toNode, rwAttrs, roAttrs ) )
     self.updateRWAccess()
     self.log.always( "init done!" )
 
@@ -215,7 +224,7 @@ class FTSGraph( Graph ):
     self.log.always( " rw access update done!" )
     return S_OK()
 
-  def findFTSSiteForSE( self, se ):
+  def findSiteForSE( self, se ):
     """ return FTSSite for a given SE """
     for node in self.nodes():
       if se in node:
@@ -257,7 +266,7 @@ class FTSStrategy( object ):
   # # scheduling type
   schedulingType = "File"
 
-  def __init__( self, csPath = None, ftsHistoryViews = None ):
+  def __init__( self, csPath = None, ftsSites = None, ftsHistoryViews = None ):
     """c'tor
 
     :param self: self reference
@@ -292,9 +301,12 @@ class FTSStrategy( object ):
                                 "Simple" : self.simple,
                                 "Swarm" : self.swarm }
 
-    self.ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, self.acceptableFailureRate,
-                              self.acceptableFailedFiles, self.schedulingType )
-
+    self.ftsGraph = FTSGraph( "FTSGraph",
+                              ftsSites,
+                              ftsHistoryViews,
+                              self.acceptableFailureRate,
+                              self.acceptableFailedFiles,
+                              self.schedulingType )
     # # if we land here everything is OK
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
@@ -307,13 +319,17 @@ class FTSStrategy( object ):
     return cls.__graphLock
 
   @classmethod
-  def resetGraph( cls, ftsHistoryViews ):
+  def resetGraph( cls, ftsSites, ftsHistoryViews ):
     """ reset graph """
     ftsGraph = None
     try:
       cls.graphLock().acquire()
-      ftsGraph = FTSGraph( "FTSGraph", ftsHistoryViews, cls.acceptableFailureRate,
-                           cls.acceptableFailedFiles, cls.schedulingType )
+      ftsGraph = FTSGraph( "FTSGraph",
+                           ftsSites,
+                           ftsHistoryViews,
+                           cls.acceptableFailureRate,
+                           cls.acceptableFailedFiles,
+                           cls.schedulingType )
       if ftsGraph:
         cls.ftsGraph = ftsGraph
     finally:
