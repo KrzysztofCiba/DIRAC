@@ -123,6 +123,12 @@ class FTSDBTests( unittest.TestCase ):
     for i, ftsSite in enumerate( self.ftsSites ):
       get = db.getFTSSite( i + 1 )
       self.assertEqual( get["OK"], True, "getFTSSite failed" )
+      self.assertEqual( isinstance( get["Value"], FTSSite ), True, "getFTSSite wrong value returned" )
+
+    getFTSSitesList = db.getFTSSitesList()
+    self.assertEqual( getFTSSitesList["OK"], True, "getFTSSIteList failed" )
+    for item in getFTSSitesList["Value"]:
+      self.assertEqual( isinstance( item, FTSSite ), True, "getFTSSitesList wrong value returned" )
 
     for ftsFile in self.ftsFiles:
       put = db.putFTSFile( ftsFile )

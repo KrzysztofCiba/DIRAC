@@ -166,14 +166,14 @@ class FTSDB( DB ):
 
   def getFTSSitesList( self ):
     """ bulk read of FTS sites """
-    ftsSites = self._transaction( "SELECT * FROM `FTSSites`;" )
+    ftsSitesQuery = "SELECT * FROM `FTSSites`;"
+    ftsSites = self._transaction( [ ftsSitesQuery ] )
     if not ftsSites["OK"]:
       self.log.error( "getFTSSites: %s" % ftsSites["Message"] )
       return ftsSites
-    ftsSites = ftsSites["Value"]
-    self.log.always( ftsSites )
-    return S_OK()
-
+    ftsSites = ftsSites["Value"][ftsSitesQuery] if ftsSitesQuery in ftsSites["Value"] else [] 
+    return S_OK( [ FTSSite( ftsSiteDict ) for ftsSiteDict  in ftsSites ] )
+    
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """
     ftsFileSQL = ftsFile.toSQL()
