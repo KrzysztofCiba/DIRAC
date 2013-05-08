@@ -651,6 +651,7 @@ class FTSStrategy( object ):
       self.log.error( "replicationTree: %s" % tree["Message"] )
       return tree
     # # update graph edges
+    self.log.always( "replicationTree: %s" % tree["Value"] )
     update = self.addTreeToGraph( replicationTree = tree["Value"], size = size )
     if not update["OK"]:
       self.log.error( "replicationTree: unable to update FTS graph: %s" % update["Message"] )
