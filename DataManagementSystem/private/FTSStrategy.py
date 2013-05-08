@@ -461,12 +461,14 @@ class FTSStrategy( object ):
       channels = []
       for targetSE in targetSEs:
         for sourceSE in sourceSEs:
+          self.log.info( "searching %s-%s" % ( sourceSE, targetSE ) )
           ftsChannel = self.ftsGraph.findRoute( sourceSE, targetSE )
           if not ftsChannel["OK"]:
             self.log.warn( "minimiseTotalWait: %s" % ftsChannel["Message"] )
             continue
           ftsChannel = ftsChannel["Value"]
           channels.append( ( ftsChannel, sourceSE, targetSE ) )
+
       if not channels:
         msg = "minimiseTotalWait: FTS route between %s and %s not defined" % ( ",".join( sourceSEs ),
                                                                                ",".join( targetSEs ) )
@@ -481,7 +483,7 @@ class FTSStrategy( object ):
         self.log.error( msg )
         return S_ERROR( msg )
 
-      self.log.debug( "minimiseTotalWait: found %s candidate routes, checking activity" % len( channels ) )
+      self.log.info( "minimiseTotalWait: found %s candidate routes, checking activity" % len( channels ) )
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"]
                    and channel.timeToStart < float( "inf" ) ]
@@ -551,7 +553,7 @@ class FTSStrategy( object ):
         return S_ERROR( msg )
       # # filter out already used channels
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
-                   if channel.channelID not in tree ]
+                   if channel.routeName not in tree ]
       if not channels:
         msg = "dynamicThroughput: all FTS routes between %s and %s are already used in tree" % ( ",".join( sourceSEs ),
                                                                                                  ",".join( targetSEs ) )
