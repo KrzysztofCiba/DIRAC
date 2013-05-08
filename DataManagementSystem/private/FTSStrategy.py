@@ -474,7 +474,7 @@ class FTSStrategy( object ):
         return S_ERROR( msg )
       # # filter out already used channels
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
-                   if channel.channelID not in tree ]
+                   if channel.routeName not in tree ]
       if not channels:
         msg = "minimiseTotalWait: all FTS routes between %s and %s are already used in tree" % ( ",".join( sourceSEs ),
                                                                                                  ",".join( targetSEs ) )
@@ -515,8 +515,8 @@ class FTSStrategy( object ):
       for routeName, treeItem in tree.items():
         if selSourceSE in treeItem["DestSE"]:
           ancestor = routeName
-      tree[selChannel.name] = { "Ancestor" : ancestor, "SourceSE" : selSourceSE,
-                                "TargetSE" : selTargetSE, "Strategy" : "MinimiseTotalWait" }
+      tree[selChannel.routeName] = { "Ancestor" : ancestor, "SourceSE" : selSourceSE,
+                                    "TargetSE" : selTargetSE, "Strategy" : "MinimiseTotalWait" }
       sourceSEs.append( selTargetSE )
       targetSEs.remove( selTargetSE )
 
