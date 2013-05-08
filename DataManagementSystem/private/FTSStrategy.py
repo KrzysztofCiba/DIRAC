@@ -148,23 +148,9 @@ class FTSGraph( Graph ):
 
     for ftsHistory in ftsHistoryViews:
 
-      fromNode = self.findSiteForSE( ftsHistory.SourceSE )
-      if not fromNode["OK"]:
-        self.log.warn( "SourceSE %s not found in graph" % ftsHistory.SourceSE )
-        continue
-      fromNode = fromNode["Value"]
-
-      toNode = self.findSiteForSE( ftsHistory.TargetSE )
-      if not toNode["OK"]:
-        self.log.warn( "TargetSE %s not found in graph" % ftsHistory.TargetSE )
-        continue
-      toNode = toNode["Value"]
-      if not fromNode or not toNode:
-        continue
-
-      route = self.findRoute( fromNode, toNode )
+      route = self.findRoute( ftsHistory.SourceSE, ftsHistory.TargetSE )
       if not route["OK"]:
-        self.log.warn( "FTS route between %s and %s not found" % ( fromNode.name, toNode.name ) )
+        self.log.warn( "FTS route between %s and %s not found" % ( ftsHistory.SourceSE, ftsHistory.TargetSE ) )
         continue
       route = route["Value"]
 
