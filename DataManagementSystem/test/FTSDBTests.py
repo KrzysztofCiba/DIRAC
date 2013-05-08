@@ -120,6 +120,10 @@ class FTSDBTests( unittest.TestCase ):
       put = db.putFTSSite( ftsSite )
       self.assertEqual( put["OK"], True, "putFTSSite failed" )
 
+    for i, ftsSite in enumerate( self.ftsSites ):
+      get = db.getFTSSite( i + 1 )
+      self.assertEqual( get["OK"], True, "getFTSSite failed" )
+
     for ftsFile in self.ftsFiles:
       put = db.putFTSFile( ftsFile )
       self.assertEqual( put["OK"], True, "putFTSFile failed" )
