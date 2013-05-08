@@ -86,6 +86,8 @@ class FTSManagerHandler( RequestHandler ):
     gLogger.always( "FTS is %s" % { True: "enabled", False: "disabled"}[cls.ftsMode] )
 
     if cls.ftsMode:
+      # # get FTSStrategy
+      cls.ftsStrategy()
       # # every 10 minutes update RW access in FTSGraph
       gThreadScheduler.addPeriodicTask( 10, cls.updateRWAccess )
       # # every half an hour replace FTSGraph
@@ -122,12 +124,14 @@ class FTSManagerHandler( RequestHandler ):
         gLogger.warn( "unable to read FTSSites: %s" % ftsSites["Message"] )
         ftsSites["Value"] = []
       ftsSites = ftsSites["Value"]
+      gLogger.always( "ftsSites: %s" % ftsSites )
 
       ftsHistory = cls.__ftsDB.getFTSHistory()
       if not ftsHistory["OK"]:
         gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
         ftsHistory["Value"] = []
       ftsHistory = ftsHistory["Value"]
+      gLogger.always( "ftsHistory: %s" % ftsHistory )
 
       cls.__ftsStrategy = FTSStrategy( csPath, ftsSites, ftsHistory )
 

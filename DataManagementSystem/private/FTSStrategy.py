@@ -117,7 +117,7 @@ class FTSGraph( Graph ):
     for site, ses in sitesDict.items():
 
       if site not in ftsSitesNames:
-        self.log.info( "skipping site '%s', not defined as FTSSite" )
+        self.log.info( "skipping site '%s', not defined as FTSSite" % site )
         continue
 
       rwDict = dict.fromkeys( ses )

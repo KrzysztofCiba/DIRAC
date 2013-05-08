@@ -129,7 +129,7 @@ class FTSDBTests( unittest.TestCase ):
       self.assertEqual( isinstance( get["Value"], FTSSite ), True, "getFTSSite wrong value returned" )
 
     getFTSSitesList = db.getFTSSitesList()
-    self.assertEqual( getFTSSitesList["OK"], True, "getFTSSiteList failed" )
+    self.assertEqual( getFTSSitesList["OK"], True, "getFTSSitesList failed" )
     for item in getFTSSitesList["Value"]:
       self.assertEqual( isinstance( item, FTSSite ), True, "getFTSSitesList wrong value returned" )
 
