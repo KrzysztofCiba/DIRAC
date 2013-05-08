@@ -179,23 +179,8 @@ class FTSGraph( Graph ):
         route.failedAttempts += failedFiles
         route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
         route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
-        self.log.info( "AAAAAAAAAAAAAAAAAAAA fileput=%s" % route.fileput )
-      else:
-        # # route is missing, create a new one
-        rwAttrs = { "files": files, "size": size,
-                    "successfulAttempts": files - failedFiles,
-                    "failedAttempts": failedFiles,
-                    "failedSize": failedSize,
-                    "fileput": float( files - failedFiles ) / FTSHistoryView.INTERVAL,
-                    "throughput": float( size - failedSize ) / FTSHistoryView.INTERVAL  }
-        roAttrs = { "routeName": "%s#%s" % ( fromNode.name, toNode.name ),
-                    "acceptableFailureRate": self.acceptableFailureRate,
-                    "acceptableFailedFiles": self.acceptableFailedFiles,
-                    "schedulingType": self.schedulingType }
-        self.addEdge( Route( fromNode, toNode, rwAttrs, roAttrs ) )
+
     self.updateRWAccess()
-
-
     self.log.info( "CCCCCCCCCCCCCCCCCCCCCCC sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
 
     self.log.always( "init done!" )
