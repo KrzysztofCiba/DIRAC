@@ -136,7 +136,7 @@ class FTSGraph( Graph ):
     for siteA in self.nodes():
       for siteB in self.nodes():
         rwAttrs = { "files": 0, "size": 0, "successfulAttempts": 0,
-                    "failedAttempts": 0, "failedSize": 0,
+                    "failedFiles": 0, "failedAttempts": 0, "failedSize": 0,
                     "fileput": 0.0, "throughput": 0.0 }
         roAttrs = { "routeName": "%s#%s" % ( siteA.name, siteB.name ),
                     "acceptableFailureRate": self.acceptableFailureRate,
