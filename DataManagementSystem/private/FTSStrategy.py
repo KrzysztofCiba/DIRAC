@@ -484,6 +484,10 @@ class FTSStrategy( object ):
         return S_ERROR( msg )
 
       self.log.info( "minimiseTotalWait: found %s candidate routes, checking activity" % len( channels ) )
+
+      for ch, s, t in channels:
+        self.log.info( "%s %s %s" % ( ch.routeName, ch.fromNode.SEs[s]["read"], ch.toNode.SEs[t]["write"] ) )
+
       channels = [ ( channel, sourceSE, targetSE ) for channel, sourceSE, targetSE in channels
                    if channel.fromNode.SEs[sourceSE]["read"] and channel.toNode.SEs[targetSE]["write"]
                    and channel.timeToStart < float( "inf" ) ]
