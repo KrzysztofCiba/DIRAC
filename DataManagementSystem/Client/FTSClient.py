@@ -85,7 +85,23 @@ class FTSClient( Client ):
       cls.__requestClient = RequestClient()
     return cls.__requestClient
 
+  def getFTSSite( self, ftsSiteID ):
+    """ get FTSSite given FTSSiteID """
+    getFTSSite = self.ftsManager().getFTSSite( ftsSiteID )
+    if not getFTSSite["OK"]:
+      self.log.error( "getFTSSite: %s" % getFTSSite["Message"] )
+      return getFTSSite
+    getFTSSite = FTSSite( getFTSSite["Value"] ) if getFTSSite["Value"] else None
+    return S_OK( getFTSSite )
 
+  def getFTSSitesList( self ):
+    """ get list of FTSSites """
+    getFTSSitesList = self.ftsManager().getFTSSitesList()
+    if not getFTSSitesList["OK"]:
+      self.log.error( "getFTSSitesList: %s" % getFTSSitesList["Message"] )
+      return getFTSSitesList
+    getFTSSitesList = getFTSSitesList["Value"]
+    return S_OK( [ FTSSite( ftsSite ) for ftsSite in getFTSSitesList ] )
 
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into FTSDB

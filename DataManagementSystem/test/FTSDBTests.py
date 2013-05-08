@@ -50,7 +50,6 @@ class FTSDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/DBName', 'FTSDB' )
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/User', 'Dirac' )
 
-
     self.ftsSites = [ FTSSite( { "ServerURI": "foo://bar.ch/FTSService", "Name": "bar.ch" } ),
                       FTSSite( { "ServerURI": "foo://baz.pl/FTSService", "Name": "baz.pl" } ) ]
 
@@ -179,6 +178,7 @@ class FTSDBTests( unittest.TestCase ):
   def test04GetFTSIDs( self ):
     """ get ids """
     db = FTSDB()
+
     ftsJobIDs = db.getFTSJobIDs( [ "Submitted" ] )
     self.assertEqual( ftsJobIDs["OK"], True, "getFTSJobIDs error" )
     self.assertEqual( len( ftsJobIDs["Value"] ), self.submitted, "getFTSJobIDs wrong value returned" )
@@ -187,9 +187,9 @@ class FTSDBTests( unittest.TestCase ):
     self.assertEqual( ftsFileIDs["OK"], True, "getFTSFileIDs error" )
     self.assertEqual( type( ftsFileIDs["Value"] ), list, "getFTSFileIDs wrong value returned" )
 
-
   def test05Delete( self ):
     """ delete files and jobs """
+
     db = FTSDB()
 
     for i in range( 1, 301 ):
@@ -201,7 +201,6 @@ class FTSDBTests( unittest.TestCase ):
       self.assertEqual( delete["OK"], True, "deleleFTSJob failed" )
 
     summary = db.getDBSummary()
-
     self.assertEqual( summary["OK"], True, "getDBSummary failed" )
     self.assertEqual( "FTSJob" in summary["Value"], True, "getDBSummary FTSJob missing" )
     self.assertEqual( summary["Value"]["FTSJob"], {}, "getDBSummary.FTSJob wrong value returned" )
