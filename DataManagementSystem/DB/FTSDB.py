@@ -164,6 +164,14 @@ class FTSDB( DB ):
     # # if we land here FTSSite does nor exist
     return S_OK()
 
+  def deleteFTSSite( self, ftsSiteID ):
+    """ delete FTSSite given its FTSSiteID """
+    delete = "DELETE FROM `FTSSite` WHERE `FTSSiteID` = %s;" % int( ftsSiteID )
+    delete = self._transaction( [ delete ] )
+    if not delete["OK"]:
+      self.log.error( delete["Message"] )
+    return delete
+
   def getFTSSitesList( self ):
     """ bulk read of FTS sites """
     ftsSitesQuery = "SELECT * FROM `FTSSite`;"
@@ -171,9 +179,9 @@ class FTSDB( DB ):
     if not ftsSites["OK"]:
       self.log.error( "getFTSSites: %s" % ftsSites["Message"] )
       return ftsSites
-    ftsSites = ftsSites["Value"][ftsSitesQuery] if ftsSitesQuery in ftsSites["Value"] else [] 
+    ftsSites = ftsSites["Value"][ftsSitesQuery] if ftsSitesQuery in ftsSites["Value"] else []
     return S_OK( [ FTSSite( ftsSiteDict ) for ftsSiteDict  in ftsSites ] )
-    
+
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """
     ftsFileSQL = ftsFile.toSQL()

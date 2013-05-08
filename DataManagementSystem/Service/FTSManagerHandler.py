@@ -191,13 +191,61 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( str( error ) )
 
-  types_putFTSSite = [ StringTypes ]
+  types_putFTSSite = [ DictType ]
   @classmethod
   def export_putFTSSite( cls, ftsSiteJSON ):
-    """ """
-    ftsSite = FTSSite( ftsSiteJSON )
+    """ put FTSSite """
+    try:
+      ftsSite = FTSSite( ftsSiteJSON )
+      put = cls.__ftsDB.putFTSSite( ftsSite )
+      if not put["OK"]:
+        gLogger.error( "putFTSSite: %s" % put["Message"] )
+      return put
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
 
+  types_getFTSSite = [ LongType ]
+  @classmethod
+  def export_getFTSSite( cls, ftsSiteID ):
+    """ get FTSSite given its id """
+    try:
+      getSite = cls.__ftsDB.getFTSSite( ftsSiteID )
+      if not getSite["OK"]:
+        gLogger.error( "getFTSSite: %s" % getSite["Message"] )
+        return getSite
+      getSite = getSite["Value"] if getSite["Value"] else None
+      if not getSite:
+        return S_OK()
+      getSite = getSite.toJSON()
+      if not getSite["OK"]:
+        gLogger.error( "getFTSSite: %s" % getSite["Message"] )
+      return getSite
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
 
+  types_getFTSSitesList = []
+  @classmethod
+  def export_getFTSSitesList( cls ):
+    """ get list of FTS sites """
+    try:
+      sitesList = cls.__ftsDB.getFTSSitesList()
+      if not sitesList["OK"]:
+        gLogger.error( "getFTSSitesList: %s" % sitesList["Message"] )
+        return sitesList
+      sitesList = sitesList["Value"]
+      sitesJSON = []
+      for site in sitesList:
+        siteJSON = site.toJSON()
+        if not siteJSON["OK"]:
+          gLogger.error( "getFTSSitesList: %s" % siteJSON["Message"] )
+          return siteJSON
+        sitesJSON.append( siteJSON["Value"] )
+      return S_OK( sitesJSON )
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
 
   types_getFTSFile = [ LongType ]
   @classmethod
