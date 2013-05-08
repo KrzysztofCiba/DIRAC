@@ -141,13 +141,14 @@ class FTSDB( DB ):
   def putFTSSite( self, ftsSite ):
     """ put FTS site into DB """
     if not ftsSite.FTSSiteID:
-      existing = self._query( "SELECT COUNT(*) FROM `FTSSite` WHERE `Name` = '%s'" % ftsSite.Name )
+      existing = self._query( "SELECT `FTSSiteID` FROM `FTSSite` WHERE `Name` = '%s'" % ftsSite.Name )
       if not existing["OK"]:
         self.log.error( "putFTSSite: %s" % existing["Message"] )
         return existing
       existing = existing["Value"]
-      self.log.always( existing )
-    
+      if existing:
+        return S_ERROR( "putFTSSite: site of '%s' name is already defined at FTSSiteID = %s" % ( ftsSite.Name,
+                                                                                                 existing ) )
     ftsSiteSQL = ftsSite.toSQL()
     if not ftsSiteSQL["OK"]:
       self.log.error( "putFTSSite: %s" % ftsSiteSQL["Message"] )
