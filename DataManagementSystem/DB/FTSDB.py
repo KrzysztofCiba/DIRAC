@@ -341,6 +341,12 @@ class FTSDB( DB ):
         retDict["FTSHistory"] = v
     return S_OK( retDict )
 
+  def _getFTSSiteProperties( self, ftsSiteID, columnNames = None ):
+    """ select :columNames: from FTSSite given FTSSiteID """
+    columnNames = columnNames if columnNames else FTSSite.tabelDesc()["Fields"].keys()
+    columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
+    return "SELECT %s FROM `FTSSite` WHERE `FTSSiteID` = %s" % ( columnNames, ftsSiteID )
+
   def _getFTSJobProperties( self, ftsJobID, columnNames = None ):
     """ select :columnNames: from FTSJob table  """
     columnNames = columnNames if columnNames else FTSJob.tableDesc()["Fields"].keys()
