@@ -146,39 +146,40 @@ class FTSGraph( Graph ):
         self.log.info( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
         self.addEdge( route )
 
-    self.log.info( "BBBBBBBBBBBBBBBBB sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
-
-
     for ftsHistory in ftsHistoryViews:
-      sourceSE = ftsHistory.SourceSE
-      targetSE = ftsHistory.TargetSE
-      files = ftsHistory.Files
-      failedFiles = ftsHistory.FailedFiles
-      size = ftsHistory.Size
-      failedSize = ftsHistory.FailedSize
-      fromNode = self.findSiteForSE( sourceSE )
+
+      fromNode = self.findSiteForSE( ftsHistory.SourceSE )
       if not fromNode["OK"]:
-        self.log.error( "SourceSE %s not found in graph" % sourceSE )
+        self.log.warn( "SourceSE %s not found in graph" % ftsHistory.SourceSE )
         continue
       fromNode = fromNode["Value"]
-      toNode = self.findSiteForSE( targetSE )
+
+      toNode = self.findSiteForSE( ftsHistory.TargetSE )
       if not toNode["OK"]:
-        self.log.error( "TargetSE %s not found in graph" % targetSE )
+        self.log.warn( "TargetSE %s not found in graph" % ftsHistory.TargetSE )
         continue
       toNode = toNode["Value"]
       if not fromNode or not toNode:
         continue
+
       route = self.findRoute( fromNode, toNode )
-      # # route is there, update
-      if route["OK"]:
-        route = route["Value"]
-        route.files += files
-        route.size += size
-        route.failedSize += failedSize
-        route.successfulAttempts += files - failedFiles
-        route.failedAttempts += failedFiles
-        route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
-        route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
+      if not route["OK"]:
+        self.log.warn( "FTS route between %s and %s not found" % ( fromNode.name, toNode.name ) )
+        continue
+      route = route["Value"]
+
+      files = ftsHistory.Files
+      failedFiles = ftsHistory.FailedFiles
+      size = ftsHistory.Size
+      failedSize = ftsHistory.FailedSize
+
+      route.files += files
+      route.size += size
+      route.failedSize += failedSize
+      route.successfulAttempts += ( files - failedFiles )
+      route.failedAttempts += failedFiles
+      route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
+      route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
 
     self.updateRWAccess()
     self.log.info( "CCCCCCCCCCCCCCCCCCCCCCC sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
