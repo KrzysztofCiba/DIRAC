@@ -126,7 +126,7 @@ class FTSSite( Record ):
                 for column, value in self.__data__.items()
                 if value and column != "FTSSiteID" ]
     query = []
-    if self.FTSFileID:
+    if self.FTSSiteID:
       query.append( "UPDATE `FTSSite` SET " )
       query.append( ", ".join( [ "%s=%s" % item for item in colVals  ] ) )
       query.append( " WHERE `FTSSiteID`=%d;\n" % self.FTSSiteID )
