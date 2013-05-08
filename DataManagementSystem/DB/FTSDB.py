@@ -140,11 +140,20 @@ class FTSDB( DB ):
 
   def putFTSSite( self, ftsSite ):
     """ put FTS site into DB """
+    if not ftsSite.FTSSiteID:
+      existing = self._query( "SELECT COUNT(*) FROM `FTSSite` WHERE `Name` = %s" % ftsSite.Name )
+      if not existing["OK"]:
+        self.log.error( "putFTSSite: %s" % existing["Message"] )
+        return existing
+      existing = existing["Value"]
+      self.log.always( existing )
+    
     ftsSiteSQL = ftsSite.toSQL()
     if not ftsSiteSQL["OK"]:
       self.log.error( "putFTSSite: %s" % ftsSiteSQL["Message"] )
       return ftsSiteSQL
     ftsSiteSQL = ftsSiteSQL["Value"]
+    
     putFTSSite = self._transaction( ftsSiteSQL )
     if not putFTSSite["OK"]:
       self.log.error( putFTSSite["Message"] )
@@ -343,7 +352,7 @@ class FTSDB( DB ):
 
   def _getFTSSiteProperties( self, ftsSiteID, columnNames = None ):
     """ select :columNames: from FTSSite given FTSSiteID """
-    columnNames = columnNames if columnNames else FTSSite.tabelDesc()["Fields"].keys()
+    columnNames = columnNames if columnNames else FTSSite.tableDesc()["Fields"].keys()
     columnNames = ",".join( [ '`%s`' % str( columnName ) for columnName in columnNames ] )
     return "SELECT %s FROM `FTSSite` WHERE `FTSSiteID` = %s" % ( columnNames, ftsSiteID )
 

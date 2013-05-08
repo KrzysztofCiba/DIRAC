@@ -118,6 +118,8 @@ class FTSDBTests( unittest.TestCase ):
     for ftsSite in self.ftsSites:
       put = db.putFTSSite( ftsSite )
       self.assertEqual( put["OK"], True, "putFTSSite failed" )
+      put = db.putFTSSite( ftsSite )
+      print put
 
     for i, ftsSite in enumerate( self.ftsSites ):
       get = db.getFTSSite( i + 1 )
