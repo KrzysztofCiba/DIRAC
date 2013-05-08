@@ -123,7 +123,7 @@ class FTSManagerHandler( RequestHandler ):
         ftsSites["Value"] = []
       ftsSites = ftsSites["Value"]
 
-      ftsHistory = cls.__ftsDB.getFTSDBHistory()
+      ftsHistory = cls.__ftsDB.getFTSHistory()
       if not ftsHistory["OK"]:
         gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
         ftsHistory["Value"] = []
