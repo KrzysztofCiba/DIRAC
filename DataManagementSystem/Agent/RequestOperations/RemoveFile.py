@@ -83,7 +83,8 @@ class RemoveFile( BaseOperation ):
       gMonitor.addMark( "RemoveFileOK", 1 )
 
     # # set
-    failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.items() if opFile.Status in ( "Failed", "Waiting" ) ]
+    failedFiles = [ ( lfn, opFile ) for ( lfn, opFile ) in toRemoveDict.items() 
+                    if opFile.Status in ( "Failed", "Waiting" ) ]
     if failedFiles:
       self.operation.Error = "failed to remove %d files" % len( failedFiles )
 
