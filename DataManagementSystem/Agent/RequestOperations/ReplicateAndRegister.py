@@ -49,7 +49,7 @@ class ReplicateAndRegister( BaseOperation ):
     BaseOperation.__init__( self, operation, csPath )
     # # own gMonitor stuff for files
     gMonitor.registerActivity( "ReplicateAndRegisterAtt", "Replicate and register attempted",
-                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "ReplicateOK", "Replications successful",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "ReplicateFail", "Replications failed",
@@ -81,9 +81,10 @@ class ReplicateAndRegister( BaseOperation ):
     checkReplicas = self.__checkReplicas()
     if not checkReplicas["OK"]:
       self.log.error( checkReplicas["Message"] )
-    if self.FTSMode:
-      if self.request.OwnerGroup in self.FTSBannedGroups:
-        self.log.info( "usage of FTS is banned for this request's owner" )
+    if hasattr( self, "FTSMode" ) and getattr( self, "FTSMode" ):
+      bannedGroups = getattr( self, "FTSBannedGroups" ) if hasattr( self, "FTSBannedGroups" ) else () 
+      if self.request.OwnerGroup in bannedGroups:
+        self.log.info( "usage of FTS system is banned for request's owner" )
         return self.rmTransfer()
       return self.ftsTransfer()
     return self.rmTransfer()
@@ -189,6 +190,7 @@ class ReplicateAndRegister( BaseOperation ):
         return S_ERROR( self.operation.Error )
 
     for opFile in self.getWaitingFilesList():
+      gMonitor.addMark( "FTSScheduleAtt", 1 )
       # # check replicas
       replicas = self._filterReplicas( opFile )
       if not replicas["OK"]:
@@ -197,25 +199,28 @@ class ReplicateAndRegister( BaseOperation ):
 
       if not replicas["Valid"] and replicas["Banned"]:
         self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+        gMonitor.addMark( "FTSScheduleFail", 1 )          
         continue
 
       validReplicas = replicas["Valid"]
       bannedReplicas = replicas["Banned"]
 
       if not validReplicas and bannedReplicas:
-        self.log.warn( "unable to schedule '%s', replicas only at banned SEs" )
+        self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
+        gMonitor.addMark( "FTSScheduleFail", 1 )
         continue
 
       if validReplicas:
-        ftsSchedule = self.ftsClient.ftsSchedule( opFile, validReplicas, self.operation.targetSEList )
+        ftsSchedule = self.ftsClient().ftsSchedule( opFile, validReplicas, self.operation.targetSEList )
         if not ftsSchedule["OK"]:
           self.log.error( ftsSchedule["Message"] )
+          gMonitor.addMark( "FTSScheduleFail", 1 )
           continue
-        # # if we're here file was scheduled
+        # # if we land here file was scheduled
+        gMonitor.addMark( "FTSScheduleOK", 1 )
         opFile.Status = "Scheduled"
 
     return S_OK()
-
 
   def rmTransfer( self ):
     """ replicate and register using ReplicaManager  """
