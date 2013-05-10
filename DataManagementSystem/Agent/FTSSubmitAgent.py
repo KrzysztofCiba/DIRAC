@@ -13,6 +13,7 @@
 """
 # # imports
 import time
+import uuid
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 # # from Core
@@ -218,12 +219,13 @@ class FTSSubmitAgent( AgentModule ):
       ftsJob.addFile( ftsFile )
 
 
-
     self.log.info( "submitting..." )
-    submit = ftsJob.submitFTS2()
+    submit = S_OK()  # ftsJob.submitFTS2()
     if not submit["OK"]:
       log.error( submit["Message"] )
       return submit
+    # # TODO:replace, this is just for testing
+    ftsJob.FTSGUID = str( uuid.uuid4() )
     log.info( "FTSJob %s submitted to FTS server %s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     for ftsFile in ftsJob:
