@@ -78,6 +78,7 @@ class Route( Edge ):
 
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
+      print "BBBBBBBBBBBBBBBBBBBBBBBB", transferSpeed
     return 0.0
 
 class FTSGraph( Graph ):
