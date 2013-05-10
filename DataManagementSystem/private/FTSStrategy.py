@@ -74,11 +74,11 @@ class Route( Edge ):
     waitingTransfers = { "File" : self.Files - self.SuccessfulFiles - self.FailedFiles,
                          "Throughput" : self.Size - self.SuccessfulSize - self.FailedSize }[self.SchedulingType]
 
-    print "AAAAAAAAAAAAAAAAAAAAAAAAAA", transferSpeed, waitingTransfers
+    # print "AAAAAAAAAAAAAAAAAAAAAAAAAA", transferSpeed, waitingTransfers
 
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
-      print "BBBBBBBBBBBBBBBBBBBBBBBB", transferSpeed
+      # print "BBBBBBBBBBBBBBBBBBBBBBBB", transferSpeed
     return 0.0
 
 
@@ -171,16 +171,16 @@ class FTSGraph( Graph ):
       t1 = route.timeToStart
 
       self.log.always( "AAA %s" % ftsHistory.toJSON()["Value"] )
-      self.log.always( "AAA route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
-                       ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
-                         route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
+      # self.log.always( "AAA route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
+      #                 ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
+      #                   route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
       route.FailedFiles += ftsHistory.FailedFiles
       route.FailedSize += ftsHistory.FailedSize
 
       if ftsHistory.Status in FTSJob.TRANSSTATES:
-        route.Size += ftsHistory.Completeness * ftsHistory.Size
-        route.Files += int( ftsHistory.Completeness * ftsHistory.Files )
+        route.Size += ftsHistory.Completeness * ftsHistory.Size / 100.0
+        route.Files += int( ftsHistory.Completeness * ftsHistory.Files / 100.0 )
       else:
         route.Files += ftsHistory.Files
         route.Size += ftsHistory.Size
@@ -193,9 +193,9 @@ class FTSGraph( Graph ):
 
       t2 = route.timeToStart
 
-      self.log.always( "BBB route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
-                       ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
-                         route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
+      # self.log.always( "BBB route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
+      #                 ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
+      #                   route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
       self.log.always( "t1 t2 diff %s %s %s" % ( t1, t2, t2 - t1 ) )
 
