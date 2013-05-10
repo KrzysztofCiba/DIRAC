@@ -64,7 +64,7 @@ class FTSJob( Record ):
     self.__data__["SubmitTime"] = now
     self.__data__["LastUpdate"] = now
     self.__data__["Status"] = "Submitted"
-    self.__data__["Completeness"] = 0
+    self.__data__["Completeness"] = 0.0
     self.__data__["FTSJobID"] = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
     fromDict = fromDict if fromDict else {}
@@ -90,7 +90,7 @@ class FTSJob( Record ):
                "SourceToken": "VARCHAR(255)",
                "Size": "INTEGER NOT NULL",
                "Files": "INTEGER NOT NULL",
-               "Completeness": "INTEGER NOT NULL DEFAULT 0",
+               "Completeness": "DOUBLE PRECISSION NOT NULL DEFAULT 0.0",
                "FailedFiles": "INTEGER DEFAULT 0",
                "FailedSize": "INTEGER DEFAULT 0",
                "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty', 'Assigned' ) DEFAULT 'Submitted'",
