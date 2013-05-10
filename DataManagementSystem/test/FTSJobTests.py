@@ -41,9 +41,14 @@ class FTSJobTests( unittest.TestCase ):
 
   def setUp( self ):
     """ test set up """
-    self.fileA = FTSFile( { "LFN": "/a", "ChecksumType": "ADLER32", "Checksum": "123456", "Size": 10 } )
-    self.fileB = FTSFile( { "LFN": "/b", "ChecksumType": "ADLER32", "Checksum": "654321", "Size": 9 } )
 
+
+    self.fileA = FTSFile( { "LFN": "/a", "ChecksumType": "ADLER32", "Checksum": "123456", "Size": 10,
+                           "SourceSE": "CERN-USER", "TargetSE": "PIC-USER",
+                           "SourceSURL": "sourceSURL", "TargetSURL": "targetSURL"  } )
+    self.fileB = FTSFile( { "LFN": "/b", "ChecksumType": "ADLER32", "Checksum": "654321", "Size": 10,
+                           "SourceSE": "CERN-USER", "TargetSE": "PIC-USER",
+                           "SourceSURL": "sourceSURL", "TargetSURL": "targetSURL"  } )
   def tearDown( self ):
     """ test tear down """
     del self.fileA
@@ -77,7 +82,7 @@ class FTSJobTests( unittest.TestCase ):
 
     self.assertEqual( len( ftsJob ), 2 )
     self.assertEqual( ftsJob.Files, 2 )
-    self.assertEqual( ftsJob.Size, 19 )
+    self.assertEqual( ftsJob.Size, 20 )
 
     json = ftsJob.toJSON()
     ftsJobJSON = FTSJob( json["Value"] )
@@ -112,7 +117,19 @@ class FTSJobTests( unittest.TestCase ):
 
     self.assertEqual( len( ftsJob ), 2 )
     self.assertEqual( ftsJob.Files, 2 )
-    self.assertEqual( ftsJob.Size, 19 )
+    self.assertEqual( ftsJob.Size, 20 )
+
+  def test03Submit( self ):
+    """ submit """
+    ftsJob = FTSJob()
+
+    ftsJob.addFile( self.fileA )
+    ftsJob.addFile( self.fileB )
+
+    submit = ftsJob.submitFTS2()
+    print submit
+
+
 
 
 # # test execution

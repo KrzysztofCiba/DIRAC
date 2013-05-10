@@ -27,10 +27,11 @@ import os
 import datetime
 import re
 import tempfile
+import uuid
 import xml.etree.ElementTree as ElementTree
 from xml.parsers.expat import ExpatError
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import checkGuid
 # from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
@@ -46,9 +47,9 @@ class FTSJob( Record ):
   class describing one FTS job
   """
   # # initial states
-  INITSTATES = ( "Submitted", "Ready" )
+  INITSTATES = ( "Submitted", "Ready", "Staging" )
   # # ongoing transfer states
-  TRANSSTATES = ( "Active" )
+  TRANSSTATES = ( "Active", "Hold" )
   # # failed states
   FAILEDSTATES = ( "Canceled", "Failed" )
   # # finished
@@ -69,6 +70,9 @@ class FTSJob( Record ):
     self.__data__["Completeness"] = 0
     self.__data__["FTSJobID"] = 0
     self.__files__ = TypedList( allowedTypes = FTSFile )
+
+    self._log = gLogger.getSubLogger( "FTSJob-%s" % self.FTSJobID , True )
+
     fromDict = fromDict if fromDict else {}
     for ftsFileDict in fromDict.get( "FTSFiles", [] ):
       self +=FTSFile( ftsFileDict )
@@ -95,7 +99,8 @@ class FTSJob( Record ):
                "Completeness": "INTEGER NOT NULL DEFAULT 0",
                "FailedFiles": "INTEGER DEFAULT 0",
                "FailedSize": "INTEGER DEFAULT 0",
-               "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty' ) DEFAULT 'Submitted'",
+               "Status" : "ENUM( 'Submitted', 'Ready', 'Staging', 'Canceled', 'Active', 'Hold', "\
+                "'Failed', 'Finished', 'FinishedDirty' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",
@@ -179,7 +184,7 @@ class FTSJob( Record ):
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    reStatus = re.compile( "Submitted|Ready|Staging|Canceled|Active|Failed|Finished|FinishedDirty|Assigned" )
+    reStatus = re.compile( "Submitted|Ready|Staging|Hold|Canceled|Active|Failed|Finished|FinishedDirty|Assigned" )
     if not reStatus.match( value ):
       raise ValueError( "Unknown FTSJob Status: %s" % str( value ) )
     self.__data__["Status"] = value
@@ -201,8 +206,8 @@ class FTSJob( Record ):
   @property
   def Size( self ):
     """ size getter """
-    if not self.__data__["Size"]:
-      self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
+    # if not self.__data__["Size"]:
+    self.__data__["Size"] = sum( [ ftsFile.Size for ftsFile in self ] )
     return self.__data__["Size"]
 
   @Size.setter
@@ -361,7 +366,7 @@ class FTSJob( Record ):
 
   def submitFTS2( self ):
     """ submit fts job using FTS2 client """
-    if self.GUID:
+    if self.FTSGUID:
       return S_ERROR( "FTSJob already has been submitted" )
     surls = self._surlPairs()
     if not surls:
@@ -371,7 +376,10 @@ class FTSJob( Record ):
     surlFile.write( surls )
     surlFile.close()
     submitCommand = [ "glite-transfer-submit", "-s", self.FTSServer, "-f", fileName, "-o", "--compare-checksums" ]
-    submit = executeGridCommand( "", submitCommand )
+    self._log.always( submitCommand )
+    # # TODO: revert to original one
+    submit = S_OK( ( 0, str( uuid.uuid4() ), "" ) )
+    # submit = executeGridCommand( "", submitCommand )
     os.remove( fileName )
     if not submit["OK"]:
       return submit
@@ -386,13 +394,16 @@ class FTSJob( Record ):
     if not self.GUID:
       return S_ERROR( "GUID not set, FTS job not submitted?" )
     monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.FTSGUID, "-l" ]
+    self._log.always( monitorCommand )
+
     monitor = executeGridCommand( "", monitorCommand )
-    if not monitor['OK']:
+    if not monitor["OK"]:
       return monitor
     returnCode, outputStr, errStr = monitor["Value"]
     # Returns a non zero status if error
     if not returnCode:
       return S_ERROR( errStr )
+
     return S_OK( outputStr )
 
   def submitFTS3( self ):
