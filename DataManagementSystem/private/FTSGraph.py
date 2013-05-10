@@ -148,7 +148,7 @@ class FTSGraph( Graph ):
                     "FilePut": 0.0, "ThroughPut": 0.0,
                     "ActiveJobs": 0, "FinishedJobs": 0 }
 
-        roAttrs = { "routeName": "%s/%s" % ( sourceSite.name, destSite.name ),
+        roAttrs = { "routeName": "%s => %s" % ( sourceSite.name, destSite.name ),
                     "AcceptableFailureRate": self.accFailureRate,
                     "AcceptableFailedFiles": self.accFailedFiles,
                     "SchedulingType": self.schedulingType }
