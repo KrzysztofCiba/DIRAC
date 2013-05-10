@@ -288,7 +288,7 @@ class FTSSubmitAgent( AgentModule ):
             time.sleep( 1 )
 
     # # process all results
-    self.__threadPool.processAllResults()
+    self.threadPool().processAllResults()
     return S_OK()
 
   def submit( self, ftsFileList, ftsServerURI, sourceSE, targetSE, route, sTJId ):
