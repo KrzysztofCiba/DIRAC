@@ -289,7 +289,7 @@ class FTSSubmitAgent( AgentModule ):
     """
     log = gLogger.getSubLogger( sTJId, True )
 
-    log.info( "got %s FTSFiles to submit to ftsServer=%s" % ( len( ftsFileList ), ftsServerURI ) )
+    log.info( "%s FTSFiles to submit to FTS @ %s" % ( len( ftsFileList ), ftsServerURI ) )
 
     ftsJob = FTSJob()
     ftsJob.FTSServer = ftsServerURI
@@ -312,7 +312,7 @@ class FTSSubmitAgent( AgentModule ):
     ftsJob.FTSGUID = str( uuid.uuid4() )
 
     # # save newly created FTSJob
-    log.info( "FTSJob %s submitted to FTS server %s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
+    log.info( "FTSJob %s submitted to FTS @ %s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
     for ftsFile in ftsJob:
       ftsFile.Status = "Submitted"
       ftsFile.FTSGUID = ftsJob.FTSGUID
