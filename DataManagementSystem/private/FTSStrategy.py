@@ -317,11 +317,10 @@ class FTSStrategy( object ):
                               self.acceptableFailedFiles,
                               self.schedulingType )
 
-    for node in self.ftsGraph.nodes():
-      self.log.always( node )
-    for edge in self.ftsGraph.edges():
-      self.log.always( edge )
-
+    # for node in self.ftsGraph.nodes():
+    #  self.log.debug( node )
+    # for edge in self.ftsGraph.edges():
+    #  self.log.debug( edge )
 
     # # if we land here everything is OK
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
@@ -377,10 +376,8 @@ class FTSStrategy( object ):
         self.graphLock().acquire()
         for route in self.ftsGraph.edges():
           if route.routeName in replicationTree:
-            self.log.always( route )
             route.WaitingSize += size
             route.WaitingFiles += 1
-            self.log.always( route )
       finally:
         self.graphLock().release()
     return S_OK()
