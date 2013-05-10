@@ -107,18 +107,20 @@ class FTSSubmitAgent( AgentModule ):
 
   def resetFTSGraph( self ):
     """ create fts graph """
+    log = gLogger.getSubLogger( "ftsGraph" )
+
     ftsSites = self.ftsClient().getFTSSitesList()
     if not ftsSites["OK"]:
-      self.log.error( "resetFTSGraph: unable to get FTS sites list: %s" % ftsSites["Message"] )
+      log.error( "unable to get FTS sites list: %s" % ftsSites["Message"] )
       return ftsSites
     ftsSites = ftsSites["Value"]
     if not ftsSites:
-      self.log.error( "resetFTSGraph: FTSSites list is empty, no records in FTSDB.FTSSite table?" )
+      log.error( "FTSSites list is empty, no records in FTSDB.FTSSite table?" )
       return S_ERROR( "no FTSSites found" )
 
     ftsHistory = self.ftsClient().getFTSHistory()
     if not ftsHistory["OK"]:
-      self.log.error( "resetFTSGraph: unable to get FTS history: %s" % ftsHistory["Message"] )
+      log.error( "unable to get FTS history: %s" % ftsHistory["Message"] )
       return ftsHistory
     ftsHistory = ftsHistory["Value"]
 
@@ -128,15 +130,15 @@ class FTSSubmitAgent( AgentModule ):
     finally:
       self.updateLock().release()
 
-    self.log.info( "FTSSites:" )
+    log.info( "FTSSites:" )
     for i, site in enumerate( self.__ftsGraph.nodes() ):
-      self.log.info( " [%02d] FTSSite: %-25s ServerURI: %s" % ( i, site.name, site.ServerURI ) )
-    self.log.info( "FTSRoutes:" )
+      log.info( " [%02d] FTSSite: %-25s ServerURI: %s" % ( i, site.name, site.ServerURI ) )
+    log.info( "FTSRoutes:" )
     for i, route in enumerate( self.__ftsGraph.edges() ):
-      self.log.info( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
-                                                                                   route.routeName,
-                                                                                   route.ActiveJobs,
-                                                                                   route.toNode.MaxActiveJobs ) )
+      log.info( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
+                                                                             route.routeName,
+                                                                             route.ActiveJobs,
+                                                                             route.toNode.MaxActiveJobs ) )
     # # save graph stamp
     self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
 
@@ -152,31 +154,31 @@ class FTSSubmitAgent( AgentModule ):
 
   def initialize( self ):
     """ agent's initialization """
+    log = gLogger.getSubLogger( "initialize" )
 
     self.FTSGRAPH_REFRESH = self.am_getOption( "FTSGraphValidityPeriod", self.FTSGRAPH_REFRESH )
-    self.log.info( "FTSGraph validity period       = %s s" % self.FTSGRAPH_REFRESH )
+    log.info( "FTSGraph validity period       = %s s" % self.FTSGRAPH_REFRESH )
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
-    self.log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
+    log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
     self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerChannel", self.MAX_ACTIVE_JOBS )
-    self.log.info( "Max active FTSJobs/route       = %s" % self.MAX_ACTIVE_JOBS )
+    log.info( "Max active FTSJobs/route       = %s" % self.MAX_ACTIVE_JOBS )
     self.MAX_FILES_PER_JOB = self.am_getOption( "MaxFilesPerJob", self.MAX_FILES_PER_JOB )
-    self.log.info( "Max FTSFiles/FTSJob            = %d" % self.MAX_FILES_PER_JOB )
+    log.info( "Max FTSFiles/FTSJob            = %d" % self.MAX_FILES_PER_JOB )
 
     # # thread pool
     self.MIN_THREADS = self.am_getOption( "MinThreads", self.MIN_THREADS )
     self.MAX_THREADS = self.am_getOption( "MaxThreads", self.MAX_THREADS )
     minmax = ( abs( self.MIN_THREADS ), abs( self.MAX_THREADS ) )
     self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
-    self.log.info( "ThreadPool min threads         = %s" % self.MIN_THREADS )
-    self.log.info( "ThreadPool max threads         = %s" % self.MAX_THREADS )
+    log.info( "ThreadPool min threads         = %s" % self.MIN_THREADS )
+    log.info( "ThreadPool max threads         = %s" % self.MAX_THREADS )
 
-    self.log.info( "initialize: creation of FTSGraph..." )
+    log.info( "initialize: creation of FTSGraph..." )
     createGraph = self.resetFTSGraph()
     if not createGraph["OK"]:
-      self.log.error( "initialize: %s" % createGraph["Message"] )
+      log.error( "initialize: %s" % createGraph["Message"] )
       return createGraph
-
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
