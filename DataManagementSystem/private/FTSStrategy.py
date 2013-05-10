@@ -122,7 +122,7 @@ class FTSGraph( Graph ):
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
       site = Site( ftsSite.Name, {"SEs": rwDict, "ServerURI": ftsSite.ServerURI } )
-      self.log.info( "adding %s" % ftsSite.name )
+      self.log.info( "adding FTSSite %s using FTSServer %s" % ( ftsSite.Name, ftsSite.ServerURI ) )
       self.addNode( site )
 
     self.log.info( "AAAAAAAAAAAAA sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
