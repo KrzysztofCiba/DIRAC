@@ -13,6 +13,7 @@
 """
 # # imports
 import time
+import datetime
 import uuid
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
@@ -22,8 +23,9 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import getChunk
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
-from DIRAC.DataManagementSystem.private.FTSStrategy import FTSGraph
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.private.FTSGraph import FTSGraph
+from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 # # from RSS
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
@@ -42,6 +44,10 @@ class FTSSubmitAgent( AgentModule ):
 
   An information about newly created FTS jobs is hold in FTSDB.FTSJob.
   """
+  # # fts graph refresh in seconds
+  FTSGRAPH_REFRESH = FTSHistoryView.INTERVAL / 2
+  # # SE R/W access refresh in seconds
+  RW_REFRESH = 600
   # # placeholder for max job per channel
   MAX_JOBS_PER_ROUTE = 10
   # # min threads
@@ -58,6 +64,10 @@ class FTSSubmitAgent( AgentModule ):
   __rssClient = None
   # # placeholder for FTSGraph
   __ftsGraph = None
+  # # graph regeneration time delta
+  __ftsGraphValidStamp = None
+  # # r/w access valid stamp
+  __rwAccessValidStamp = None
   # # placeholder for threadPool
   __threadPool = None
 
@@ -80,32 +90,21 @@ class FTSSubmitAgent( AgentModule ):
       self.__resources = Resources()
     return self.__resources
 
-  def initialize( self ):
-    """ agent's initialization """
-
-    gMonitor.registerActivity( "FTSJobsAtt", "FTSJob created",
-                               "FTSSubmitAgent", "FTSJobs/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "FTSJobsOK", "FTSJobs submitted",
-                               "FTSSubmitAgent", "FTSJobs/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "FTSJobsFail", "FTSJobs submissions failed",
-                               "FTSSubmitAgent", "FTSJobs/min", gMonitor.OP_SUM )
-
-    gMonitor.registerActivity( "FTSFilesPerJob", "FTSFiles per FTSJob",
-                               "FTSSubmitAgent", "Number of FTSFiles per FTSJob", gMonitor.OP_MEAN )
-    gMonitor.registerActivity( "FTSSizePerJob", "FTSFiles size per FTSJob",
-                               "FTSSubmitAgent", "FTSFiles size per FTSJob", gMonitor.OP_MEAN )
-
-
+  def resetFTSGraph( self ):
+    """ create fts graph """
 
     ftsSites = self.ftsClient().getFTSSitesList()
     if not ftsSites["OK"]:
-      self.log.error( "initialize: unable to get FTS sites list: %s" % ftsSites["Message"] )
+      self.log.error( "resetFTSGraph: unable to get FTS sites list: %s" % ftsSites["Message"] )
       return ftsSites
     ftsSites = ftsSites["Value"]
+    if not ftsSites:
+      self.log.error( "resetFTSGraph: FTSSites list is empty, no records in FTSDB.FTSSite table?" )
+      return S_ERROR( "no FTSSites found" )
 
     ftsHistory = self.ftsClient().getFTSHistory()
     if not ftsHistory["OK"]:
-      self.log.error( "initialize: unable to get FTS history: %s" % ftsHistory["Message"] )
+      self.log.error( "resetFTSGraph: unable to get FTS history: %s" % ftsHistory["Message"] )
       return ftsHistory
     ftsHistory = ftsHistory["Value"]
 
@@ -113,37 +112,77 @@ class FTSSubmitAgent( AgentModule ):
     for i, ftsSite in enumerate( self.__ftsGraph.nodes() ):
       self.log.info( "[%d] FTSSite: %s ServerURI: %s" % ( i, ftsSite.name, ftsSite.ServerURI ) )
 
-    if not self.__ftsGraph.nodes():
-      self.log.error( "initialize: FTSSites not defined!!!" )
-      return S_ERROR( "FTSSites not defined in FTSDB" )
+    # # save graph stamp
+    self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
 
+    # # refresh SE R/W access
+    self.__ftsGraph.updateRWAccess()
+    self.__rwAccessValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.RW_REFRESH )
+
+    return S_OK()
+
+  def initialize( self ):
+    """ agent's initialization """
+
+    self.FTSGRAPH_REFRESH = self.am_getOption( "FTSGraphValidityPeriod", self.FTSGRAPH_REFRESH )
+    self.log.info( "FTSGraph validity period = %s s" % self.GRAPH_VALIDITY_PERIOD )
+    self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
+    self.log.info( "SEs R/W access validity period = %s s" % self.GRAPH_VALIDITY_PERIOD )
+
+    self.log.info( "initialize: creation of FTSGraph..." )
+    createGraph = self.resetFTSGraph()
+    if not createGraph["OK"]:
+      self.log.error( "initialize: %s" % createGraph["Message"] )
+      return createGraph
+
+    self.MAX_JOBS_PER_ROUTE = self.am_getOption( "MaxJobsPerChannel", self.MAX_JOBS_PER_ROUTE )
+    self.log.info( "Max FTSJobs/route = %s" % self.MAX_JOBS_PER_ROUTE )
     self.MAX_FILES_PER_JOB = self.am_getOption( "MaxFilesPerJob", self.MAX_FILES_PER_JOB )
-    self.log.info( "Max FTSFiles per FTSJob = %d" % self.MAX_FILES_PER_JOB )
+    self.log.info( "Max FTSFiles/FTSJob = %d" % self.MAX_FILES_PER_JOB )
 
+    # # thread pool
     self.MIN_THREADS = self.am_getOption( "MinThreads", self.MIN_THREADS )
     self.MAX_THREADS = self.am_getOption( "MaxThreads", self.MAX_THREADS )
     minmax = ( abs( self.MIN_THREADS ), abs( self.MAX_THREADS ) )
     self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
     self.log.info( "ThreadPool min threads = %s" % self.MIN_THREADS )
     self.log.info( "ThreadPool max threads = %s" % self.MAX_THREADS )
-
     self.__threadPool = ThreadPool( self.MIN_THREADS, self.MAX_THREADS )
     self.__threadPool.daemonize()
-
-    # # read CS options
-    self.MAX_JOBS_PER_ROUTE = self.am_getOption( "MaxJobsPerChannel", self.MAX_JOBS_PER_ROUTE )
-    self.log.info( "max jobs/route = %s" % self.MAX_JOBS_PER_ROUTE )
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
+
+    # # gMonitor stuff here
+    gMonitor.registerActivity( "FTSJobsAtt", "FTSJob created",
+                               "FTSSubmitAgent", "Created FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSJobsOK", "FTSJobs submitted",
+                               "FTSSubmitAgent", "Submitted FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSJobsFail", "FTSJobs submissions failed",
+                               "FTSSubmitAgent", "Failed FTSJobs/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity( "FTSFilesPerJob", "FTSFiles per FTSJob",
+                               "FTSSubmitAgent", "Number of FTSFiles per FTSJob", gMonitor.OP_MEAN )
+    gMonitor.registerActivity( "FTSSizePerJob", "Average FTSFiles size per FTSJob",
+                               "FTSSubmitAgent", "Average submitted size per FTSJob", gMonitor.OP_MEAN )
+
     return S_OK()
 
   def execute( self ):
     """ one cycle execution """
+    now = datetime.datetime.now()
+    if now > self.__ftsGraphValidStamp:
+      resetFTSGraph = self.resetFTSGraph()
+      if not resetFTSGraph["OK"]:
+        self.log.error( "execute: FTSGraph recreation error: %s" % resetFTSGraph["Message"] )
+        return resetFTSGraph
+    if now > self.__rwAccessValidStamp:
+      self.__ftsGraph.updateRWAccess()
+
     self.log.info( "execute: updating RW for SEs..." )
-    # # up[date RW access for SE first
+    # # upadate RW access for SE first
     self.__ftsGraph.updateRWAccess()
 
     self.log.info( "execute: reading FTSFiles..." )
