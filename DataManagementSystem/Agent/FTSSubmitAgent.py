@@ -117,7 +117,7 @@ class FTSSubmitAgent( AgentModule ):
 
     self.__ftsGraph = FTSGraph( "FTSGraph", ftsSites, ftsHistory )
     for i, ftsSite in enumerate( self.__ftsGraph.nodes() ):
-      self.log.info( "[%d] FTSSite: %s ServerURI: %s" % ( i, ftsSite.name, ftsSite.ServerURI ) )
+      self.log.info( "[%d] FTSSite: %-25s ServerURI: %s" % ( i, ftsSite.name, ftsSite.ServerURI ) )
 
     # # save graph stamp
     self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
