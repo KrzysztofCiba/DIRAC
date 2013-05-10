@@ -90,6 +90,13 @@ class FTSSubmitAgent( AgentModule ):
       self.__resources = Resources()
     return self.__resources
 
+  def threadPool( self ):
+    """ thread pool getter """
+    if not self.__threadPool:
+      self.__threadPool = ThreadPool( self.MIN_THREADS, self.MAX_THREADS )
+      self.__threadPool.daemonize()
+    return self.__threadPool
+
   def resetFTSGraph( self ):
     """ create fts graph """
 
@@ -147,8 +154,6 @@ class FTSSubmitAgent( AgentModule ):
     self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
     self.log.info( "ThreadPool min threads = %s" % self.MIN_THREADS )
     self.log.info( "ThreadPool max threads = %s" % self.MAX_THREADS )
-    self.__threadPool = ThreadPool( self.MIN_THREADS, self.MAX_THREADS )
-    self.__threadPool.daemonize()
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
@@ -167,7 +172,6 @@ class FTSSubmitAgent( AgentModule ):
                                "FTSSubmitAgent", "Number of FTSFiles per FTSJob", gMonitor.OP_MEAN )
     gMonitor.registerActivity( "FTSSizePerJob", "Average FTSFiles size per FTSJob",
                                "FTSSubmitAgent", "Average submitted size per FTSJob", gMonitor.OP_MEAN )
-
     return S_OK()
 
   def execute( self ):
@@ -235,7 +239,7 @@ class FTSSubmitAgent( AgentModule ):
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
           sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
           while True:
-            queue = self.__threadPool.generateJobAndQueueIt( self.submit,
+            queue = self.threadPool().generateJobAndQueueIt( self.submit,
                                                              args = ( ftsFileListChunk, targetSite.ServerURI,
                                                                       sourceSE, targetSE, sTJId ),
                                                              sTJId = sTJId )
