@@ -50,7 +50,6 @@ class Site( Node ):
   def __str__( self ):
     return "<site name='%s' SEs='%s' />" % ( self.name, ",".join( self.SEs.keys() ) )
 
-
 class Route( Edge ):
   """
   .. class:: Route
