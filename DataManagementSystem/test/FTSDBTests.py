@@ -80,7 +80,7 @@ class FTSDBTests( unittest.TestCase ):
     self.submitted = 0
 
     self.ftsJobs = []
-    for i in range( 5000 ):
+    for i in range( 7200 ):
 
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
@@ -97,7 +97,7 @@ class FTSDBTests( unittest.TestCase ):
 
       ftsFile = FTSFile()
       ftsFile.FileID = i + 1
-      ftsFile.OperationID = 9999
+      ftsFile.OperationID = i + 1
       ftsFile.LFN = "/a/b/c/%d" % i
       ftsFile.Size = 1000000
       ftsFile.SourceSE = ftsJob.SourceSE
