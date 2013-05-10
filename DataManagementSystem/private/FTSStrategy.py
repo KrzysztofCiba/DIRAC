@@ -153,6 +153,9 @@ class FTSGraph( Graph ):
       failedFiles = ftsHistory.FailedFiles
       size = ftsHistory.Size
       failedSize = ftsHistory.FailedSize
+      status = ftsHistory.Status
+
+
 
       route.files += files
       route.size += size
