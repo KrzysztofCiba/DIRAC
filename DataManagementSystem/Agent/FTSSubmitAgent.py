@@ -131,10 +131,12 @@ class FTSSubmitAgent( AgentModule ):
     self.log.info( "FTSSites:" )
     for i, site in enumerate( self.__ftsGraph.nodes() ):
       self.log.info( " [%02d] FTSSite: %-25s ServerURI: %s" % ( i, site.name, site.ServerURI ) )
-    self.log.info( "FTSRoutes:")
+    self.log.info( "FTSRoutes:" )
     for i, route in enumerate( self.__ftsGraph.edges() ):
-      self.log.info( " [%02d] FTSRoute: %-25s Active FTS Jobs = %s" % ( i, route.routeName, route.ActiveJobs ) )
-
+      self.log.info( " [%02d] FTSRoute: %-25s Active FTS Jobs (MAX) = %s (%s)" % ( i,
+                                                                                   route.routeName,
+                                                                                   route.ActiveJobs,
+                                                                                   route.toNode.MaxActiveJobs ) )
     # # save graph stamp
     self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
 
@@ -272,8 +274,8 @@ class FTSSubmitAgent( AgentModule ):
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
 
-          if route.ActiveJobs > self.MAX_JOBS_PER_ROUTE:
-            self.log.info( "execute: maximal number of active FTSJobs reached at FTS route %s" % route.routeName )
+          if route.ActiveJobs > min( self.MAX_JOBS_PER_ROUTE, route.toNode.MaxActiveJobs ):
+            self.log.info( "execute: maximal number of active jobs reached at FTS route %s" % route.routeName )
             break
 
           sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
