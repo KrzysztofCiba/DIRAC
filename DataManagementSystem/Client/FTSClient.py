@@ -170,7 +170,7 @@ class FTSClient( Client ):
     if not ftsJobJSON["OK"]:
       self.log.error( ftsJobJSON["Message"] )
       return ftsJobJSON
-    return self.ftsManager().putFTSJob( ftsJobJSON )
+    return self.ftsManager().putFTSJob( ftsJobJSON["Value"] )
 
   def getFTSJob( self, ftsJobID ):
     """ get FTS job
