@@ -220,7 +220,7 @@ class FTSSubmitAgent( AgentModule ):
     :param str targetSE: targetSE
     :param str sTJId: thread name for sublogger
     """
-    log = gLogger.getSubLogger( sTJId )
+    log = gLogger.getSubLogger( sTJId, False )
 
     log.info( "got %s FTSFiles to submit to ftsServer=%s" % ( len( ftsFileList ), ftsServerURI ) )
 
