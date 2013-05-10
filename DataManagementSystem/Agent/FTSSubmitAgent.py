@@ -269,12 +269,11 @@ class FTSSubmitAgent( AgentModule ):
           self.log.error( "execute: %s" % route["Message"] )
           return route
         route = route["Value"]
-        self.log.info( "execute: creating thread jobs for route %s" % route.name )
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
 
           if route.ActiveJobs > self.MAX_JOBS_PER_ROUTE:
-            self.log.info( "execute: maximal number of active FTSJobs reached at FTS route %s" % route.name )
+            self.log.info( "execute: maximal number of active FTSJobs reached at FTS route %s" % route.routeName )
             break
 
           sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
