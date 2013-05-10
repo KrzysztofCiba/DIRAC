@@ -170,7 +170,7 @@ class FTSGraph( Graph ):
 
       self.log.always( "AAA %s" % ftsHistory.toJSON()["Value"] )
       self.log.always( "AAA route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
-                       ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
+                       ( route.name, route.WaitingFiles, route.WaitingSize, route.SuccessfulFiles, route.SuccessfulSize,
                          route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
       if ftsHistory.Status in FTSJob.INITSTATES:
@@ -192,7 +192,7 @@ class FTSGraph( Graph ):
       t2 = route.timeToStart
 
       self.log.always( "BBB route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
-                       ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
+                       ( route.name, route.WaitingFiles, route.WaitingSize, route.SuccessfulFiles, route.SuccessfulSize,
                          route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
       self.log.always( "t1 t2 diff %s %s %s" % ( t1, t2, t2 - t1 ) )
