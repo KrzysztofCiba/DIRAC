@@ -310,7 +310,7 @@ class FTSSubmitAgent( AgentModule ):
     log.info( "%s FTSFiles to submit to FTS @ %s" % ( len( ftsFileList ), ftsServerURI ) )
 
     if route.ActiveJobs > min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs ):
-      log.info( "maximal active jobs reached at route %s" % route.routeName )
+      log.info( "bailing out: maximal active jobs reached at route %s" % route.routeName )
       return S_OK()
 
     ftsJob = FTSJob()
