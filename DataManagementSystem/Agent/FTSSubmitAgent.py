@@ -15,7 +15,7 @@
 import time
 import uuid
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 # # from Core
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -83,7 +83,20 @@ class FTSSubmitAgent( AgentModule ):
   def initialize( self ):
     """ agent's initialization """
 
-    # # TODO: list indices must be integers not str
+    gMonitor.registerActivity( "FTSJobsAtt", "FTSJob created",
+                               "FTSSubmitAgent", "FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSJobsOK", "FTSJobs submitted",
+                               "FTSSubmitAgent", "FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSJobsFail", "FTSJobs submissions failed",
+                               "FTSSubmitAgent", "FTSJobs/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity( "FTSFilesPerJob", "FTSFiles per FTSJob",
+                               "FTSSubmitAgent", "Number of FTSFiles per FTSJob", gMonitor.OP_MEAN )
+    gMonitor.registerActivity( "FTSSizePerJob", "FTSFiles size per FTSJob",
+                               "FTSSubmitAgent", "FTSFiles size per FTSJob", gMonitor.OP_MEAN )
+
+
+
     ftsSites = self.ftsClient().getFTSSitesList()
     if not ftsSites["OK"]:
       self.log.error( "initialize: unable to get FTS sites list: %s" % ftsSites["Message"] )
@@ -190,6 +203,7 @@ class FTSSubmitAgent( AgentModule ):
             if queue["OK"]:
               self.log.info( "execute: enqueued transfer '%s'" % sTJId )
               enqueued += 1
+              gMonitor.addMark( "FTSJobsAtt", 1 )
               break
             time.sleep( 1 )
 
@@ -221,9 +235,10 @@ class FTSSubmitAgent( AgentModule ):
       # # TODO: check source file presence and its metadata
       ftsJob.addFile( ftsFile )
 
-    log.info( "submitting..." )
+    log.debug( "submitting..." )
     submit = S_OK()  # ftsJob.submitFTS2()
     if not submit["OK"]:
+      gMonitor.addMark( "FTSJobsFail", 1 )
       log.error( submit["Message"] )
       return submit
     # # TODO:replace, this is just for testing
@@ -233,10 +248,17 @@ class FTSSubmitAgent( AgentModule ):
     for ftsFile in ftsJob:
       ftsFile.Status = "Submitted"
       ftsFile.FTSGUID = ftsJob.FTSGUID
+      ftsFile.Attempt = ftsFile.Attempt + 1
 
     putFTSJob = self.ftsClient().putFTSJob( ftsJob )
     if not putFTSJob["OK"]:
       log.error( putFTSJob["Message"] )
+      gMonitor.addMark( "FTSJobsFail", 1 )
       return putFTSJob
     # # if we're here job was submitted and  saved
+    gMonitor.addMark( "FTSJobsOK", 1 )
+
+    gMonitor.addMark( "FTSFilesPerJob", ftsJob.Files )
+    gMonitor.addMark( "FTSSizePerJob", ftsJob.Size )
+
     return S_OK()
