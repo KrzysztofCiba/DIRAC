@@ -140,7 +140,7 @@ class FTSGraph( Graph ):
       for destSite in self.nodes():
 
         rwAttrs = { "Files": 0, "Size": 0,
-                    "SuccessfulFiles": 0, "SuccessFulSize": 0,
+                    "SuccessfulFiles": 0, "SuccessfulSize": 0,
                     "FailedFiles": 0, "FailedSize": 0,
                     "Fileput": 0.0, "Throughput": 0.0 }
 
