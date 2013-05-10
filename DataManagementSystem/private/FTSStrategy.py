@@ -79,6 +79,8 @@ class Route( Edge ):
       return waitingTransfers / float( transferSpeed )
     return 0.0
 
+  def __str__( self ):
+    return "<route name='%s' timeToStart='%s' waitingFiles='%s' waitingSize='%s' fileput='%s' />" % ( self.name, self.timeToStart, self.WaitingFiles, self.WaitingSize, self.Fileput )
 
 class FTSGraph( Graph ):
   """
@@ -365,11 +367,10 @@ class FTSStrategy( object ):
         self.graphLock().acquire()
         for route in self.ftsGraph.edges():
           if route.routeName in replicationTree:
-            self.log.always( "updating route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.WaitingSize, route.WaitingFiles, route.timeToStart ) )
+            self.log.always( route )
             route.WaitingSize += size
             route.WaitingFiles += 1
-            self.log.always( "route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.WaitingSize, route.WaitingFiles, route.timeToStart ) )
-
+            self.log.always( route )
       finally:
         self.graphLock().release()
     return S_OK()
