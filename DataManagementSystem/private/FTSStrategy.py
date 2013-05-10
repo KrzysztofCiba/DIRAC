@@ -123,10 +123,8 @@ class FTSGraph( Graph ):
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
       site = Site( ftsSite.Name, {"SEs": rwDict, "ServerURI": ftsSite.ServerURI } )
-      self.log.info( "adding FTSSite %s using FTSServer %s" % ( ftsSite.Name, ftsSite.ServerURI ) )
+      self.log.debug( "adding FTSSite %s using FTSServer %s" % ( ftsSite.Name, ftsSite.ServerURI ) )
       self.addNode( site )
-
-    self.log.info( "AAAAAAAAAAAAA sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
 
 
     for sourceSite in self.nodes():
@@ -160,14 +158,13 @@ class FTSGraph( Graph ):
       route.size += size
       route.failedSize += failedSize
       route.failedAttempts += failedFiles
+
       if status in FTSJob.FINALSTATES:
         route.successfulAttempts += ( files - failedFiles )
         route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
         route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
 
     self.updateRWAccess()
-    self.log.info( "CCCCCCCCCCCCCCCCCCCCCCC sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
-
     self.log.always( "init done!" )
 
   def rssClient( self ):
@@ -206,6 +203,8 @@ class FTSGraph( Graph ):
           continue
         self.log.info( "write %s %s" % ( se , wAccess ) )
         rwDict[se]["write"] = True if wAccess["Value"] in ( "Active", "Degraded" ) else False
+        self.log.debug( "Site '%s' SE '%s' read %s write %s " % ( site.name, se,
+                                                                  rwDict[se]["read"], rwDict[se]["write"] ) )
       site.SEs = rwDict
     return S_OK()
 
