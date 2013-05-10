@@ -103,6 +103,17 @@ class FTSClient( Client ):
     getFTSSitesList = getFTSSitesList["Value"]
     return S_OK( [ FTSSite( ftsSite ) for ftsSite in getFTSSitesList ] )
 
+  def getFTSFileList( self, statusList = None ):
+    """ get list of FTSFiles with status in statusList """
+    statusList = statusList if statusList else [ "Waiting" ]
+    getFTSFileList = self.ftsManager().getFTSSFileList( statusList )
+    if not getFTSFileList["OK"]:
+      self.log.error( "getFTSFileList: %s" % getFTSFileList["Message"] )
+      return getFTSFileList
+    getFTSFileList = getFTSFileList["Value"]
+    return S_OK( [ FTSFile( ftsFile ) for ftsFile in getFTSFileList ] )
+
+
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into FTSDB
 

@@ -450,6 +450,27 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
+  types_getFTSFileList = [ ListType ]
+  @classmethod
+  def export_getFTSFileList( cls, statusList = [ "Waiting" ] ):
+    """ get FTSFiles with status in :statusList: """
+    try:
+      getFTSFileList = cls.__ftsDB.getFTSFileList( statusList )
+      if not getFTSFileList["OK"]:
+        gLogger.error( getFTSFileList[ "Message" ] )
+        return getFTSFileList
+      fileList = []
+      for ftsFile in getFTSFileList["Value"]:
+        fileJSON = ftsFile.toJSON()
+        if not fileJSON["OK"]:
+          gLogger.error( "getFTSFileList: %s" % fileJSON["Message"] )
+          return fileJSON
+        fileList.append( fileJSON["Value"] )
+      return S_OK( fileList )
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( error )
+
   types_getFTSHistory = []
   @classmethod
   def export_getFTSHistory( cls ):

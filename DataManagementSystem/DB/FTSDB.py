@@ -154,7 +154,7 @@ class FTSDB( DB ):
       self.log.error( "putFTSSite: %s" % ftsSiteSQL["Message"] )
       return ftsSiteSQL
     ftsSiteSQL = ftsSiteSQL["Value"]
-    
+
     putFTSSite = self._transaction( ftsSiteSQL )
     if not putFTSSite["OK"]:
       self.log.error( putFTSSite["Message"] )
@@ -310,6 +310,14 @@ class FTSDB( DB ):
       self.log.error( query["Message"] )
       return query
     return S_OK( [ item[0] for item in query["Value"] ] )
+
+  def getFTSFileList( self, statusList = ["Waiting"] ):
+    query = "SELECT * FROM `FTSFile` WHERE `Status` IN (%s)" % stringListToString( statusList )
+    trn = self._transaction( [query] )
+    if not trn["OK"]:
+      self.log.error( "getFTSFileList: %s" % trn["Message"] )
+      return trn
+    return S_OK( [ FTSFile( fileDict ) for fileDict in trn["Value"][query] ] )
 
   def getFTSHistory( self ):
     """ query FTSHistoryView, return list of FTSHistoryViews """

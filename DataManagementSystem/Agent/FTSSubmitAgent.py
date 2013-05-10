@@ -12,8 +12,13 @@
 """
 
 # # imports
+import time
+# # from DIRAC
 from DIRAC import S_OK, S_ERROR
+# # from Core
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Base.AgentModule import AgentModule
+# # from DMS
 from DIRAC.DataManagementSystem.Clinet.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.private.FTSStrategy import FTSGraph
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
@@ -44,6 +49,10 @@ class FTSSubmitAgent( AgentModule ):
   """
   # # placeholder for max job per channel
   MAX_JOBS_PER_ROUTE = 10
+  # # min threads
+  MIN_THREADS = 1
+  # # max threads
+  MAX_THREADS = 10
 
   def ftsClient( self ):
     """ FTS client """
@@ -89,6 +98,16 @@ class FTSSubmitAgent( AgentModule ):
       self.log.error( "initialize: FTSSites not defined!!!" )
       return S_ERROR( "FTSSites not defined in FTSDB" )
 
+    self.MIN_THREADS = self.am_getOption( "MinThreads", self.MIN_THREADS )
+    self.MAX_THREADS = self.am_getOption( "MaxThreads", self.MAX_THREADS )
+    minmax = ( abs( self.MIN_THREADS ), abs( self.MAX_THREADS ) )
+    self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
+    self.log.info( "ThreadPool min threads = %s" % self.MIN_THREADS )
+    self.log.info( "ThreadPool max threads = %s" % self.MAX_THREADS )
+
+    self.threadPool = ThreadPool( self.MIN_THREADS, self.MAX_THREADS )
+    self.threadPool.daemonize()
+
     # # read CS options
     self.MAX_JOBS_PER_ROUTE = self.am_getOption( "MaxJobsPerChannel", self.MAX_JOBS_PER_ROUTE )
     self.log.info( "max jobs/route = %s" % self.MAX_JOBS_PER_ROUTE )
@@ -104,40 +123,70 @@ class FTSSubmitAgent( AgentModule ):
 
     :param self: self reference
     """
+    self.ftsGraph.updateRWAccess()
 
+    ftsFileList = self.ftsClient().getFTSFileList( ["Waiting"] )
+    if not ftsFileList["OK"]:
+      self.log.error( "execute: unable to read Waiting FTSFiles: %s" % ftsFileList["Message"] )
+      return ftsFileList
+    ftsFileList = ftsFileList["Value"]
+    # #  [sourceSE][targetSE] => list of files
+    ftsFileDict = {}
+    sourceSEs = 0
+    targetSEs = 0
+    for ftsFile in ftsFileList:
+      if ftsFile.SourceSE not in ftsFileDict:
+        sourceSEs += 1
+        ftsFileDict[ftsFile.SourceSE] = {}
+      if ftsFile.TargetSE not in ftsFileDict[ftsFile.SourceSE]:
+        targetSEs += 1
+        ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE] = []
+      ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE].append( ftsFile )
 
+    self.log.info( "found %d FTSFiles, %d sourceSEs and %s targetSEs" % ( len( ftsFileList ), sourceSEs, targetSEs ) )
+
+    enqueued = 0
+
+    # # entering sourceSE, targetSE, ftsFile loop
+    for sourceSE, targetDict in ftsFileDict.items():
+      sourceSite = self.ftsGraph.findSiteForSE( sourceSE )
+      if not sourceSite["OK"]:
+        self.log.error( "unable to find source site for %s SE" % sourceSE )
+        continue
+      sourceSite = sourceSite["Value"]
+      if not sourceSite.SEs[sourceSE]["read"]:
+        self.log.error( "source SE %S is banned for reading" % sourceSE )
+        continue
+
+      for targetSE, ftsFileList in targetDict.items():
+        targetSite = self.ftsGraph.fondSiteForSE( targetSE )
+        if not targetSite["OK"]:
+          self.log.error( "unable to fins target site for %s SE" % targetSE )
+          continue
+        targetSite = targetSite["Value"]
+        if not targetSite.SEs[targetSE]["write"]:
+          self.log.error( "target SE %S is banned for writing" % sourceSE )
+          continue
+        while True:
+          queue = self.threadPool.generateJobAndQueueIt( self.submitTransfer, args = ( ftsFileList, targetSite.ServiceURI ) )
+          if queue["OK"]:
+            enqueued += 1
+            break
+        time.sleep( 1 )
+
+    self.threadPool.processAllResults()
     return S_OK()
 
-    #########################################################################
-    #  Obtain the eligible channels for submission.
-    self.log.info( 'Obtaining channels eligible for submission.' )
-    res = self.transferDB.selectChannelsForSubmission( self.maxJobsPerChannel )
-    if not res['OK']:
-      self.log.error( "Failed to retrieve channels for submission.", res['Message'] )
-      return S_OK()
-    elif not res['Value']:
-      self.log.info( "FTSSubmitAgent. No channels eligible for submission." )
-      return S_OK()
-    channelDicts = res['Value']
-    self.log.info( 'Found %s eligible channels.' % len( channelDicts ) )
 
-    #########################################################################
-    # Submit to all the eligible waiting channels.
-    i = 1
-    for channelDict in channelDicts:
-      infoStr = "\n\n##################################################################################\n\n"
-      infoStr = "%sStarting submission loop %s of %s\n\n" % ( infoStr, i, len( channelDicts ) )
-      self.log.info( infoStr )
-      res = self.submitTransfer( channelDict )
-      i += 1
-    return S_OK()
-
-  def submitTransfer( self, channelDict ):
+  def submitTransfer( self, ftsFileDict, ftsServerURI ):
     """ create and submit FTS jobs based on information it gets from the DB
 
     :param self: self reference
     :param dict channelDict: dict with channel info as read from TransferDB.selectChannelsForSubmission
     """
+
+    ftsJob = FTSJob()
+
 
     # Create the FTSRequest object for preparing the submission
     oFTSRequest = FTSRequest()
