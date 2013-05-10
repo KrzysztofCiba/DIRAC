@@ -86,8 +86,8 @@ class FTSDBTests( unittest.TestCase ):
       ftsJob.FTSServer = "https://fts.service.org"
       ftsJob.Status = statuses[ i % len( statuses ) ]
       if ftsJob.Status in FTSJob.FINALSTATES:
-        ftsJob.Completeness = random.randint( 1, 100 )
-      if ftsJob.Status == "Finished":
+        ftsJob.Completeness = 100.0
+      if ftsJob.Status == "Active":
         ftsJob.Completeness = 100.0
 
         
