@@ -164,13 +164,6 @@ class FTSGraph( Graph ):
         continue
       route = route["Value"]
 
-      t1 = route.timeToStart
-
-      self.log.always( "AAA %s" % ftsHistory.toJSON()["Value"] )
-      self.log.always( "AAA route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
-                       ( route.name, route.WaitingFiles, route.WaitingSize, route.SuccessfulFiles, route.SuccessfulSize,
-                         route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
-
       if ftsHistory.Status in FTSJob.INITSTATES:
         route.WaitingFiles += ftsHistory.Files
         route.WaitingSize += ftsHistory.Size
@@ -186,14 +179,6 @@ class FTSGraph( Graph ):
 
       route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
       route.Throughput = float( route.SuccessfulSize - route.FailedSize ) / FTSHistoryView.INTERVAL
-
-      t2 = route.timeToStart
-
-      self.log.always( "BBB route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
-                       ( route.name, route.WaitingFiles, route.WaitingSize, route.SuccessfulFiles, route.SuccessfulSize,
-                         route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
-
-      self.log.always( "t1 t2 diff %s %s %s" % ( t1, t2, t2 - t1 ) )
 
     self.updateRWAccess()
     self.log.debug( "init done!" )
@@ -250,7 +235,6 @@ class FTSGraph( Graph ):
       if fromSE in edge.fromNode.SEs and toSE in edge.toNode.SEs:
         return S_OK( edge )
     return S_ERROR( "FTSGraph: unable to find route between '%s' and '%s'" % ( fromSE, toSE ) )
-
 
 ########################################################################
 class FTSStrategy( object ):
