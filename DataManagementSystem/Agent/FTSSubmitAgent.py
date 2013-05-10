@@ -125,9 +125,9 @@ class FTSSubmitAgent( AgentModule ):
     """ agent's initialization """
 
     self.FTSGRAPH_REFRESH = self.am_getOption( "FTSGraphValidityPeriod", self.FTSGRAPH_REFRESH )
-    self.log.info( "FTSGraph validity period = %s s" % self.GRAPH_VALIDITY_PERIOD )
+    self.log.info( "FTSGraph validity period = %s s" % self.FTSGRAPH_REFRESH )
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
-    self.log.info( "SEs R/W access validity period = %s s" % self.GRAPH_VALIDITY_PERIOD )
+    self.log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
     self.log.info( "initialize: creation of FTSGraph..." )
     createGraph = self.resetFTSGraph()
