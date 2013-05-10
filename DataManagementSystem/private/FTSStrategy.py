@@ -313,6 +313,13 @@ class FTSStrategy( object ):
                               self.acceptableFailureRate,
                               self.acceptableFailedFiles,
                               self.schedulingType )
+
+    for node in self.ftsGraph.nodes():
+      self.log.always( node )
+    for edge in self.ftsGraph.edges():
+      self.log.always( edge )
+
+
     # # if we land here everything is OK
     self.log.info( "%s has been constructed" % self.__class__.__name__ )
 
