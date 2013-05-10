@@ -212,7 +212,7 @@ class FTSSubmitAgent( AgentModule ):
         self.updateLock().release()
         self.__rwAccessValidStamp = now
 
-    self.log.info( "execute: reading FTSFiles..." )
+    self.log.debug( "execute: reading FTSFiles..." )
     ftsFileList = self.ftsClient().getFTSFileList( ["Waiting"] )
     if not ftsFileList["OK"]:
       self.log.error( "execute: unable to read Waiting FTSFiles: %s" % ftsFileList["Message"] )
@@ -223,7 +223,7 @@ class FTSSubmitAgent( AgentModule ):
       self.log.info( "execute: no FTSFiles to submit" )
       return S_OK()
 
-    # #  [sourceSE][targetSE] => list of files
+    # #  ftsFileDict[sourceSE][targetSE] = [ FTSFile, FTSFile, ... ]
     ftsFileDict = {}
     for ftsFile in ftsFileList:
       if ftsFile.SourceSE not in ftsFileDict:
@@ -232,7 +232,7 @@ class FTSSubmitAgent( AgentModule ):
         ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE] = []
       ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE].append( ftsFile )
 
-    self.log.info( "execute: entering main loop..." )
+    self.log.debug( "execute: entering main loop..." )
     # # thread job counter
     enqueued = 1
     # # entering sourceSE, targetSE, ftsFile loop
@@ -257,7 +257,8 @@ class FTSSubmitAgent( AgentModule ):
           self.log.error( "execute: target SE %s is banned for writing" % sourceSE )
           continue
 
-        self.log.info( "execute: %s files waiting for transfer from %s to %s" % ( len( ftsFileList ), sourceSE, targetSE ) )
+        self.log.info( "execute: %s files are waiting for transfer from %s to %s" % ( len( ftsFileList ),
+                                                                                      sourceSE, targetSE ) )
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
           sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
@@ -267,7 +268,7 @@ class FTSSubmitAgent( AgentModule ):
                                                                       sourceSE, targetSE, sTJId ),
                                                              sTJId = sTJId )
             if queue["OK"]:
-              self.log.info( "execute: enqueued transfer '%s'" % sTJId )
+              self.log.info( "execute: '%s' enqueued for execution" % sTJId )
               enqueued += 1
               gMonitor.addMark( "FTSJobsAtt", 1 )
               break
