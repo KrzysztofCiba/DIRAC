@@ -77,7 +77,7 @@ class FTSSubmitAgent( AgentModule ):
   def updateLock( self ):
     """ update lock """
     if not self.__updateLock:
-      self.__updateLock = LockRing().getLock( "FTSSubmitAgetnLock", True )
+      self.__updateLock = LockRing().getLock( "FTSSubmitAgentLock" )
     return self.__updateLock
 
   def ftsClient( self ):
@@ -199,18 +199,18 @@ class FTSSubmitAgent( AgentModule ):
 
   def execute( self ):
     """ one cycle execution """
-
+    log = gLogger.getSubLogger( "execute" )
     # # reset FTSGraph if expired
     now = datetime.datetime.now()
     if now > self.__ftsGraphValidStamp:
-      self.log.info( "execute: resetting FTS graph " )
+      log.info( "resetting expired FTS graph " )
       resetFTSGraph = self.resetFTSGraph()
       if not resetFTSGraph["OK"]:
-        self.log.error( "execute: FTSGraph recreation error: %s" % resetFTSGraph["Message"] )
+        log.error( "FTSGraph recreation error: %s" % resetFTSGraph["Message"] )
         return resetFTSGraph
     # # update R/W access in FTSGraph if expired
     if now > self.__rwAccessValidStamp:
-      self.log.info( "execute: updating R/W access for SEs" )
+      log.info( "updating expired R/W access for SEs" )
       try:
         self.updateLock().acquire()
         self.__ftsGraph.updateRWAccess()
@@ -218,15 +218,15 @@ class FTSSubmitAgent( AgentModule ):
         self.updateLock().release()
         self.__rwAccessValidStamp = now
 
-    self.log.debug( "execute: reading FTSFiles..." )
+    log.debug( "reading FTSFiles..." )
     ftsFileList = self.ftsClient().getFTSFileList( ["Waiting"] )
     if not ftsFileList["OK"]:
-      self.log.error( "execute: unable to read Waiting FTSFiles: %s" % ftsFileList["Message"] )
+      log.error( "unable to read Waiting FTSFiles: %s" % ftsFileList["Message"] )
       return ftsFileList
     ftsFileList = ftsFileList["Value"]
 
     if not ftsFileList:
-      self.log.info( "execute: no FTSFiles to submit" )
+      log.info( "no waiting FTSFiles to submit found in FTSDB" )
       return S_OK()
 
     # #  ftsFileDict[sourceSE][targetSE] = [ FTSFile, FTSFile, ... ]
@@ -238,7 +238,6 @@ class FTSSubmitAgent( AgentModule ):
         ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE] = []
       ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE].append( ftsFile )
 
-    self.log.debug( "execute: entering main loop..." )
     # # thread job counter
     enqueued = 1
     # # entering sourceSE, targetSE, ftsFile loop
@@ -246,29 +245,29 @@ class FTSSubmitAgent( AgentModule ):
 
       sourceSite = self.__ftsGraph.findSiteForSE( sourceSE )
       if not sourceSite["OK"]:
-        self.log.error( "execute: unable to find source site for %s SE" % sourceSE )
+        log.error( "unable to find source site for %s SE" % sourceSE )
         continue
       sourceSite = sourceSite["Value"]
       if not sourceSite.SEs[sourceSE]["read"]:
-        self.log.error( "execute: source SE %s is banned for reading" % sourceSE )
+        log.error( "source SE %s is banned for reading" % sourceSE )
         continue
 
       for targetSE, ftsFileList in targetDict.items():
         targetSite = self.__ftsGraph.findSiteForSE( targetSE )
         if not targetSite["OK"]:
-          self.log.error( "execute: unable to find target site for %s SE" % targetSE )
+          log.error( "unable to find target site for %s SE" % targetSE )
           continue
         targetSite = targetSite["Value"]
         if not targetSite.SEs[targetSE]["write"]:
-          self.log.error( "execute: target SE %s is banned for writing" % sourceSE )
+          log.error( "target SE %s is banned for writing" % sourceSE )
           continue
 
-        self.log.info( "execute: %s files are waiting for transfer from %s to %s" % ( len( ftsFileList ),
-                                                                                      sourceSE, targetSE ) )
+        log.info( "%s files are waiting for transfer from %s to %s" % ( len( ftsFileList ),
+                                                                        sourceSE, targetSE ) )
 
         route = self.__ftsGraph.findRoute( sourceSE, targetSE )
         if not route["OK"]:
-          self.log.error( "execute: %s" % route["Message"] )
+          log.error( route["Message"] )
           return route
         route = route["Value"]
 
@@ -276,8 +275,8 @@ class FTSSubmitAgent( AgentModule ):
 
           minmax = min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs )
           if route.ActiveJobs > minmax:
-            self.log.info( "execute: bailing out! maximal number of active jobs (%s) reached at FTS route %s" % ( minmax,
-                                                                                                                  route.routeName ) )
+            log.info( "bailing out! maximal number of active jobs (%s) reached at FTS route %s" % ( minmax,
+                                                                                                    route.routeName ) )
             break
 
           sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
@@ -287,7 +286,7 @@ class FTSSubmitAgent( AgentModule ):
                                                                       sourceSE, targetSE, route, sTJId ),
                                                              sTJId = sTJId )
             if queue["OK"]:
-              self.log.info( "execute: '%s' enqueued for execution" % sTJId )
+              log.info( "'%s' enqueued for execution" % sTJId )
               enqueued += 1
               gMonitor.addMark( "FTSJobsAtt", 1 )
               break
