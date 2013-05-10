@@ -159,9 +159,9 @@ class FTSGraph( Graph ):
       route.files += files
       route.size += size
       route.failedSize += failedSize
-      route.successfulAttempts += ( files - failedFiles )
       route.failedAttempts += failedFiles
       if status in FTSJob.FINALSTATES:
+        route.successfulAttempts += ( files - failedFiles )
         route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
         route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
 
