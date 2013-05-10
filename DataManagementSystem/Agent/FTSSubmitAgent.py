@@ -179,7 +179,7 @@ class FTSSubmitAgent( AgentModule ):
           sTJId = "[Thread-%s](%s %s)" % ( enqueued, sourceSE, targetSE )
           while True:
             queue = self.__threadPool.generateJobAndQueueIt( self.submitTransfer,
-                                                             args = ( ftsFileListChunk, targetSite.ServiceURI,
+                                                             args = ( ftsFileListChunk, targetSite.ServerURI,
                                                                       sourceSE, targetSE, sTJId ),
                                                              sTJId = sTJId )
             if queue["OK"]:
