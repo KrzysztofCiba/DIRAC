@@ -165,11 +165,17 @@ class FTSGraph( Graph ):
         continue
       route = route["Value"]
 
-      route.Files += ftsHistory.Files
-      route.Size += ftsHistory.Size
 
       route.FailedFiles += ftsHistory.FailedFiles
       route.FailedSize += ftsHistory.FailedSize
+
+      if ftsHistory.Status in FTSJob.TRANSSTATES:
+        route.Size += ftsHistory.Completeness * ftsHistory.Size
+        route.Files += int( ftsHistory.Completeness * ftsHistory.Files )
+      else:
+        route.Files += ftsHistory.Files
+        route.Size += ftsHistory.Size
+
 
 
       if ftsHistory.Status in FTSJob.FINALSTATES:
