@@ -117,8 +117,8 @@ class FTSSubmitAgent( AgentModule ):
       self.log.error( "initialize: FTSSites not defined!!!" )
       return S_ERROR( "FTSSites not defined in FTSDB" )
 
-    self.MAX_FILES_PER_JOB = self.am_getOption( "FilesPerJob", self.MAX_FILES_PER_JOB )
-    self.log.info( "FTSFiles/FTSJob = %d" % self.MAX_FILES_PER_JOB )
+    self.MAX_FILES_PER_JOB = self.am_getOption( "MaxFilesPerJob", self.MAX_FILES_PER_JOB )
+    self.log.info( "Max FTSFiles per FTSJob = %d" % self.MAX_FILES_PER_JOB )
 
     self.MIN_THREADS = self.am_getOption( "MinThreads", self.MIN_THREADS )
     self.MAX_THREADS = self.am_getOption( "MaxThreads", self.MAX_THREADS )
@@ -194,7 +194,7 @@ class FTSSubmitAgent( AgentModule ):
         self.log.info( "execute: %s files waiting for transfer from %s to %s" % ( len( ftsFileList ), sourceSE, targetSE ) )
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
-          sTJId = "submitTransfer-%s[%s %s]" % ( enqueued, sourceSE, targetSE )
+          sTJId = "submitTransfer-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
           while True:
             queue = self.__threadPool.generateJobAndQueueIt( self.submitTransfer,
                                                              args = ( ftsFileListChunk, targetSite.ServerURI,
