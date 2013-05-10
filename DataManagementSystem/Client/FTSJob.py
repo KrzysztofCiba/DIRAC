@@ -49,8 +49,10 @@ class FTSJob( Record ):
   INITSTATES = ( "Submitted", "Ready" )
   # # ongoing transfer states
   TRANSSTATES = ( "Active" )
-  # # final states
-  FINALSTATES = ( "Canceled", "Failed", "Finished", "FinishedDirty" )
+  # # failed states
+  FAILEDSTATES = ( "Canceled", "Failed" )
+  # # finished
+  FINALSTATES = ( "Finished", "FinishedDirty" )
 
   def __init__( self, fromDict = None ):
     """c'tor
@@ -93,7 +95,7 @@ class FTSJob( Record ):
                "Completeness": "INTEGER NOT NULL DEFAULT 0",
                "FailedFiles": "INTEGER DEFAULT 0",
                "FailedSize": "INTEGER DEFAULT 0",
-               "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty', 'Assigned' ) DEFAULT 'Submitted'",
+               "Status" : "ENUM( 'Submitted', 'Ready', 'Canceled', 'Active', 'Failed', 'Finished', 'FinishedDirty' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",

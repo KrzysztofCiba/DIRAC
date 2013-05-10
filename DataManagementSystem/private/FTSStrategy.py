@@ -144,7 +144,7 @@ class FTSGraph( Graph ):
     for sourceSite in self.nodes():
       for destSite in self.nodes():
 
-        rwAttrs = { "Files": 0, "Size": 0,
+        rwAttrs = { "WaitingFiles": 0, "WaitingSize": 0,
                     "SuccessfulFiles": 0, "SuccessfulSize": 0,
                     "FailedFiles": 0, "FailedSize": 0,
                     "Fileput": 0.0, "Throughput": 0.0 }
@@ -173,22 +173,21 @@ class FTSGraph( Graph ):
                        ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
                          route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
-
-      route.FailedFiles += ftsHistory.FailedFiles
-      route.FailedSize += ftsHistory.FailedSize
-
-      if ftsHistory.Status in FTSJob.TRANSSTATES:
-        route.Size += ftsHistory.Completeness * ftsHistory.Size / 100.0
-        route.Files += int( ftsHistory.Completeness * ftsHistory.Files / 100.0 )
-      else:
-        route.Files += ftsHistory.Files
-        route.Size += ftsHistory.Size
-
-      if ftsHistory.Status in FTSJob.FINALSTATES:
+      if ftsHistory.Status in FTSJob.INITSTATES:
+        route.WaitingFiles += ftsHistory.Files
+        route.WaitingSize += ftsHistory.Size
+      elif ftsHistory.Status in FTSJob.TRANSSTATES:
+        route.WaitingSize += ftsHistory.Completeness * ftsHistory.Size / 100.0
+        route.WaitingFiles += int( ftsHistory.Completeness * ftsHistory.Files / 100.0 )
+      elif ftsHistory.Status in FTSJob.FAILEDSTATES:
+        route.FailedFiles += ftsHistory.FailedFiles
+        route.FailedSize += ftsHistory.FailedSize
+      else:  # # FINISHEDSTATES
         route.SuccessfulFiles += ( ftsHistory.Files - ftsHistory.FailedFiles )
         route.SuccessfulSize += ( ftsHistory.Size - ftsHistory.FailedSize )
-        route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
-        route.Throughput = float( route.Size - route.FailedSize ) / FTSHistoryView.INTERVAL
+
+      route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
+      route.Throughput = float( route.Size - route.FailedSize ) / FTSHistoryView.INTERVAL
 
       t2 = route.timeToStart
 
