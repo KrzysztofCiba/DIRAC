@@ -71,8 +71,8 @@ class Route( Edge ):
     #  return float( "inf" )
     transferSpeed = { "File": self.Fileput,
                       "Throughput": self.Throughput }[self.SchedulingType]
-    waitingTransfers = { "File" : self.Files - self.SuccessfulFiles - self.FailedFiles,
-                         "Throughput" : self.Size - self.SuccessfulSize - self.FailedSize }[self.SchedulingType]
+    waitingTransfers = { "File" : self.WaitingFiles,
+                         "Throughput": self.WaitingSize }[self.SchedulingType]
 
     # print "AAAAAAAAAAAAAAAAAAAAAAAAAA", transferSpeed, waitingTransfers
 
@@ -383,10 +383,10 @@ class FTSStrategy( object ):
         self.graphLock().acquire()
         for route in self.ftsGraph.edges():
           if route.routeName in replicationTree:
-            self.log.always( "updating route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.Size, route.Files, route.timeToStart ) )
-            route.Size += size
-            route.Files += 1
-            self.log.always( "route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.Size, route.Files, route.timeToStart ) )
+            self.log.always( "updating route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.WaitingSize, route.WaitingFiles, route.timeToStart ) )
+            route.WaitingSize += size
+            route.WaitingFiles += 1
+            self.log.always( "route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.WaitingSize, route.WaitingFiles, route.timeToStart ) )
 
       finally:
         self.graphLock().release()
