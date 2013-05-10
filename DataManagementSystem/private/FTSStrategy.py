@@ -123,49 +123,46 @@ class FTSGraph( Graph ):
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
       site = Site( ftsSite.Name, {"SEs": rwDict, "ServerURI": ftsSite.ServerURI } )
-      self.log.debug( "adding FTSSite %s using FTSServer %s" % ( ftsSite.Name, ftsSite.ServerURI ) )
+      self.log.debug( "adding site %s using ServerURI %s" % ( ftsSite.Name, ftsSite.ServerURI ) )
       self.addNode( site )
-
 
     for sourceSite in self.nodes():
       for destSite in self.nodes():
+
         rwAttrs = { "files": 0, "size": 0, "successfulAttempts": 0,
                     "failedFiles": 0, "failedAttempts": 0, "failedSize": 0,
                     "fileput": 0.0, "throughput": 0.0 }
+
         roAttrs = { "routeName": "%s#%s" % ( sourceSite.name, destSite.name ),
                     "acceptableFailureRate": self.acceptableFailureRate,
                     "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
+
         route = Route( sourceSite, destSite, rwAttrs, roAttrs )
-        self.log.info( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
+        self.log.debug( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
         self.addEdge( route )
 
     for ftsHistory in ftsHistoryViews:
 
       route = self.findRoute( ftsHistory.SourceSE, ftsHistory.TargetSE )
       if not route["OK"]:
-        self.log.warn( "FTS route between %s and %s not found" % ( ftsHistory.SourceSE, ftsHistory.TargetSE ) )
+        self.log.warn( "route between %s and %s not found" % ( ftsHistory.SourceSE, ftsHistory.TargetSE ) )
         continue
       route = route["Value"]
 
-      files = ftsHistory.Files
-      failedFiles = ftsHistory.FailedFiles
-      size = ftsHistory.Size
-      failedSize = ftsHistory.FailedSize
-      status = ftsHistory.Status
+      route.files += ftsHistory.Files
+      route.size += ftsHistory.Size
 
-      route.files += files
-      route.size += size
-      route.failedSize += failedSize
-      route.failedAttempts += failedFiles
+      route.failedAttempts += ftsHistory.FailedFiles
+      route.failedSize += ftsHistory.FailedSize
 
-      if status in FTSJob.FINALSTATES:
-        route.successfulAttempts += ( files - failedFiles )
+      if ftsHistory.Status in FTSJob.FINALSTATES:
+        route.successfulAttempts += ( ftsHistory.Files - ftsHistory.FailedFiles )
         route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
         route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
 
     self.updateRWAccess()
-    self.log.always( "init done!" )
+    self.log.debug( "init done!" )
 
   def rssClient( self ):
     """ RSS client getter """
