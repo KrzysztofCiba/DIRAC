@@ -50,7 +50,7 @@ class FTSSubmitAgent( AgentModule ):
   # # SE R/W access refresh in seconds
   RW_REFRESH = 600
   # # placeholder for max job per channel
-  MAX_JOBS_PER_ROUTE = 10
+  MAX_ACTIVE_JOBS = 50
   # # min threads
   MIN_THREADS = 1
   # # max threads
@@ -158,8 +158,8 @@ class FTSSubmitAgent( AgentModule ):
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     self.log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
-    self.MAX_JOBS_PER_ROUTE = self.am_getOption( "MaxJobsPerChannel", self.MAX_JOBS_PER_ROUTE )
-    self.log.info( "Max FTSJobs/route              = %s" % self.MAX_JOBS_PER_ROUTE )
+    self.MAX_ACTIVE_JOBS = self.am_getOption( "MaxActiveJobsPerChannel", self.MAX_ACTIVE_JOBS )
+    self.log.info( "Max active FTSJobs/route       = %s" % self.MAX_ACTIVE_JOBS )
     self.MAX_FILES_PER_JOB = self.am_getOption( "MaxFilesPerJob", self.MAX_FILES_PER_JOB )
     self.log.info( "Max FTSFiles/FTSJob            = %d" % self.MAX_FILES_PER_JOB )
 
@@ -308,6 +308,10 @@ class FTSSubmitAgent( AgentModule ):
     log = gLogger.getSubLogger( sTJId, True )
 
     log.info( "%s FTSFiles to submit to FTS @ %s" % ( len( ftsFileList ), ftsServerURI ) )
+
+    if route.ActiveJobs > min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs ):
+      log.info( "maximal active jobs reached at route %s" % route.routeName )
+      return S_OK()
 
     ftsJob = FTSJob()
     ftsJob.FTSServer = ftsServerURI
