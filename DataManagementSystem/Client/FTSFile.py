@@ -98,7 +98,7 @@ class FTSFile( Record ):
   def FTSGUID( self, value ):
     """ FTSGUID setter """
     if self._parent:
-      self.__data__["FTSGUID"] = self._preant.FTSGUID
+      self.__data__["FTSGUID"] = self._parent.FTSGUID
     else:
       self.__data__["FTSGUID"] = value
 
