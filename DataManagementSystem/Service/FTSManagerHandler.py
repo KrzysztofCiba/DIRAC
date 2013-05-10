@@ -102,7 +102,6 @@ class FTSManagerHandler( RequestHandler ):
       schedule = cls.ftsStrategy().replicationTree( ["RAL-USER", "CERN-USER"], ["PIC-USER"], 1000000 )
       gLogger.always( schedule )
 
-
     return S_OK()
 
   @classmethod
