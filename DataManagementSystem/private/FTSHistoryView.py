@@ -67,7 +67,7 @@ class FTSHistoryView( object ):
                           "Size": "SUM(`FTSJob`.`Size`)",
                           "FailedFiles": "SUM(`FTSJob`.`FailedFiles`)",
                           "FailedSize": "SUM(`FTSJob`.`FailedSize`)",
-                          "Completeness": "SUM(`FTSJob`.`Completeness`)/COUNT(DISTINCT `FTSJob`.`FTSJobID`)" },
+                          "Completeness": "SUM(`FTSJob`.`Completeness`)/COUNT(DISTINCT `FTSJob`.`FTSJobID`)/100.0" },
              "SelectFrom" : "`FTSJob`",
              "Clauses": [ "`FTSJob`.`LastUpdate` > ( UTC_TIMESTAMP() - INTERVAL %s SECOND )" % FTSHistoryView.INTERVAL ],
              "GroupBy": [ "`SourceSE`", "`TargetSE`", "`Status`" ] }
