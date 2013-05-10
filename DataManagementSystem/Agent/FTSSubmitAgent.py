@@ -308,7 +308,6 @@ class FTSSubmitAgent( AgentModule ):
     :param str sTJId: thread name for sublogger
     """
     log = gLogger.getSubLogger( sTJId, True )
-
     log.info( "%s FTSFiles to submit to FTS @ %s" % ( len( ftsFileList ), ftsServerURI ) )
 
     minmax = min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs )
@@ -317,12 +316,13 @@ class FTSSubmitAgent( AgentModule ):
                                                                                           route.routeName ) )
       return S_OK()
 
+    # # create FTSJob instance
     ftsJob = FTSJob()
     ftsJob.FTSServer = ftsServerURI
     ftsJob.SourceSE = sourceSE
     ftsJob.TargetSE = targetSE
 
-    # # TODO: list of rejected files
+    # # TODO: filter out files without replica at sourceSE
     rejectedFiles = []
     for ftsFile in ftsFileList:
       # # TODO: check source file presence and its metadata
@@ -342,7 +342,7 @@ class FTSSubmitAgent( AgentModule ):
     finally:
       self.updateLock().release()
 
-    # # TODO:replace, this is just for testing
+    # # TODO: replace, this is just for testing
     ftsJob.FTSGUID = str( uuid.uuid4() )
 
     # # save newly created FTSJob
