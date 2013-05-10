@@ -57,28 +57,31 @@ class Route( Edge ):
     """ c'tor """
     Edge.__init__( self, fromNode, toNode, rwAttrs, roAttrs )
 
-  @property
-  def timeToStart( self ):
-    """ get time to start for this channel """
+  def isActive( self ):
+    """ check activity of this channel """
     successRate = 100.0
     attempted = self.SuccessfulFiles + self.FailedFiles
     if attempted:
       successRate *= self.SuccessfulFiles / attempted
-    if successRate < self.AcceptableFailureRate:
-      # if self.distinctFailedFiles > self.AcceptableFailedFiles:
+    return bool( successRate > self.AcceptableFailureRate )
+
+  @property
+  def transferSpeed( self ):
+    """ transfer speed getter """
+    return { "File": self.Fileput,
+             "Throughput": self.Throughput }[self.SchedulingType]
+
+  @property
+  def timeToStart( self ):
+    """ get time to start for this channel """
+    if not self.isActive():
       return float( "inf" )
-    # if self.status != "Active":
-    #  return float( "inf" )
     transferSpeed = { "File": self.Fileput,
                       "Throughput": self.Throughput }[self.SchedulingType]
     waitingTransfers = { "File" : self.WaitingFiles,
                          "Throughput": self.WaitingSize }[self.SchedulingType]
-
-    # print "AAAAAAAAAAAAAAAAAAAAAAAAAA", transferSpeed, waitingTransfers
-
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
-      # print "BBBBBBBBBBBBBBBBBBBBBBBB", transferSpeed
     return 0.0
 
 
