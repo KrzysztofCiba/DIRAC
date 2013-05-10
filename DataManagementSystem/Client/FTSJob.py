@@ -342,9 +342,9 @@ class FTSJob( Record ):
     """ files iterator """
     return self.__files__.__iter__()
 
-  def __getitem__( self, i ):
-    """ [] op for files """
-    return self.__files__.__getitem__( i )
+  # def __getitem__( self, i ):
+  #  """ [] op for files """
+  #  return self.__files__.__getitem__( i )
 
   def fileStatusList( self ):
     """ get list of files statuses """
