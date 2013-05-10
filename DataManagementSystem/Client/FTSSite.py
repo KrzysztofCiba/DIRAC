@@ -50,7 +50,7 @@ class FTSSite( Record ):
     :param dict fromDict: data dict
     """
     Record.__init__( self )
-    self.__date__["MaxActiveJobs"] = 50
+    self.__data__["MaxActiveJobs"] = 50
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
