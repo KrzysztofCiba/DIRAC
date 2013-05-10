@@ -86,14 +86,13 @@ class FTSDBTests( unittest.TestCase ):
       ftsJob.FTSServer = "https://fts.service.org"
       ftsJob.Status = statuses[ i % len( statuses ) ]
       if ftsJob.Status in FTSJob.FINALSTATES:
-        ftsJob.Completeness = 100.0
+        ftsJob.Completeness = 1.0
       if ftsJob.Status == "Active":
-        ftsJob.Completeness = random.randint( 1, 100 )
-
+        ftsJob.Completeness = 0.3
         
       ftsJob.SourceSE = ses[ i % len( ses ) ]
       ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
-      i
+
       ftsFile = FTSFile()
       ftsFile.FileID = i + 1
       ftsFile.OperationID = 9999
