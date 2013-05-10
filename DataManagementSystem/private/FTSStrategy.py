@@ -64,9 +64,9 @@ class Route( Edge ):
     attempted = self.SuccessfulFiles + self.FailedFiles
     if attempted:
       successRate *= self.SuccessfulFiles / attempted
-    if successRate < self.acceptableFailureRate:
-      if self.distinctFailedFiles > self.acceptableFailedFiles:
-        return float( "inf" )
+    if successRate < self.AcceptableFailureRate:
+      # if self.distinctFailedFiles > self.AcceptableFailedFiles:
+      return float( "inf" )
     # if self.status != "Active":
     #  return float( "inf" )
     transferSpeed = { "File": self.Fileput,
