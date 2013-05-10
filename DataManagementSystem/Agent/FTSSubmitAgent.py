@@ -133,7 +133,7 @@ class FTSSubmitAgent( AgentModule ):
       self.log.info( " [%02d] FTSSite: %-25s ServerURI: %s" % ( i, site.name, site.ServerURI ) )
     self.log.info( "FTSRoutes:" )
     for i, route in enumerate( self.__ftsGraph.edges() ):
-      self.log.info( " [%02d] FTSRoute: %-25s Active FTS Jobs (MAX) = %s (%s)" % ( i,
+      self.log.info( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
                                                                                    route.routeName,
                                                                                    route.ActiveJobs,
                                                                                    route.toNode.MaxActiveJobs ) )
