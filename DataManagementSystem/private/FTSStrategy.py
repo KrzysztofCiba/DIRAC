@@ -30,6 +30,7 @@ from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import Resources
 # # from DMS
+from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
 
 class Site( Node ):
