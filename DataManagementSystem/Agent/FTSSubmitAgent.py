@@ -208,8 +208,7 @@ class FTSSubmitAgent( AgentModule ):
     """
     log = gLogger.getSubLogger( sTJId )
 
-    log.info( "got sourceSE=%s targetSE=%s ftsServer=%s ftsFiles=%s" % ( sourceSE, targetSE,
-                                                                     ftsServerURI, len( ftsFileList ) ) )
+    log.info( "got %s FTSFiles to submit to ftsServer=%s" % ( len( ftsFileList ), ftsServerURI ) )
 
     ftsJob = FTSJob()
     ftsJob.FTSServer = ftsServerURI
@@ -222,8 +221,7 @@ class FTSSubmitAgent( AgentModule ):
       # # TODO: check source file presence and its metadata
       ftsJob.addFile( ftsFile )
 
-
-    self.log.info( "submitting..." )
+    log.info( "submitting..." )
     submit = S_OK()  # ftsJob.submitFTS2()
     if not submit["OK"]:
       log.error( submit["Message"] )
