@@ -359,10 +359,10 @@ class FTSStrategy( object ):
         self.graphLock().acquire()
         for route in self.ftsGraph.edges():
           if route.routeName in replicationTree:
-            self.log.always( "updating route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.size, route.files, route.timeToStart ) )
+            self.log.always( "updating route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.Size, route.Files, route.timeToStart ) )
             route.size += size
             route.files += 1
-            self.log.always( "route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.size, route.files, route.timeToStart ) )
+            self.log.always( "route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.Size, route.Files, route.timeToStart ) )
 
       finally:
         self.graphLock().release()
