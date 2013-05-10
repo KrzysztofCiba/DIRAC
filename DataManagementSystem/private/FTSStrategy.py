@@ -160,8 +160,6 @@ class FTSGraph( Graph ):
 
     for ftsHistory in ftsHistoryViews:
 
-
-
       route = self.findRoute( ftsHistory.SourceSE, ftsHistory.TargetSE )
       if not route["OK"]:
         self.log.warn( "route between %s and %s not found" % ( ftsHistory.SourceSE, ftsHistory.TargetSE ) )
@@ -171,9 +169,10 @@ class FTSGraph( Graph ):
       t1 = route.timeToStart
 
       self.log.always( "AAA %s" % ftsHistory.toJSON()["Value"] )
-      # self.log.always( "AAA route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
-      #                 ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
-      #                   route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
+      self.log.always( "AAA route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
+                       ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
+                         route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
+
 
       route.FailedFiles += ftsHistory.FailedFiles
       route.FailedSize += ftsHistory.FailedSize
@@ -193,9 +192,9 @@ class FTSGraph( Graph ):
 
       t2 = route.timeToStart
 
-      # self.log.always( "BBB route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
-      #                 ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
-      #                   route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
+      self.log.always( "BBB route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
+                       ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
+                         route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
       self.log.always( "t1 t2 diff %s %s %s" % ( t1, t2, t2 - t1 ) )
 
