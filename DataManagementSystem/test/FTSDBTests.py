@@ -105,7 +105,11 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
       ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
       ftsFile.Status = "Waiting" if ftsJob.Status != "FinishedDirty" else "Failed"
+
       ftsFile.FTSGUID = ftsJob.FTSGUID
+      if ftsJob.Status == "FinishedDirty":
+        ftsJob.FailedFiles = 1
+        ftsJob.FailedSize = ftsFile.Size
 
       ftsJob.addFile( ftsFile )
       self.ftsJobs.append( ftsJob )
