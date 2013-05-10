@@ -106,7 +106,7 @@ class FTSClient( Client ):
   def getFTSFileList( self, statusList = None ):
     """ get list of FTSFiles with status in statusList """
     statusList = statusList if statusList else [ "Waiting" ]
-    getFTSFileList = self.ftsManager().getFTSSFileList( statusList )
+    getFTSFileList = self.ftsManager().getFTSFileList( statusList )
     if not getFTSFileList["OK"]:
       self.log.error( "getFTSFileList: %s" % getFTSFileList["Message"] )
       return getFTSFileList
