@@ -93,12 +93,6 @@ class FTSManagerHandler( RequestHandler ):
       # # every hour replace FTSGraph
       gThreadScheduler.addPeriodicTask( FTSHistoryView.INTERVAL , cls.updateFTSStrategy )
 
-      for i in range( 100 ):
-        schedule = cls.ftsStrategy().replicationTree( [ "CERN-USER", "RAL-USER" ], ["PIC-USER"], 1000000 )
-        gLogger.always( schedule )
-      schedule = cls.ftsStrategy().replicationTree( [ "RAL-USER", "CERN-USER"], ["PIC-USER"], 1000000 )
-      gLogger.always( schedule )
-
     return S_OK()
 
   @classmethod
@@ -171,11 +165,18 @@ class FTSManagerHandler( RequestHandler ):
     :param list sourceSEs: source SEs
     :param list targetSEs: target SEs
     """
+    lfn = fileJSON.get( "LFN", "" )
     size = fileJSON.get( "Size", 0 )
     tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
     if not tree["OK"]:
+      gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree["Message"] ) )
       return tree
     tree = tree["Value"]
+
+    gLogger.info( "LFN=%s tree=%s" % ( lfn, tree ) )
+
+
+
     # # sort by ancestor
     sortedKeys = self._ancestorSortKeys( tree, "Ancestor" )
     if not sortedKeys["OK"]:
