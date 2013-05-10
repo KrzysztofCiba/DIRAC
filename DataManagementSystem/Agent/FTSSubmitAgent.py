@@ -194,9 +194,9 @@ class FTSSubmitAgent( AgentModule ):
         self.log.info( "execute: %s files waiting for transfer from %s to %s" % ( len( ftsFileList ), sourceSE, targetSE ) )
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
-          sTJId = "submitTransfer-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
+          sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
           while True:
-            queue = self.__threadPool.generateJobAndQueueIt( self.submitTransfer,
+            queue = self.__threadPool.generateJobAndQueueIt( self.submit,
                                                              args = ( ftsFileListChunk, targetSite.ServerURI,
                                                                       sourceSE, targetSE, sTJId ),
                                                              sTJId = sTJId )
@@ -211,7 +211,7 @@ class FTSSubmitAgent( AgentModule ):
     self.__threadPool.processAllResults()
     return S_OK()
 
-  def submitTransfer( self, ftsFileList, ftsServerURI, sourceSE, targetSE, sTJId ):
+  def submit( self, ftsFileList, ftsServerURI, sourceSE, targetSE, sTJId ):
     """ create and submit FTSJob
 
     :param list ftsFileList: list with FTSFiles
@@ -220,7 +220,7 @@ class FTSSubmitAgent( AgentModule ):
     :param str targetSE: targetSE
     :param str sTJId: thread name for sublogger
     """
-    log = gLogger.getSubLogger( sTJId, False )
+    log = gLogger.getSubLogger( sTJId, True )
 
     log.info( "got %s FTSFiles to submit to ftsServer=%s" % ( len( ftsFileList ), ftsServerURI ) )
 
@@ -243,8 +243,9 @@ class FTSSubmitAgent( AgentModule ):
       return submit
     # # TODO:replace, this is just for testing
     ftsJob.FTSGUID = str( uuid.uuid4() )
-    log.info( "FTSJob %s submitted to FTS server %s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
+    # # save newly created FTSJob
+    log.info( "FTSJob %s submitted to FTS server %s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
     for ftsFile in ftsJob:
       ftsFile.Status = "Submitted"
       ftsFile.FTSGUID = ftsJob.FTSGUID
