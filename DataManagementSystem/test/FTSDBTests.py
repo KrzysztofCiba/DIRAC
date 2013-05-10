@@ -173,7 +173,7 @@ class FTSDBTests( unittest.TestCase ):
     self.assertEqual( "FTSJob" in summary["Value"], True, "getDBSummary FTSJob missing" )
     self.assertEqual( "FTSFile" in summary["Value"], True, "getDBSummary FTSFile missing" )
     self.assertEqual( "FTSHistory" in summary["Value"], True, "getDBSummary FTSHistory missing" )
-
+    self.assertEqual( "FTSSite" in summary["Value"], True, "getDBSummary FTSSite missing" )
 
   def test03FTSHistory( self ):
     """ history view """
@@ -213,7 +213,7 @@ class FTSDBTests( unittest.TestCase ):
     self.assertEqual( "FTSJob" in summary["Value"], True, "getDBSummary FTSJob missing" )
     self.assertEqual( "FTSFile" in summary["Value"], True, "getDBSummary FTSFile missing" )
     self.assertEqual( "FTSHistory" in summary["Value"], True, "getDBSummary FTSHistory missing" )
-    print summary["Value"]
+    self.assertEqual( "FTSSite" in summary["Value"], True, "getDBSummary FTSSite missing" )
 
 
 # # tests execution
