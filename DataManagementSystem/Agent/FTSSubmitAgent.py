@@ -140,6 +140,10 @@ class FTSSubmitAgent( AgentModule ):
       return ftsFileList
     ftsFileList = ftsFileList["Value"]
 
+    if not ftsFileList:
+      self.log.info( "execute: no FTSFiles to submit" )
+      return S_OK()
+
     # #  [sourceSE][targetSE] => list of files
     ftsFileDict = {}
     for ftsFile in ftsFileList:
