@@ -482,7 +482,7 @@ class FTSManagerHandler( RequestHandler ):
         return ftsHistory
       ftsHistory = ftsHistory["Value"]
       history = []
-      for ftsHistory in ftsHistory["Value"]:
+      for ftsHistory in ftsHistory:
         ftsHistory = ftsHistory.toJSON()
         if not ftsHistory["OK"]:
           return ftsHistory
