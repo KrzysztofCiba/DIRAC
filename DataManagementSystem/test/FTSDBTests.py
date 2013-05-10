@@ -81,10 +81,12 @@ class FTSDBTests( unittest.TestCase ):
 
     self.ftsJobs = []
     for i in range( 200 ):
+
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
       ftsJob.FTSServer = "https://fts.service.org"
       ftsJob.Status = statuses[ i % len( statuses ) ]
+
       if ftsJob.Status in FTSJob.FINALSTATES:
         ftsJob.Completeness = 1.0
       if ftsJob.Status == "Active":
@@ -107,6 +109,7 @@ class FTSDBTests( unittest.TestCase ):
 
       ftsJob.addFile( ftsFile )
       self.ftsJobs.append( ftsJob )
+
     self.submitted = len( [ i for i in self.ftsJobs if i.Status == "Submitted" ] )
 
   def tearDown( self ):
