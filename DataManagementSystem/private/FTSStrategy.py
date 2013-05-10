@@ -155,15 +155,14 @@ class FTSGraph( Graph ):
       failedSize = ftsHistory.FailedSize
       status = ftsHistory.Status
 
-
-
       route.files += files
       route.size += size
       route.failedSize += failedSize
       route.successfulAttempts += ( files - failedFiles )
       route.failedAttempts += failedFiles
-      route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
-      route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
+      if status in FTSJob.FINALSTATES:
+        route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
+        route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
 
     self.updateRWAccess()
     self.log.info( "CCCCCCCCCCCCCCCCCCCCCCC sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
