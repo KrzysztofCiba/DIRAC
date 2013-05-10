@@ -493,7 +493,7 @@ class FTSManagerHandler( RequestHandler ):
         ftsHistoryJSON = ftsHistory.toJSON()
         if not ftsHistoryJSON["OK"]:
           return ftsHistoryJSON
-        history.append( ftsHistoryJSON )
+        history.append( ftsHistoryJSON["Value"] )
       return S_OK( history )
     except Exception, error:
       gLogger.exception( error )
