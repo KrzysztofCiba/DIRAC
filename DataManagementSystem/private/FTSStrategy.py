@@ -187,7 +187,7 @@ class FTSGraph( Graph ):
         route.SuccessfulSize += ( ftsHistory.Size - ftsHistory.FailedSize )
 
       route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
-      route.Throughput = float( route.Size - route.FailedSize ) / FTSHistoryView.INTERVAL
+      route.Throughput = float( route.SuccessfulSize - route.FailedSize ) / FTSHistoryView.INTERVAL
 
       t2 = route.timeToStart
 
