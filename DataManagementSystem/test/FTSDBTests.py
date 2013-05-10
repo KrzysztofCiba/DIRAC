@@ -90,7 +90,7 @@ class FTSDBTests( unittest.TestCase ):
       if ftsJob.Status in FTSJob.FINALSTATES:
         ftsJob.Completeness = 100
       if ftsJob.Status == "Active":
-        ftsJob.Completeness = 30
+        ftsJob.Completeness = 90
 
       ftsJob.SourceSE = ses[ i % len( ses ) ]
       ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
