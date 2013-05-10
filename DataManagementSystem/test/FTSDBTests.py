@@ -74,13 +74,13 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.Status = "Waiting"
       self.ftsFiles.append( ftsFile )
 
-    ses = [ "CERN-USER", "RAL-USER", "PIC-USER" ]
+    ses = [ "CERN-USER", "RAL-USER" ]
     statuses = [ "Submitted", "Active", "Ready", "Finished" ]
 
     self.submitted = 0
 
     self.ftsJobs = []
-    for i in range( 2000 ):
+    for i in range( 400 ):
 
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
@@ -93,7 +93,7 @@ class FTSDBTests( unittest.TestCase ):
         ftsJob.Completeness = 90
 
       ftsJob.SourceSE = ses[ i % len( ses ) ]
-      ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
+      ftsJob.TargetSE = "PIC-USER"
 
       ftsFile = FTSFile()
       ftsFile.FileID = i + 1
