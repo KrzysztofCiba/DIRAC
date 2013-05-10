@@ -117,32 +117,27 @@ class FTSGraph( Graph ):
     self.log.always( ftsSitesNames )
 
     # # create nodes
-    for site, ses in sitesDict.items():
-
-      if site not in ftsSitesNames:
-        self.log.info( "skipping site '%s', not defined as FTSSite" % site )
-        continue
-
-      rwDict = dict.fromkeys( ses )
+    for ftsSite in ftsSites:
+      rwDict = dict.fromkeys( sitesDict.get( ftsSite.Name ), {} )
       for se in rwDict:
         rwDict[se] = { "read": False, "write": False }
-      ftsSite = Site( site, {"SEs": rwDict } )
+      site = Site( ftsSite.Name, {"SEs": rwDict, "ServerURI": ftsSite.ServerURI } )
       self.log.info( "adding %s" % ftsSite.name )
-      self.addNode( ftsSite )
+      self.addNode( site )
 
     self.log.info( "AAAAAAAAAAAAA sites=%s edges=%s" % ( len( self.nodes() ), len( self.edges() ) ) )
 
 
-    for siteA in self.nodes():
-      for siteB in self.nodes():
+    for sourceSite in self.nodes():
+      for destSite in self.nodes():
         rwAttrs = { "files": 0, "size": 0, "successfulAttempts": 0,
                     "failedFiles": 0, "failedAttempts": 0, "failedSize": 0,
                     "fileput": 0.0, "throughput": 0.0 }
-        roAttrs = { "routeName": "%s#%s" % ( siteA.name, siteB.name ),
+        roAttrs = { "routeName": "%s#%s" % ( sourceSite.name, destSite.name ),
                     "acceptableFailureRate": self.acceptableFailureRate,
                     "acceptableFailedFiles": self.acceptableFailedFiles,
                     "schedulingType": self.schedulingType }
-        route = Route( siteA, siteB, rwAttrs, roAttrs )
+        route = Route( sourceSite, destSite, rwAttrs, roAttrs )
         self.log.info( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
         self.addEdge( route )
 
