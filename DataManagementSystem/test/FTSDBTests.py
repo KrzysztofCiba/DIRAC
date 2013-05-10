@@ -99,7 +99,7 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.FileID = i + 1
       ftsFile.OperationID = 9999
       ftsFile.LFN = "/a/b/c/%d" % i
-      ftsFile.Size = 10
+      ftsFile.Size = 1000000
       ftsFile.SourceSE = ftsJob.SourceSE
       ftsFile.TargetSE = ftsJob.TargetSE
       ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
