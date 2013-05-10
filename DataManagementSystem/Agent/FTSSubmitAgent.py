@@ -194,7 +194,7 @@ class FTSSubmitAgent( AgentModule ):
         self.log.info( "execute: %s files waiting for transfer from %s to %s" % ( len( ftsFileList ), sourceSE, targetSE ) )
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
-          sTJId = "[submitTransfer-%s](%s %s)" % ( enqueued, sourceSE, targetSE )
+          sTJId = "submitTransfer-%s[%s %s]" % ( enqueued, sourceSE, targetSE )
           while True:
             queue = self.__threadPool.generateJobAndQueueIt( self.submitTransfer,
                                                              args = ( ftsFileListChunk, targetSite.ServerURI,
