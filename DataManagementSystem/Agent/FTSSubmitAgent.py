@@ -274,8 +274,10 @@ class FTSSubmitAgent( AgentModule ):
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
 
-          if route.ActiveJobs > min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs ):
-            self.log.info( "execute: maximal number of active jobs reached at FTS route %s" % route.routeName )
+          minmax = min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs )
+          if route.ActiveJobs > minmax:
+            self.log.info( "execute: bailing out! maximal number of active jobs (%s) reached at FTS route %s" % ( minmax,
+                                                                                                                  route.routeName ) )
             break
 
           sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
@@ -309,8 +311,10 @@ class FTSSubmitAgent( AgentModule ):
 
     log.info( "%s FTSFiles to submit to FTS @ %s" % ( len( ftsFileList ), ftsServerURI ) )
 
-    if route.ActiveJobs > min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs ):
-      log.info( "bailing out: maximal active jobs reached at route %s" % route.routeName )
+    minmax = min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs )
+    if route.ActiveJobs > minmax:
+      log.info( "bailing out: maximal number of active jobs (%s) reached at route %s" % ( minmax,
+                                                                                          route.routeName ) )
       return S_OK()
 
     ftsJob = FTSJob()
