@@ -274,7 +274,7 @@ class FTSSubmitAgent( AgentModule ):
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
 
-          if route.ActiveJobs > min( self.MAX_JOBS_PER_ROUTE, route.toNode.MaxActiveJobs ):
+          if route.ActiveJobs > min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs ):
             self.log.info( "execute: maximal number of active jobs reached at FTS route %s" % route.routeName )
             break
 
