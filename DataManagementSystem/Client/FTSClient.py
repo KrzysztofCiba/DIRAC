@@ -222,13 +222,7 @@ class FTSClient( Client ):
       self.log.error( getFTSHistory["Message"] )
       return getFTSHistory
     getFTSHistory = getFTSHistory["Value"]
-    history = []
-    for ftsHistory in getFTSHistory:
-      ftsHistory = FTSHistoryView( ftsHistory )
-      if not ftsHistory["OK"]:
-        return ftsHistory
-      history.append( ftsHistory["Value"] )
-    return S_OK( history )
+    return S_OK( [ FTSHistoryView( ftsHistory ) for ftsHistory in getFTSHistory ] )
 
   def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
     """ schedule lfn for FTS job
