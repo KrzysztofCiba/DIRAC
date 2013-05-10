@@ -136,12 +136,6 @@ class FTSSubmitAgent( AgentModule ):
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     self.log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
-    self.log.info( "initialize: creation of FTSGraph..." )
-    createGraph = self.resetFTSGraph()
-    if not createGraph["OK"]:
-      self.log.error( "initialize: %s" % createGraph["Message"] )
-      return createGraph
-
     self.MAX_JOBS_PER_ROUTE = self.am_getOption( "MaxJobsPerChannel", self.MAX_JOBS_PER_ROUTE )
     self.log.info( "Max FTSJobs/route              = %s" % self.MAX_JOBS_PER_ROUTE )
     self.MAX_FILES_PER_JOB = self.am_getOption( "MaxFilesPerJob", self.MAX_FILES_PER_JOB )
@@ -154,6 +148,13 @@ class FTSSubmitAgent( AgentModule ):
     self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
     self.log.info( "ThreadPool min threads         = %s" % self.MIN_THREADS )
     self.log.info( "ThreadPool max threads         = %s" % self.MAX_THREADS )
+
+    self.log.info( "initialize: creation of FTSGraph..." )
+    createGraph = self.resetFTSGraph()
+    if not createGraph["OK"]:
+      self.log.error( "initialize: %s" % createGraph["Message"] )
+      return createGraph
+
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
@@ -178,16 +179,14 @@ class FTSSubmitAgent( AgentModule ):
     """ one cycle execution """
     now = datetime.datetime.now()
     if now > self.__ftsGraphValidStamp:
+      self.log.info( "execute: resetting FTS graph " )
       resetFTSGraph = self.resetFTSGraph()
       if not resetFTSGraph["OK"]:
         self.log.error( "execute: FTSGraph recreation error: %s" % resetFTSGraph["Message"] )
         return resetFTSGraph
     if now > self.__rwAccessValidStamp:
+      self.log.info( "execute: updating R/W access for SEs" )
       self.__ftsGraph.updateRWAccess()
-
-    self.log.info( "execute: updating RW for SEs..." )
-    # # upadate RW access for SE first
-    self.__ftsGraph.updateRWAccess()
 
     self.log.info( "execute: reading FTSFiles..." )
     ftsFileList = self.ftsClient().getFTSFileList( ["Waiting"] )
