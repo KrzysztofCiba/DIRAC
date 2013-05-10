@@ -18,6 +18,7 @@ import uuid
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gMonitor
 # # from Core
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import getChunk
@@ -70,7 +71,14 @@ class FTSSubmitAgent( AgentModule ):
   __rwAccessValidStamp = None
   # # placeholder for threadPool
   __threadPool = None
+  # # update lock
+  __updateLock = None
 
+  def updateLock( self ):
+    """ update lock """
+    if not self.__updateLock:
+      self.__updateLock = LockRing().getLock( "FTSSubmitAgetnLock", True )
+    return self.__updateLock
 
   def ftsClient( self ):
     """ FTS client """
@@ -99,7 +107,6 @@ class FTSSubmitAgent( AgentModule ):
 
   def resetFTSGraph( self ):
     """ create fts graph """
-
     ftsSites = self.ftsClient().getFTSSitesList()
     if not ftsSites["OK"]:
       self.log.error( "resetFTSGraph: unable to get FTS sites list: %s" % ftsSites["Message"] )
@@ -115,7 +122,12 @@ class FTSSubmitAgent( AgentModule ):
       return ftsHistory
     ftsHistory = ftsHistory["Value"]
 
-    self.__ftsGraph = FTSGraph( "FTSGraph", ftsSites, ftsHistory )
+    try:
+      self.updateLock().acquire()
+      self.__ftsGraph = FTSGraph( "FTSGraph", ftsSites, ftsHistory )
+    finally:
+      self.updateLock().release()
+
     for i, ftsSite in enumerate( self.__ftsGraph.nodes() ):
       self.log.info( "[%d] FTSSite: %-25s ServerURI: %s" % ( i, ftsSite.name, ftsSite.ServerURI ) )
 
@@ -123,7 +135,11 @@ class FTSSubmitAgent( AgentModule ):
     self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
 
     # # refresh SE R/W access
-    self.__ftsGraph.updateRWAccess()
+    try:
+      self.updateLock().acquire()
+      self.__ftsGraph.updateRWAccess()
+    finally:
+      self.updateLock().release()
     self.__rwAccessValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.RW_REFRESH )
 
     return S_OK()
@@ -177,6 +193,8 @@ class FTSSubmitAgent( AgentModule ):
 
   def execute( self ):
     """ one cycle execution """
+
+    # # reset FTSGraph if expired
     now = datetime.datetime.now()
     if now > self.__ftsGraphValidStamp:
       self.log.info( "execute: resetting FTS graph " )
@@ -184,9 +202,15 @@ class FTSSubmitAgent( AgentModule ):
       if not resetFTSGraph["OK"]:
         self.log.error( "execute: FTSGraph recreation error: %s" % resetFTSGraph["Message"] )
         return resetFTSGraph
+    # # update R/W access in FTSGraph if expired
     if now > self.__rwAccessValidStamp:
       self.log.info( "execute: updating R/W access for SEs" )
-      self.__ftsGraph.updateRWAccess()
+      try:
+        self.updateLock().acquire()
+        self.__ftsGraph.updateRWAccess()
+      finally:
+        self.updateLock().release()
+        self.__rwAccessValidStamp = now
 
     self.log.info( "execute: reading FTSFiles..." )
     ftsFileList = self.ftsClient().getFTSFileList( ["Waiting"] )
