@@ -170,6 +170,15 @@ class FTSHistoryView( object ):
     """ failed files size setter """
     self.__data__["FailedSize"] = long( failedSize ) if failedSize else 0
 
+  @property
+  def Completeness( self ):
+    """ completeness getter """
+    return self.__data__["Completeness"]
+
+  @Completeness.setter
+  def Completeness( self, value ):
+    """ completeness setter  """
+    self.__data__["Completeness"] = float( value ) if value else 0.0
   def toJSON( self ):
     """ serialize to JSON format """
     return S_OK( self.__data__ )
