@@ -261,12 +261,24 @@ class FTSSubmitAgent( AgentModule ):
         self.log.info( "execute: %s files are waiting for transfer from %s to %s" % ( len( ftsFileList ),
                                                                                       sourceSE, targetSE ) )
 
+        route = self.__ftsGraph.findRoute( sourceSE, targetSE )
+        if not route["OK"]:
+          self.log.error( "execute: %s" % route["Message"] )
+          return route
+        route = route["Value"]
+        self.log.info( "execute: creating thread jobs for route %s" % route.name )
+
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
+
+          if route.ActiveJobs > self.MAX_JOBS_PER_ROUTE:
+            self.log.info( "execute: maximal number of active FTSJobs reached at route %s" % route.name )
+            continue
+
           sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
           while True:
             queue = self.threadPool().generateJobAndQueueIt( self.submit,
                                                              args = ( ftsFileListChunk, targetSite.ServerURI,
-                                                                      sourceSE, targetSE, sTJId ),
+                                                                      sourceSE, targetSE, route, sTJId ),
                                                              sTJId = sTJId )
             if queue["OK"]:
               self.log.info( "execute: '%s' enqueued for execution" % sTJId )
@@ -279,13 +291,14 @@ class FTSSubmitAgent( AgentModule ):
     self.__threadPool.processAllResults()
     return S_OK()
 
-  def submit( self, ftsFileList, ftsServerURI, sourceSE, targetSE, sTJId ):
+  def submit( self, ftsFileList, ftsServerURI, sourceSE, targetSE, route, sTJId ):
     """ create and submit FTSJob
 
     :param list ftsFileList: list with FTSFiles
     :param str ftsServerURI: FTS server URI
     :param str sourceSE: source SE
     :param str targetSE: targetSE
+    :param Route route: FTSGraph.Route between source site and target site
     :param str sTJId: thread name for sublogger
     """
     log = gLogger.getSubLogger( sTJId, True )
@@ -309,6 +322,14 @@ class FTSSubmitAgent( AgentModule ):
       gMonitor.addMark( "FTSJobsFail", 1 )
       log.error( submit["Message"] )
       return submit
+
+    # # update FTS route
+    try:
+      self.updateLock().acquire()
+      route.ActiveJobs += 1
+    finally:
+      self.updateLock().release()
+
     # # TODO:replace, this is just for testing
     ftsJob.FTSGUID = str( uuid.uuid4() )
 
