@@ -173,8 +173,7 @@ class FTSSubmitAgent( AgentModule ):
           self.log.error( "execute: target SE %s is banned for writing" % sourceSE )
           continue
 
-        self.log.info( "execute: found %s files to be transferred from %s to %s" % ( len( ftsFileList,
-                                                                                     sourceSE, targetSE ) ) )
+        self.log.info( "execute: %s files waiting for transfer from %s to %s" % ( len( ftsFileList ), sourceSE, targetSE ) )
 
         for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
           sTJId = "[Thread-%d](%s %s)" % ( sourceSE, targetSE, enqueued )
