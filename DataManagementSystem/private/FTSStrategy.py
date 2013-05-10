@@ -160,6 +160,7 @@ class FTSGraph( Graph ):
         route.successfulAttempts += ( ftsHistory.Files - ftsHistory.FailedFiles )
         route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
         route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
+        self.log.always( "AAAAAAAAAAAA fp = %s tp = %s" % ( route.fileput, route.throughput ) )
 
     self.updateRWAccess()
     self.log.debug( "init done!" )
