@@ -80,10 +80,9 @@ class FTSSubmitAgent( AgentModule ):
     return self.__resources
 
   def initialize( self ):
-    """ agent's initialization
+    """ agent's initialization """
 
-    :param self: self reference
-    """
+    # # TODO: list indices must be integers not str
     ftsSites = self.ftsClient().getFTSSitesList()
     if not ftsSites["OK"]:
       self.log.error( "initialize: unable to get FTS sites list: %s" % ftsSites["Message"] )
