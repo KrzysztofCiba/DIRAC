@@ -89,9 +89,9 @@ class FTSManagerHandler( RequestHandler ):
       # # get FTSStrategy
       cls.ftsStrategy()
       # # every 10 minutes update RW access in FTSGraph
-      gThreadScheduler.addPeriodicTask( 10, cls.updateRWAccess )
-      # # every half an hour replace FTSGraph
-      gThreadScheduler.addPeriodicTask( int( FTSHistoryView.INTERVAL / 2 ) , cls.updateFTSStrategy )
+      gThreadScheduler.addPeriodicTask( 600, cls.updateRWAccess )
+      # # every hour replace FTSGraph
+      gThreadScheduler.addPeriodicTask( FTSHistoryView.INTERVAL , cls.updateFTSStrategy )
 
       schedule = cls.ftsStrategy().replicationTree( ["CERN-USER", "RAL-USER"], ["PIC-USER"], 1000000 )
       gLogger.always( schedule )
