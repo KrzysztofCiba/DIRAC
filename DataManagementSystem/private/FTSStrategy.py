@@ -61,16 +61,18 @@ class Route( Edge ):
   def timeToStart( self ):
     """ get time to start for this channel """
     successRate = 100.0
-    attempted = self.successfulAttempts + self.failedAttempts
+    attempted = self.SuccessfulFiles + self.FailedFiles
     if attempted:
-      successRate *= self.successfulAttempts / attempted
+      successRate *= self.SuccessfulFiles / attempted
     if successRate < self.acceptableFailureRate:
       if self.distinctFailedFiles > self.acceptableFailedFiles:
         return float( "inf" )
     # if self.status != "Active":
     #  return float( "inf" )
-    transferSpeed = { "File" : self.fileput, "Throughput" : self.throughput }[self.schedulingType]
-    waitingTransfers = { "File" : self.files, "Throughput" : self.size }[self.schedulingType]
+    transferSpeed = { "File": self.Fileput,
+                      "Throughput": self.Throughput }[self.SchedulingType]
+    waitingTransfers = { "File" : self.Files - self.SuccessfulFiles - self.FailedFiles,
+                         "Throughput" : self.Size - self.SuccessfulSize - self.FailedSize }[self.SchedulingType]
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
     return 0.0
@@ -125,9 +127,6 @@ class FTSGraph( Graph ):
       return sitesDict
     sitesDict = sitesDict["Value"]
 
-    ftsSitesNames = [ ftsSite.Name for ftsSite in ftsSites ]
-    self.log.always( ftsSitesNames )
-
     # # create nodes
     for ftsSite in ftsSites:
       rwDict = dict.fromkeys( sitesDict.get( ftsSite.Name ), {} )
@@ -140,14 +139,15 @@ class FTSGraph( Graph ):
     for sourceSite in self.nodes():
       for destSite in self.nodes():
 
-        rwAttrs = { "files": 0, "size": 0, "successfulAttempts": 0,
-                    "failedFiles": 0, "failedAttempts": 0, "failedSize": 0,
-                    "fileput": 0.0, "throughput": 0.0 }
+        rwAttrs = { "Files": 0, "Size": 0,
+                    "SuccessfulFiles": 0, "SuccessFulSize": 0,
+                    "FailedFiles": 0, "FailedSize": 0,
+                    "Fileput": 0.0, "Throughput": 0.0 }
 
         roAttrs = { "routeName": "%s#%s" % ( sourceSite.name, destSite.name ),
-                    "acceptableFailureRate": self.accFailureRate,
-                    "acceptableFailedFiles": self.accFailedFiles,
-                    "schedulingType": self.schedulingType }
+                    "AcceptableFailureRate": self.accFailureRate,
+                    "AcceptableFailedFiles": self.accFailedFiles,
+                    "SchedulingType": self.schedulingType }
 
         route = Route( sourceSite, destSite, rwAttrs, roAttrs )
         self.log.debug( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
@@ -161,16 +161,17 @@ class FTSGraph( Graph ):
         continue
       route = route["Value"]
 
-      route.files += ftsHistory.Files
-      route.size += ftsHistory.Size
+      route.Files += ftsHistory.Files
+      route.Size += ftsHistory.Size
 
-      route.failedAttempts += ftsHistory.FailedFiles
-      route.failedSize += ftsHistory.FailedSize
+      route.FailedFiles += ftsHistory.FailedFiles
+      route.FailedSize += ftsHistory.FailedSize
 
       if ftsHistory.Status in FTSJob.FINALSTATES:
-        route.successfulAttempts += ( ftsHistory.Files - ftsHistory.FailedFiles )
-        route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
-        route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
+        route.SuccessfulFiles += ( ftsHistory.Files - ftsHistory.FailedFiles )
+        route.SuccessfulSize += ( ftsHistory.Size - ftsHistory.FailedSize )
+        route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
+        route.Throughput = float( route.Size - route.FailedSize ) / FTSHistoryView.INTERVAL
 
     self.updateRWAccess()
     self.log.debug( "init done!" )
