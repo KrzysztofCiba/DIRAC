@@ -72,16 +72,13 @@ class Route( Edge ):
     """ get time to start for this channel """
     if not self.isActive:
       return float( "inf" )
-    transferSpeed = { "File": self.Fileput,
-                      "Throughput": self.Throughput }[self.SchedulingType]
+    transferSpeed = { "File": self.FilePut,
+                      "Throughput": self.ThroughPut }[self.SchedulingType]
     waitingTransfers = { "File" : self.WaitingFiles,
                          "Throughput": self.WaitingSize }[self.SchedulingType]
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
     return 0.0
-
-  def __str__( self ):
-    return "<route name='%s' timeToStart='%s' waitingFiles='%s' waitingSize='%s' fileput='%s' />" % ( self.name, self.timeToStart, self.WaitingFiles, self.WaitingSize, self.Fileput )
 
 class FTSGraph( Graph ):
   """
@@ -148,9 +145,10 @@ class FTSGraph( Graph ):
         rwAttrs = { "WaitingFiles": 0, "WaitingSize": 0,
                     "SuccessfulFiles": 0, "SuccessfulSize": 0,
                     "FailedFiles": 0, "FailedSize": 0,
-                    "Fileput": 0.0, "Throughput": 0.0 }
+                    "FilePut": 0.0, "ThroughPut": 0.0,
+                    "ActiveJobs": 0, "FinishedJobs": 0 }
 
-        roAttrs = { "routeName": "%s#%s" % ( sourceSite.name, destSite.name ),
+        roAttrs = { "routeName": "%s/%s" % ( sourceSite.name, destSite.name ),
                     "AcceptableFailureRate": self.accFailureRate,
                     "AcceptableFailedFiles": self.accFailedFiles,
                     "SchedulingType": self.schedulingType }
@@ -168,20 +166,24 @@ class FTSGraph( Graph ):
       route = route["Value"]
 
       if ftsHistory.Status in FTSJob.INITSTATES:
+        route.ActiveJobs += ftsHistory.FTSJobs
         route.WaitingFiles += ftsHistory.Files
         route.WaitingSize += ftsHistory.Size
       elif ftsHistory.Status in FTSJob.TRANSSTATES:
+        route.ActiveJobs += ftsHistory.FTSJobs
         route.WaitingSize += ftsHistory.Completeness * ftsHistory.Size / 100.0
         route.WaitingFiles += int( ftsHistory.Completeness * ftsHistory.Files / 100.0 )
       elif ftsHistory.Status in FTSJob.FAILEDSTATES:
+        route.FinishedJobs += ftsHistory.FTSJobs
         route.FailedFiles += ftsHistory.FailedFiles
         route.FailedSize += ftsHistory.FailedSize
       else:  # # FINISHEDSTATES
+        route.FinishedJobs += ftsHistory.FTSJobs
         route.SuccessfulFiles += ( ftsHistory.Files - ftsHistory.FailedFiles )
         route.SuccessfulSize += ( ftsHistory.Size - ftsHistory.FailedSize )
 
-      route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
-      route.Throughput = float( route.SuccessfulSize - route.FailedSize ) / FTSHistoryView.INTERVAL
+      route.FilePut = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
+      route.ThroughPut = float( route.SuccessfulSize - route.FailedSize ) / FTSHistoryView.INTERVAL
 
     self.updateRWAccess()
     self.log.debug( "init done!" )

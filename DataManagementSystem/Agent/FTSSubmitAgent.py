@@ -107,19 +107,18 @@ class FTSSubmitAgent( AgentModule ):
 
   def resetFTSGraph( self ):
     """ create fts graph """
-    log = gLogger.getSubLogger( "(re)setFTSGraph", True )
     ftsSites = self.ftsClient().getFTSSitesList()
     if not ftsSites["OK"]:
-      log.error( "unable to get FTS sites list: %s" % ftsSites["Message"] )
+      self.log.error( "resetFTSGraph: unable to get FTS sites list: %s" % ftsSites["Message"] )
       return ftsSites
     ftsSites = ftsSites["Value"]
     if not ftsSites:
-      log.error( "FTSSites list is empty, no records in FTSDB.FTSSite table?" )
+      self.log.error( "resetFTSGraph: FTSSites list is empty, no records in FTSDB.FTSSite table?" )
       return S_ERROR( "no FTSSites found" )
 
     ftsHistory = self.ftsClient().getFTSHistory()
     if not ftsHistory["OK"]:
-      log.error( "unable to get FTS history: %s" % ftsHistory["Message"] )
+      self.log.error( "resetFTSGraph: unable to get FTS history: %s" % ftsHistory["Message"] )
       return ftsHistory
     ftsHistory = ftsHistory["Value"]
 
@@ -129,9 +128,9 @@ class FTSSubmitAgent( AgentModule ):
     finally:
       self.updateLock().release()
 
-    log.info( "FTSSites:" )
+    self.log.info( "FTSSites:" )
     for i, ftsSite in enumerate( self.__ftsGraph.nodes() ):
-      log.info( " [%d] FTSSite: %-25s ServerURI: %s" % ( i, ftsSite.name, ftsSite.ServerURI ) )
+      self.log.info( " [%d] FTSSite: %-25s ServerURI: %s" % ( i, ftsSite.name, ftsSite.ServerURI ) )
 
     # # save graph stamp
     self.__ftsGraphValidStamp = datetime.datetime.now() + datetime.timedelta( seconds = self.FTSGRAPH_REFRESH )
