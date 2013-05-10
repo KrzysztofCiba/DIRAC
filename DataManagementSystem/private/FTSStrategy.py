@@ -90,21 +90,32 @@ class FTSGraph( Graph ):
                 name,
                 ftsSites = None,
                 ftsHistoryViews = None,
-                acceptableFailureRate = 0.75,
-                acceptableFailedFiles = 5,
+                accFailureRate = 0.75,
+                accFailedFiles = 5,
                 schedulingType = "Files" ):
-    """ c'tor """
+    """ c'tor
+
+    :param str name: graph name
+    :param list ftsSites: list with FTSSites
+    :param list ftshsitoryViews: list with FTSHistoryViews
+    :param float accFailureRate: acceptable failure rate
+    :param int accFailedFiles: acceptable failed files
+    :param str schedulingType: scheduling type
+    """
     Graph.__init__( self, "FTSGraph" )
     self.log = gLogger.getSubLogger( name, True )
-    self.acceptableFailureRate = acceptableFailureRate
-    self.acceptableFailedFiles = acceptableFailedFiles
+    self.accFailureRate = accFailureRate
+    self.accFailedFiles = accFailedFiles
     self.schedulingType = schedulingType
     self.initialize( ftsSites, ftsHistoryViews )
 
   def initialize( self, ftsSites = None, ftsHistoryViews = None ):
+    """ initialize FTSGraph  given FTSSites and FTSHistoryViews
 
-    """ initialize FTSGraph  """
-    self.log.always( "initializing FTS graph..." )
+    :param list ftsSites: list with FTSSites instances
+    :param list ftsHistoryViews: list with FTSHistoryViews instances
+    """
+    self.log.debug( "initializing FTS graph..." )
 
     ftsSites = ftsSites if ftsSites else []
     ftsHistoryViews = ftsHistoryViews if ftsHistoryViews else []
@@ -134,8 +145,8 @@ class FTSGraph( Graph ):
                     "fileput": 0.0, "throughput": 0.0 }
 
         roAttrs = { "routeName": "%s#%s" % ( sourceSite.name, destSite.name ),
-                    "acceptableFailureRate": self.acceptableFailureRate,
-                    "acceptableFailedFiles": self.acceptableFailedFiles,
+                    "acceptableFailureRate": self.accFailureRate,
+                    "acceptableFailedFiles": self.accFailedFiles,
                     "schedulingType": self.schedulingType }
 
         route = Route( sourceSite, destSite, rwAttrs, roAttrs )
@@ -160,7 +171,6 @@ class FTSGraph( Graph ):
         route.successfulAttempts += ( ftsHistory.Files - ftsHistory.FailedFiles )
         route.fileput = float( route.files - route.failedFiles ) / FTSHistoryView.INTERVAL
         route.throughput = float( route.size - route.failedSize ) / FTSHistoryView.INTERVAL
-        self.log.always( "AAAAAAAAAAAA fp = %s tp = %s" % ( route.fileput, route.throughput ) )
 
     self.updateRWAccess()
     self.log.debug( "init done!" )
@@ -182,7 +192,7 @@ class FTSGraph( Graph ):
 
     :param list seList: SE list
     """
-    self.log.info( "updating RW access..." )
+    self.log.debug( "updateRWAccess: updating RW access..." )
     for site in self.nodes():
       seList = site.SEs.keys()
       rwDict = dict.fromkeys( seList )
@@ -216,7 +226,7 @@ class FTSGraph( Graph ):
     for edge in self.edges():
       if fromSE in edge.fromNode.SEs and toSE in edge.toNode.SEs:
         return S_OK( edge )
-    return S_ERROR( "FTSGraph: unable to find FTS route between '%s' and '%s'" % ( fromSE, toSE ) )
+    return S_ERROR( "FTSGraph: unable to find route between '%s' and '%s'" % ( fromSE, toSE ) )
 
 
 ########################################################################
@@ -251,6 +261,8 @@ class FTSStrategy( object ):
 
     :param self: self reference
     :param str csPath: CS path
+    :param list ftsSites: list of FTSSites
+    :param list ftsHistoryViews: list of FTSHistoryViews
     """
     # ## config path
     self.csPath = csPath
@@ -305,7 +317,11 @@ class FTSStrategy( object ):
 
   @classmethod
   def resetGraph( cls, ftsSites, ftsHistoryViews ):
-    """ reset graph """
+    """ reset graph
+
+    :param list ftsSites: list of FTSSites
+    :param list ftsHistoryViews: list of FTSHistoryViews
+    """
     ftsGraph = None
     try:
       cls.graphLock().acquire()
@@ -341,7 +357,6 @@ class FTSStrategy( object ):
       try:
         self.graphLock().acquire()
         for route in self.ftsGraph.edges():
-          self.log.info( "checking route %s" % route.routeName )
           if route.routeName in replicationTree:
             self.log.always( "updating route %s size=%s files=%s timeToStart=%s" % ( route.routeName, route.size, route.files, route.timeToStart ) )
             route.size += size
