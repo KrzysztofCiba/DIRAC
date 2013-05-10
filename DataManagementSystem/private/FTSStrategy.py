@@ -47,6 +47,10 @@ class Site( Node ):
     """ check if SE is hosted at this site """
     return se in self.SEs
 
+  def __str__( self ):
+    return "<site name='%s' SEs='%s' />" % ( self.name, ",".join( self.SEs.kesy() ) )
+
+
 class Route( Edge ):
   """
   .. class:: Route

@@ -80,7 +80,7 @@ class FTSDBTests( unittest.TestCase ):
     self.submitted = 0
 
     self.ftsJobs = []
-    for i in range( 400 ):
+    for i in range( 5000 ):
 
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
