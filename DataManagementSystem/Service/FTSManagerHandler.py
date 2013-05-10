@@ -370,7 +370,10 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.error( isValid["Message"] )
       return isValid
     try:
-      return cls.__ftsDB.putFTSJob( ftsJob )
+      put = cls.__ftsDB.putFTSJob( ftsJob )
+      if not put["OK"]:
+        return S_ERROR( put["Message"] )
+      return S_OK()
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
