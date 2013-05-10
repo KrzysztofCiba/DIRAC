@@ -31,6 +31,8 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
+
 
 ########################################################################
 class FTSValidator( object ):
@@ -42,7 +44,8 @@ class FTSValidator( object ):
   # # required attributes in FTSLfn, FTSJob and FTSJobFile
   __reqAttrs = { FTSJob: { "attrs": [ "SourceSE", "TargetSE", "FTSServer", "Size"] },
                  FTSFile: { "attrs": [ "FileID", "OperationID", "LFN", "Checksum", "ChecksumType", "Size",
-                                       "SourceSE", "SourceSURL", "TargetSE", "TargetSURL" ] } }
+                                       "SourceSE", "SourceSURL", "TargetSE", "TargetSURL" ] },
+                 FTSSite: { "attrs": [] } }
 
   def __init__( self ):
     """ c'tor """
@@ -65,11 +68,11 @@ class FTSValidator( object ):
   def hasReqAttrs( cls, obj ):
     """ has required attributes set
 
-    :param mixed obj: FTSLfn, FTSJob of FTSJobFile instance
+    :param mixed obj: FTSFile, FTSJob of FTSSite instance
     """
     for objtype in cls.__reqAttrs:
       if isinstance( obj, objtype ):
-        for attr in cls.__reqAttrs[objtype]:
+        for attr in cls.__reqAttrs[objtype]["attrs"]:
           if not getattr( obj, attr ):
             return S_ERROR( "Missing property %s in %s" % ( attr, obj.__class__.__name__ ) )
       return S_OK()
@@ -78,12 +81,12 @@ class FTSValidator( object ):
   def hasFTSJobFiles( cls, obj ):
     """ check if FTSJob has FTSJobFiles
 
-    :param mixed obj: FTSLfn, FTSJob of FTSJobFile instance
+    :param mixed obj: FTSJob instance
     """
     if not isinstance( obj, FTSJob ):
       return S_OK()
     if not len( obj ):
-      return S_ERROR( "FTSJob is missing FTSJobFiles" )
+      return S_ERROR( "FTSJob is missing FTSFiles" )
     return S_OK()
 
 # # global instance
