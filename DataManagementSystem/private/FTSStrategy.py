@@ -81,6 +81,7 @@ class Route( Edge ):
       print "BBBBBBBBBBBBBBBBBBBBBBBB", transferSpeed
     return 0.0
 
+
 class FTSGraph( Graph ):
   """
   .. class:: FTSGraph
@@ -165,6 +166,9 @@ class FTSGraph( Graph ):
         continue
       route = route["Value"]
 
+      self.log.always( "AAA oute %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
+                       ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
+                         route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
       route.FailedFiles += ftsHistory.FailedFiles
       route.FailedSize += ftsHistory.FailedSize
@@ -176,13 +180,15 @@ class FTSGraph( Graph ):
         route.Files += ftsHistory.Files
         route.Size += ftsHistory.Size
 
-
-
       if ftsHistory.Status in FTSJob.FINALSTATES:
         route.SuccessfulFiles += ( ftsHistory.Files - ftsHistory.FailedFiles )
         route.SuccessfulSize += ( ftsHistory.Size - ftsHistory.FailedSize )
         route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
         route.Throughput = float( route.Size - route.FailedSize ) / FTSHistoryView.INTERVAL
+
+      self.log.always( "BBB oute %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
+                       ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
+                         route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
     self.updateRWAccess()
     self.log.debug( "init done!" )
