@@ -218,6 +218,8 @@ class FTSClient( Client ):
   def getFTSHistory( self ):
     """ get FTS history snapshot """
     getFTSHistory = self.ftsManager().getFTSHistory()
+    self.log.always( getFTSHistory["Value"] )
+
     if not getFTSHistory["OK"]:
       self.log.error( getFTSHistory["Message"] )
       return getFTSHistory
