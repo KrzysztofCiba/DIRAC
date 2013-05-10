@@ -88,7 +88,7 @@ class FTSDBTests( unittest.TestCase ):
       if ftsJob.Status in FTSJob.FINALSTATES:
         ftsJob.Completeness = 100.0
       if ftsJob.Status == "Active":
-        ftsJob.Completeness = 100.0
+        ftsJob.Completeness = random.randint( 1, 100 )
 
         
       ftsJob.SourceSE = ses[ i % len( ses ) ]
