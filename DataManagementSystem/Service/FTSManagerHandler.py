@@ -4,7 +4,6 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/08 14:24:08
 ########################################################################
-
 """ :mod: FTSManagerHandler
     =======================
 
@@ -14,9 +13,7 @@
 
     service handler for FTSDB using DISET
 """
-
 __RCSID__ = "$Id $"
-
 # #
 # @file FTSManagerHandler.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -24,8 +21,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSManagerHandler class.
 
 # # imports
-# # imports
-from types import DictType, LongType, ListType, StringTypes
+from types import DictType, LongType, ListType
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -39,7 +35,9 @@ from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.private.FTSHistoryView import FTSHistoryView
+# # for FTS scheduling
 from DIRAC.DataManagementSystem.private.FTSStrategy import FTSStrategy
+# # for FTS objects validation
 from DIRAC.DataManagementSystem.private.FTSValidator import FTSValidator
 
 
@@ -364,7 +362,7 @@ class FTSManagerHandler( RequestHandler ):
     except Exception, error:
       gLogger.exception( error )
       return S_ERROR( error )
- 
+
     isValid = cls.ftsValidator().validate( ftsJob )
     if not isValid["OK"]:
       gLogger.error( isValid["Message"] )
