@@ -48,6 +48,7 @@ class FTSHistoryView( object ):
     self.__data__["FailedFiles"] = 0
     self.__data__["FailedSize"] = 0
     self.__data__["FTSJobs"] = 0
+    self.__data__["Completeness"] = 0.0
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown FTSHistoryView attribute '%s'" % key )
@@ -179,6 +180,7 @@ class FTSHistoryView( object ):
   def Completeness( self, value ):
     """ completeness setter  """
     self.__data__["Completeness"] = float( value ) if value else 0.0
+
   def toJSON( self ):
     """ serialize to JSON format """
     return S_OK( self.__data__ )
