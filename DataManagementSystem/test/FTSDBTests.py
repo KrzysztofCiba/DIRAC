@@ -91,7 +91,7 @@ class FTSDBTests( unittest.TestCase ):
         ftsJob.Completeness = 100
       if ftsJob.Status == "Active":
         ftsJob.Completeness = 30
-        
+
       ftsJob.SourceSE = ses[ i % len( ses ) ]
       ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
 
@@ -104,7 +104,7 @@ class FTSDBTests( unittest.TestCase ):
       ftsFile.TargetSE = ftsJob.TargetSE
       ftsFile.SourceSURL = "foo://source.bar.baz/%s" % ftsFile.LFN
       ftsFile.TargetSURL = "foo://target.bar.baz/%s" % ftsFile.LFN
-      ftsFile.Status = "Waiting"
+      ftsFile.Status = "Waiting" if ftsJob.Status != "FinishedDirty" else "Failed"
       ftsFile.FTSGUID = ftsJob.FTSGUID
 
       ftsJob.addFile( ftsFile )
