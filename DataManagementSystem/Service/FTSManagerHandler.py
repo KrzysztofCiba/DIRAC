@@ -135,14 +135,12 @@ class FTSManagerHandler( RequestHandler ):
         gLogger.warn( "unable to read FTSSites: %s" % ftsSites["Message"] )
         ftsSites["Value"] = []
       ftsSites = ftsSites["Value"]
-      gLogger.always( "ftsSites: %s" % ftsSites )
 
       ftsHistory = cls.__ftsDB.getFTSHistory()
       if not ftsHistory["OK"]:
         gLogger.warn( "unable to get FTSHistory for FTSStrategy: %s" % ftsHistory["Message"] )
         ftsHistory["Value"] = []
       ftsHistory = ftsHistory["Value"]
-      gLogger.always( "ftsHistory: %s" % ftsHistory )
 
       cls.__ftsStrategy = FTSStrategy( csPath, ftsSites, ftsHistory )
 
