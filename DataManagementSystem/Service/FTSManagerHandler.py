@@ -350,11 +350,16 @@ class FTSManagerHandler( RequestHandler ):
   @classmethod
   def export_putFTSJob( cls, ftsJobJSON ):
     """ put FTSLfn into FTSDB """
+    gLogger.always( ftsJobJSON )
+
     ftsFiles = []  # ftsJobJSON.get( "FTSFiles", [] )
+
     if "FTSFiles" in ftsJobJSON:
       ftsFiles = ftsJobJSON.get( "FTSFiles", [] )
       del ftsJobJSON["FTSFiles"]
+
     ftsJob = FTSJob( ftsJobJSON )
+
     if not ftsJob["OK"]:
       gLogger.error( ftsJob["Message"] )
       return ftsJob
