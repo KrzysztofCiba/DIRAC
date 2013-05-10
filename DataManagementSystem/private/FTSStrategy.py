@@ -73,6 +73,9 @@ class Route( Edge ):
                       "Throughput": self.Throughput }[self.SchedulingType]
     waitingTransfers = { "File" : self.Files - self.SuccessfulFiles - self.FailedFiles,
                          "Throughput" : self.Size - self.SuccessfulSize - self.FailedSize }[self.SchedulingType]
+
+    print "AAAAAAAAAAAAAAAAAAAAAAAAAA", transferSpeed, waitingTransfers
+
     if transferSpeed:
       return waitingTransfers / float( transferSpeed )
     return 0.0
@@ -167,6 +170,7 @@ class FTSGraph( Graph ):
       route.FailedFiles += ftsHistory.FailedFiles
       route.FailedSize += ftsHistory.FailedSize
 
+
       if ftsHistory.Status in FTSJob.FINALSTATES:
         route.SuccessfulFiles += ( ftsHistory.Files - ftsHistory.FailedFiles )
         route.SuccessfulSize += ( ftsHistory.Size - ftsHistory.FailedSize )
@@ -235,7 +239,7 @@ class FTSStrategy( object ):
   """
   .. class:: FTSStrategy
 
-  helper class to create replication forrest for a given file and it's replicas using
+  helper class to create replication forest for a given file and it's replicas using
   several different strategies
   """
   # # make it singleton
