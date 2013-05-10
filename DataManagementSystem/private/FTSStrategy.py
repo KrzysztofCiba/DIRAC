@@ -48,7 +48,7 @@ class Site( Node ):
     return se in self.SEs
 
   def __str__( self ):
-    return "<site name='%s' SEs='%s' />" % ( self.name, ",".join( self.SEs.kesy() ) )
+    return "<site name='%s' SEs='%s' />" % ( self.name, ",".join( self.SEs.keys() ) )
 
 
 class Route( Edge ):
