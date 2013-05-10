@@ -132,7 +132,7 @@ class FTSSubmitAgent( AgentModule ):
     """ agent's initialization """
 
     self.FTSGRAPH_REFRESH = self.am_getOption( "FTSGraphValidityPeriod", self.FTSGRAPH_REFRESH )
-    self.log.info( "FTSGraph validity period = %s s" % self.FTSGRAPH_REFRESH )
+    self.log.info( "FTSGraph validity period       = %s s" % self.FTSGRAPH_REFRESH )
     self.RW_REFRESH = self.am_getOption( "RWAccessValidityPeriod", self.RW_REFRESH )
     self.log.info( "SEs R/W access validity period = %s s" % self.RW_REFRESH )
 
@@ -143,17 +143,17 @@ class FTSSubmitAgent( AgentModule ):
       return createGraph
 
     self.MAX_JOBS_PER_ROUTE = self.am_getOption( "MaxJobsPerChannel", self.MAX_JOBS_PER_ROUTE )
-    self.log.info( "Max FTSJobs/route = %s" % self.MAX_JOBS_PER_ROUTE )
+    self.log.info( "Max FTSJobs/route              = %s" % self.MAX_JOBS_PER_ROUTE )
     self.MAX_FILES_PER_JOB = self.am_getOption( "MaxFilesPerJob", self.MAX_FILES_PER_JOB )
-    self.log.info( "Max FTSFiles/FTSJob = %d" % self.MAX_FILES_PER_JOB )
+    self.log.info( "Max FTSFiles/FTSJob            = %d" % self.MAX_FILES_PER_JOB )
 
     # # thread pool
     self.MIN_THREADS = self.am_getOption( "MinThreads", self.MIN_THREADS )
     self.MAX_THREADS = self.am_getOption( "MaxThreads", self.MAX_THREADS )
     minmax = ( abs( self.MIN_THREADS ), abs( self.MAX_THREADS ) )
     self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
-    self.log.info( "ThreadPool min threads = %s" % self.MIN_THREADS )
-    self.log.info( "ThreadPool max threads = %s" % self.MAX_THREADS )
+    self.log.info( "ThreadPool min threads         = %s" % self.MIN_THREADS )
+    self.log.info( "ThreadPool max threads         = %s" % self.MAX_THREADS )
 
     # This sets the Default Proxy to used as that defined under
     # /Operations/Shifter/DataManager
