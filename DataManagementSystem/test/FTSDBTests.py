@@ -26,6 +26,7 @@ __RCSID__ = "$Id $"
 # # imports
 import unittest
 import uuid
+import random
 from DIRAC import gConfig
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
@@ -84,9 +85,15 @@ class FTSDBTests( unittest.TestCase ):
       ftsJob.FTSGUID = str( uuid.uuid4() )
       ftsJob.FTSServer = "https://fts.service.org"
       ftsJob.Status = statuses[ i % len( statuses ) ]
+      if ftsJob.Status in FTSJob.FINALSTATES:
+        ftsJob.Completeness = random.randint( 1, 100 )
+      if ftsJob.Status == "Finished":
+        ftsJob.Completeness = 100.0
+
+        
       ftsJob.SourceSE = ses[ i % len( ses ) ]
       ftsJob.TargetSE = ses[ ( i + 1 ) % len( ses ) ]
-
+      i
       ftsFile = FTSFile()
       ftsFile.FileID = i + 1
       ftsFile.OperationID = 9999
