@@ -160,13 +160,16 @@ class FTSGraph( Graph ):
 
     for ftsHistory in ftsHistoryViews:
 
+
+
       route = self.findRoute( ftsHistory.SourceSE, ftsHistory.TargetSE )
       if not route["OK"]:
         self.log.warn( "route between %s and %s not found" % ( ftsHistory.SourceSE, ftsHistory.TargetSE ) )
         continue
       route = route["Value"]
 
-      self.log.always( "AAA oute %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
+      self.log.always( "AAA %s" % ftsHistory.toJSON()["Value"] )
+      self.log.always( "AAA route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
                        ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
                          route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
@@ -186,7 +189,7 @@ class FTSGraph( Graph ):
         route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
         route.Throughput = float( route.Size - route.FailedSize ) / FTSHistoryView.INTERVAL
 
-      self.log.always( "BBB oute %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
+      self.log.always( "BBB route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
                        ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
                          route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
 
