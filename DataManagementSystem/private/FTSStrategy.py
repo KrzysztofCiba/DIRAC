@@ -168,6 +168,8 @@ class FTSGraph( Graph ):
         continue
       route = route["Value"]
 
+      t1 = route.timeToStart
+
       self.log.always( "AAA %s" % ftsHistory.toJSON()["Value"] )
       self.log.always( "AAA route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
                        ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
@@ -189,9 +191,13 @@ class FTSGraph( Graph ):
         route.Fileput = float( route.SuccessfulFiles - route.FailedFiles ) / FTSHistoryView.INTERVAL
         route.Throughput = float( route.Size - route.FailedSize ) / FTSHistoryView.INTERVAL
 
+      t2 = route.timeToStart
+
       self.log.always( "BBB route %s files %s size %s successful files %s successful size %s failed files %s failed size %s fileput %s throughput %s timetoStart %s" % \
                        ( route.name, route.Files, route.Size, route.SuccessfulFiles, route.SuccessfulSize,
                          route.FailedFiles, route.FailedSize, route.Fileput, route.Throughput, route.timeToStart ) )
+
+      self.log.always( "t1 t2 diff %s %s %s" % ( t1, t2, t2 - t1 ) )
 
     self.updateRWAccess()
     self.log.debug( "init done!" )
