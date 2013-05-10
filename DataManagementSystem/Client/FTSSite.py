@@ -50,6 +50,7 @@ class FTSSite( Record ):
     :param dict fromDict: data dict
     """
     Record.__init__( self )
+    self.__date__["MaxActiveJobs"] = 50
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
@@ -62,7 +63,8 @@ class FTSSite( Record ):
     return { "Fields" :
              { "FTSSiteID": "INTEGER NOT NULL AUTO_INCREMENT",
                "Name": "VARCHAR(255) NOT NULL",
-               "ServerURI":  "VARCHAR(255)" },
+               "ServerURI":  "VARCHAR(255)",
+               "MaxActiveJobs": "INTEGER NOT NULL DEFAULT 50" },
              "PrimaryKey": [ "FTSSiteID" ] }
 
   @property
@@ -94,6 +96,16 @@ class FTSSite( Record ):
   def ServerURI( self, value ):
     """ server uri setter """
     self.__data__["ServerURI"] = value
+
+  @property
+  def MaxActiveJobs( self ):
+    """ max active jobs """
+    return self.__data__["MaxActiveJobs"]
+
+  @MaxActiveJobs.setter
+  def MaxActiveJobs(self, value):
+    """ max active jobs setter """
+    self.__data__["MaxActiveJobs"] = int( value ) if value else 50
 
   def toXML( self, dumpToStr = False ):
     """ serialize FTS site to XML

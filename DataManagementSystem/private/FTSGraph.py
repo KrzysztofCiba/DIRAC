@@ -4,9 +4,9 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/10 20:02:32
 ########################################################################
-""" :mod: FTSGraph 
+""" :mod: FTSGraph
     ==============
- 
+
     .. module: FTSGraph
     :synopsis: FTS graph
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -14,13 +14,13 @@
     nodes are FTS sites sites and edges are routes between them
 """
 __RCSID__ = "$Id: $"
-##
+# #
 # @file FTSGraph.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/05/10 20:03:00
 # @brief Definition of FTSGraph class.
 
-## imports 
+# # imports
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Graph import Graph, Node, Edge
@@ -132,10 +132,16 @@ class FTSGraph( Graph ):
 
     # # create nodes
     for ftsSite in ftsSites:
-      rwDict = dict.fromkeys( sitesDict.get( ftsSite.Name ), {} )
-      for se in rwDict:
-        rwDict[se] = { "read": False, "write": False }
-      site = Site( ftsSite.Name, {"SEs": rwDict, "ServerURI": ftsSite.ServerURI } )
+      rwSEsDict = dict.fromkeys( sitesDict.get( ftsSite.Name ), {} )
+      for se in rwSEsDict:
+        rwSEsDict[se] = { "read": False, "write": False }
+
+      rwAttrs = { "SEs": rwSEsDict }
+      roAttrs = { "ServerURI": ftsSite.ServerURI,
+                  "FTSSiteID": ftsSite.FTSSiteID,
+                  "MaxActiveJobs": ftsSite.MaxActiveJobs }
+      site = Site( ftsSite.Name, rwAttrs, roAttrs )
+
       self.log.debug( "adding site %s using ServerURI %s" % ( ftsSite.Name, ftsSite.ServerURI ) )
       self.addNode( site )
 
