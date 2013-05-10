@@ -324,7 +324,7 @@ class FTSDB( DB ):
     """ get DB summary """
     # # this will be returned
     retDict = { "FTSSite": {}, "FTSJob": {}, "FTSFile": {}, "FTSHistory": {} }
-    transQueries = { "SELECT COUNT(*) FROM `FTSSite`;": "FTSSite",
+    transQueries = { "SELECT * FROM `FTSSite`;": "FTSSite",
                     "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
                      "SELECT `Status`, COUNT(`Status`) FROM `FTSFile` GROUP BY `Status`;" : "FTSFile",
                      "SELECT * FROM `FTSHistoryView`;": "FTSHistory" }
