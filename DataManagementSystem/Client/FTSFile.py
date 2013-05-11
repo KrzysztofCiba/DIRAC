@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 import re
+import datetime
 import xml.etree.ElementTree as ElementTree
 from xml.parsers.expat import ExpatError
 # # from DIRAC
@@ -49,6 +50,9 @@ class FTSFile( Record ):
     self._parent = None
     self.__data__["Status"] = "Waiting"
     self.__data__["Attempt"] = 0
+    now = datetime.datetime.now()
+    self.__data__["CreationTime"] = now
+    self.__data__["LastUpdate"] = now
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
@@ -66,6 +70,8 @@ class FTSFile( Record ):
                "Attempt": "INTEGER NOT NULL DEFAULT 0",
                "Checksum": "VARCHAR(64)",
                "ChecksumType": "ENUM('ADLER32', 'MD5', 'SHA1', 'NONE') DEFAULT 'ADLER32'",
+               "CreationTime" : "DATETIME",
+               "LastUpdate" : "DATETIME",
                "Size": "INTEGER NOT NULL",
                "FTSGUID":  "VARCHAR(64)",
                "SourceSE": "VARCHAR(128) NOT NULL",
@@ -137,6 +143,34 @@ class FTSFile( Record ):
     if not os.path.isabs( value ):
       raise ValueError( "LFN should be an absolute path!" )
     self.__data__["LFN"] = value
+
+  @property
+  def CreationTime( self ):
+    """ creation time getter """
+    return self.__data__["CreationTime"]
+
+  @CreationTime.setter
+  def CreationTime( self, value = None ):
+    """ creation time setter """
+    if type( value ) not in ( datetime.datetime, str ) :
+      raise TypeError( "CreationTime should be a datetime.datetime!" )
+    if type( value ) == str:
+      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    self.__data__["CreationTime"] = value
+
+  @property
+  def LastUpdate( self ):
+    """ last update getter """
+    return self.__data__["LastUpdate"]
+
+  @LastUpdate.setter
+  def LastUpdate( self, value = None ):
+    """ last update setter """
+    if type( value ) not in  ( datetime.datetime, str ):
+      raise TypeError( "LastUpdate should be a datetime.datetime!" )
+    if type( value ) == str:
+      value = datetime.datetime.strptime( value.split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    self.__data__["LastUpdate"] = value
 
   @property
   def Attempt( self ):
@@ -256,7 +290,6 @@ class FTSFile( Record ):
     return S_OK( dict( zip( self.__data__.keys(),
                       [ val if val != None else "" for val in self.__data__.values() ] ) ) )
 
-
   def toXML( self, dumpToStr = False ):
     """ serialize file to XML
 
@@ -264,6 +297,8 @@ class FTSFile( Record ):
     """
     dumpToStr = bool( dumpToStr )
     attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
+    attrs["CreationTime"] = self.CreationTime.isoformat( " " ).split( "." )[0] if self.CreationTime else ""
+    attrs["LastUpdate"] = self.LastUpdate.isoformat( " " ).split( "." )[0] if self.LastUpdate else ""
     el = ElementTree.Element( "ftsfile", attrs )
     return S_OK( { False: el, True: ElementTree.tostring( el ) }[dumpToStr] )
 
@@ -284,7 +319,8 @@ class FTSFile( Record ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) == str else str( value ) )
                 for column, value in self.__data__.items()
-                if value and column != "FTSFileID" ]
+                if value and column not in ( "FTSFileID", "LastUpdate" )  ]
+    colVals.append( ( "LastUpdate", "UTC_TIMESTAMP()" ) )
     query = []
     if self.FTSFileID:
       query.append( "UPDATE `FTSFile` SET " )
