@@ -81,7 +81,11 @@ class FTSMonitorAgent( AgentModule ):
     """ agent's initialization """
 
     # # gMonitor stuff over here
-    gMonitor.registerActivity( "FTSMonitorAtt", "Monitored FTSJobs",
+    gMonitor.registerActivity( "FTSMonitorAtt", "FTSJobs monitor attempts",
+                               "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSMonitorOK", "Successful FTSJobs monitor attempts",
+                               "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "FTSMonitorAtt", "Failed FTSJobs monitor attempts",
                                "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
