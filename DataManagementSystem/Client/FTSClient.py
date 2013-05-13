@@ -103,20 +103,22 @@ class FTSClient( Client ):
     getFTSSitesList = getFTSSitesList["Value"]
     return S_OK( [ FTSSite( ftsSite ) for ftsSite in getFTSSitesList ] )
 
-  def getFTSFileList( self, statusList = None ):
+  def getFTSFileList( self, statusList = None, limit = None ):
     """ get list of FTSFiles with status in statusList """
     statusList = statusList if statusList else [ "Waiting" ]
-    getFTSFileList = self.ftsManager().getFTSFileList( statusList )
+    limit = limit if limit else 1000
+    getFTSFileList = self.ftsManager().getFTSFileList( statusList, limit )
     if not getFTSFileList["OK"]:
       self.log.error( "getFTSFileList: %s" % getFTSFileList["Message"] )
       return getFTSFileList
     getFTSFileList = getFTSFileList["Value"]
     return S_OK( [ FTSFile( ftsFile ) for ftsFile in getFTSFileList ] )
 
-  def getFTSJobList( self, statusList = None ):
+  def getFTSJobList( self, statusList = None, limit = None ):
     """ get FTSJobs wit statues in :statusList: """
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
-    getFTSJobList = self.ftsManager().getFTSJobList( statusList )
+    limit = limit if limit else 500
+    getFTSJobList = self.ftsManager().getFTSJobList( statusList, limit )
     if not getFTSJobList["OK"]:
       self.log.error( "getFTSJobList: %s" % getFTSJobList["Message"] )
       return getFTSJobList
