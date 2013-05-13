@@ -85,7 +85,7 @@ class FTSMonitorAgent( AgentModule ):
                                "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSMonitorOK", "Successful FTSJobs monitor attempts",
                                "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "FTSMonitorAtt", "Failed FTSJobs monitor attempts",
+    gMonitor.registerActivity( "FTSMonitorFail", "Failed FTSJobs monitor attempts",
                                "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
@@ -187,6 +187,25 @@ class FTSMonitorAgent( AgentModule ):
     targetSE = ftsJob.TargetSE
 
     log.info( "monitorTransfer: %s at %s" % ( ftsGUID, ftsServer ) )
+
+    monitor = ftsJob.monitorFTS2()
+    if not monitor["OK"]:
+      gMonitor.addMark( "FTSMonitorFail", 1 )
+      log.error( monitor["Message"] )
+      return monitor
+    monitor = monitor["Value"]
+
+    # # monitor status change
+    gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
+
+    # # list of files to reschedule
+    toReschedule = monitor.get( "toReschedule", [] )
+    # # list of files to register
+    toRegister = monitor.get( "toRegister", [] )
+
+    gMonitor.addMark( "FTSMonitorOK", 1 )
+    return S_OK()
+
 
     #########################################################################
     # Perform summary update of the FTS Request and update FTSReq entries.
