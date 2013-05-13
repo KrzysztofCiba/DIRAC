@@ -459,9 +459,10 @@ class FTSManagerHandler( RequestHandler ):
 
   types_getFTSFileList = [ ListType, IntType ]
   @classmethod
-  def export_getFTSFileList( cls, statusList = None, limit = 1000 ):
+  def export_getFTSFileList( cls, statusList = None, limit = None ):
     """ get FTSFiles with status in :statusList: """
     statusList = statusList if statusList else [ "Waiting" ]
+    limit = limit if limit else 1000
     try:
       getFTSFileList = cls.__ftsDB.getFTSFileList( statusList, limit )
       if not getFTSFileList["OK"]:
