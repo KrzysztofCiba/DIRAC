@@ -113,6 +113,16 @@ class FTSClient( Client ):
     getFTSFileList = getFTSFileList["Value"]
     return S_OK( [ FTSFile( ftsFile ) for ftsFile in getFTSFileList ] )
 
+  def getFTSJobList( self, statusList = None ):
+    """ get FTSJobs wit statues in :statusList: """
+    statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
+    getFTSJobList = self.ftsManager().getFTSJobList( statusList )
+    if not getFTSJobList["OK"]:
+      self.log.error( "getFTSJobList: %s" % getFTSJobList["Message"] )
+      return getFTSJobList
+    getFTSJobList = getFTSJobList["Value"]
+    return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getFTSJobList ] )
+
 
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into FTSDB
