@@ -482,7 +482,7 @@ class FTSManagerHandler( RequestHandler ):
     """ get FTSJobs with statuses in :statusList: """
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     try:
-      ftsJobs = cls.__ftsDB.getFTSJobsList( statusList )
+      ftsJobs = cls.__ftsDB.getFTSJobList( statusList )
       if not ftsJobs["OK"]:
         gLogger.error( "getFTSJobList: %s" % ftsJobs["Message"] )
         return ftsJobs
