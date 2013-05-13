@@ -165,8 +165,13 @@ class FTSManagerHandler( RequestHandler ):
     :param list sourceSEs: source SEs
     :param list targetSEs: target SEs
     """
+
     lfn = fileJSON.get( "LFN", "" )
     size = fileJSON.get( "Size", 0 )
+    fileID = fileJSON.get( "FileID", 0 )
+    opID = fileJSON.get( "OperationID", 0 )
+
+    gLogger.info( "ftsSchedule: LFN=%s FileID=%s OperationID=%s" % ( lfn, fileID, opID ) )
 
     replicaDict = self.replicaManager().getActiveReplicas( lfn )
     if not replicaDict["OK"]:
@@ -184,8 +189,7 @@ class FTSManagerHandler( RequestHandler ):
 
     ftsFiles = []
 
-    for path in tree:
-      repDict = tree[path]
+    for route, repDict in tree.items():
       gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
                                                                           repDict["SourceSE"], repDict["TargetSE"] ) )
       transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, {} )
