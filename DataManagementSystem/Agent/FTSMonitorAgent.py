@@ -94,8 +94,8 @@ class FTSMonitorAgent( AgentModule ):
     self.MAX_THREADS = self.am_getOption( "MaxThreads", self.MAX_THREADS )
     minmax = ( abs( self.MIN_THREADS ), abs( self.MAX_THREADS ) )
     self.MIN_THREADS, self.MAX_THREADS = min( minmax ), max( minmax )
-    self.log.info( "ThreadPool min threads = %s" % self.minThreads )
-    self.log.info( "ThreadPool max threads = %s" % self.maxThreads )
+    self.log.info( "ThreadPool min threads = %s" % self.MIN_THREADS )
+    self.log.info( "ThreadPool max threads = %s" % self.MAX_THREADS )
 
     return S_OK()
 
