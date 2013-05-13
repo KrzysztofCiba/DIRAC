@@ -53,7 +53,7 @@ class RequestManagerHandler( RequestHandler ):
     """ get requestID for given :requestName: """
     requestID = requestName
     if type( requestName ) in StringTypes:
-      result = cls.requestDB.getRequestProperties( requestName, [ "RequestID" ] )
+      result = cls.__requestDB.getRequestProperties( requestName, [ "RequestID" ] )
       if not result["OK"]:
         return result
       requestID = result["Value"]
@@ -81,7 +81,7 @@ class RequestManagerHandler( RequestHandler ):
         return valid
       requestName = request.RequestName
       gLogger.info( "RequestManagerHandler.putRequest: Attempting to set request '%s'" % requestName )
-      return cls.requestDB.putRequest( request )
+      return cls.__requestDB.putRequest( request )
     except Exception, error:
       errStr = "RequestManagerHandler.putRequest: Exception while setting request."
       gLogger.exception( errStr, requestName, lException = error )
@@ -93,7 +93,7 @@ class RequestManagerHandler( RequestHandler ):
     """ Get the summary of requests in the Request DB """
     gLogger.info( "RequestManagerHandler.getDBSummary: Attempting to obtain database summary." )
     try:
-      return cls.requestDB.getDBSummary()
+      return cls.__requestDB.getDBSummary()
     except Exception, error:
       errStr = "RequestManagerHandler.getDBSummary: Exception while getting database summary."
       gLogger.exception( errStr, lException = error )
@@ -105,7 +105,7 @@ class RequestManagerHandler( RequestHandler ):
     """ Get a request of given type from the database """
     gLogger.info( "RequestHandler.getRequest: Attempting to get request" )
     try:
-      getRequest = cls.requestDB.getRequest( requestName )
+      getRequest = cls.__requestDB.getRequest( requestName )
       if not getRequest["OK"]:
         gLogger.error( "RequestHandler.getRequest: %s" % getRequest["Message"] )
         return getRequest
@@ -125,7 +125,7 @@ class RequestManagerHandler( RequestHandler ):
     """ peek request given its name """
     gLogger.info( "RequestHandler.peekRequest: Attempting to get request" )
     try:
-      peekRequest = cls.requestDB.peekRequest( requestName )
+      peekRequest = cls.__requestDB.peekRequest( requestName )
       if not peekRequest["OK"]:
         gLogger.error( "RequestHandler.peekRequest: %s" % peekRequest["Message"] )
         return peekRequest
@@ -151,7 +151,7 @@ class RequestManagerHandler( RequestHandler ):
     """
     gLogger.info( "RequestManagerHandler.getRequestSummeryWeb called" )
     try:
-      return cls.requestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
+      return cls.__requestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
     except Exception, error:
       errStr = "RequestManagerHandler.getRequestSummaryWeb: Exception while getting request."
       gLogger.exception( errStr, lException = error )
@@ -163,7 +163,7 @@ class RequestManagerHandler( RequestHandler ):
     """ Delete the request with the supplied name"""
     gLogger.info( "deleteRequest: Deleting request '%s'..." % requestName )
     try:
-      return cls.requestDB.deleteRequest( requestName )
+      return cls.__requestDB.deleteRequest( requestName )
     except Exception, error:
       errStr = "deleteRequest: Exception which deleting request '%s'." % requestName
       gLogger.exception( errStr, lException = error )
@@ -175,7 +175,7 @@ class RequestManagerHandler( RequestHandler ):
     """ Select the request names for supplied jobIDs """
     gLogger.info( "getRequestNamesForJobs: Attempting to get request names for %s jobs." % len( jobIDs ) )
     try:
-      return cls.requestDB.getRequestNamesForJobs( jobIDs )
+      return cls.__requestDB.getRequestNamesForJobs( jobIDs )
     except Exception, error:
       errStr = "getRequestNamesForJobs: Exception which getting request names."
       gLogger.exception( errStr, '', lException = error )
@@ -187,7 +187,7 @@ class RequestManagerHandler( RequestHandler ):
     """ read requests for jobs given list of jobIDs """
     gLogger.verbose( "readRequestsForJobs: Attempting to read requests associated to the jobs." )
     try:
-      res = cls.requestDB.readRequestsForJobs( jobIDs )
+      res = cls.__requestDB.readRequestsForJobs( jobIDs )
       return res
     except Exception, error:
       errStr = "readRequestsForJobs: Exception while selecting requests."
@@ -204,7 +204,7 @@ class RequestManagerHandler( RequestHandler ):
     """
     gLogger.verbose( "RequestManagerHandler.getDigest: Attempting to get digest for request '%s'" % requestName )
     try:
-      return cls.requestDB.getDigest( requestName )
+      return cls.__requestDB.getDigest( requestName )
     except Exception , error:
       errStr = "RequestManagerHandler.getDigest: exception when getting digest for '%s'" % requestName
       gLogger.exception( errStr, '', lException = error )
