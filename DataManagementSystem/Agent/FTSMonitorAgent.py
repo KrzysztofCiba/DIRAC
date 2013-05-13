@@ -182,23 +182,24 @@ class FTSMonitorAgent( AgentModule ):
     """
     log = gLogger.getSubLogger( sTJId )
 
-    ftsJobID = ftsJob.FTSJobID
-    ftsGUID = ftsJob.FTSGUID
-    ftsServer = ftsJob.FTSServer
-    sourceSE = ftsJob.SourceSE
-    targetSE = ftsJob.TargetSE
-
-    log.info( "%s at %s" % ( ftsGUID, ftsServer ) )
+    log.info( "%s at %s" % ( ftsJob.FTSGUID, ftsJob.FTSServer ) )
 
     monitor = ftsJob.monitorFTS2()
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
+      if "getTransferJobSummary2: Not authorised to query request" in res["Message"]:
+        log.error( "FTSJob expired at server" )
+        return self.cleanUpExpiredJob( ftsJob )
       return monitor
     monitor = monitor["Value"]
 
     # # monitor status change
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
+
+    if ftsJob.Status in FTSJob.FINALSTATES:
+
+      pass
 
     # # list of files to reschedule
     # toReschedule = monitor.get( "toReschedule", [] )
@@ -212,6 +213,27 @@ class FTSMonitorAgent( AgentModule ):
       return putFTSJob
 
     gMonitor.addMark( "FTSMonitorOK", 1 )
+    return S_OK()
+
+
+  def resetFiles( self, ftsJob ):
+    """ clean up when FTS job had expired on the server side
+
+    :param FTSJob ftsJob: FTSJob instance
+    """
+
+    for ftsFile in ftsJob:
+      ftsFile.Status = "Waiting"
+      ftsFile.FTSGUID = ""
+      ftsFile.Error = "FTSJob expired on server"
+      putFile = self.ftsClient().putFTSFile( ftsFile )
+      if not putFile["OK"]:
+        pass
+    ftsJob.Status = "Failed"
+    putJob = self.ftsClient()
+    if not putJob["OK"]:
+      pass
+
     return S_OK()
 
 
