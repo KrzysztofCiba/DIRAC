@@ -121,7 +121,7 @@ class FTSMonitorAgent( AgentModule ):
     for ftsJob in ftsJobs:
       sTJId = "monitor-%s/%s" % ( enqueued, ftsJob.FTSJobID )
       while True:
-        self.log.debug( "submitting FTSJob %s" % ( enqueued, ftsJob.FTSJobID ) )
+        self.log.debug( "submitting FTSJob %s to monitor" % ( ftsJob.FTSJobID ) )
         ret = self.threadPool().generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, sTJId ), sTJId = sTJId )
         if ret["OK"]:
           gMonitor.addMark( "FTSMonitorAtt", 1 )
