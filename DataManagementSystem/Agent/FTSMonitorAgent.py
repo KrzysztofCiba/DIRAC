@@ -108,20 +108,22 @@ class FTSMonitorAgent( AgentModule ):
 
     ftsJobs = self.ftsClient().getFTSJobList()
     if not ftsJobs["OK"]:
-      self.log.error( "Failed to get FTSJobs: %s" % ftsJobs["Message"] )
+      self.log.error( "execute: failed to get FTSJobs: %s" % ftsJobs["Message"] )
       return ftsJobs
 
     ftsJobs = ftsJobs["Value"]
 
     if not ftsJobs:
-      self.log.info( "No active FTS jobs found." )
+      self.log.info( "execute: no active FTS jobs found." )
       return S_OK()
+
+    self.log.info( "execute: found %s FTSJobs to monitor" % len( ftsJobs ) )
 
     enqueued = 1
     for ftsJob in ftsJobs:
       sTJId = "monitor-%s/%s" % ( enqueued, ftsJob.FTSJobID )
       while True:
-        self.log.debug( "submitting FTSJob %s to monitor" % ( ftsJob.FTSJobID ) )
+        self.log.debug( "execute: submitting FTSJob %s to monitor" % ( ftsJob.FTSJobID ) )
         ret = self.threadPool().generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, sTJId ), sTJId = sTJId )
         if ret["OK"]:
           gMonitor.addMark( "FTSMonitorAtt", 1 )

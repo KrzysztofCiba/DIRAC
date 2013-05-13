@@ -21,7 +21,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSManagerHandler class.
 
 # # imports
-from types import DictType, LongType, ListType
+from types import DictType, LongType, ListType, IntType
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -444,8 +444,9 @@ class FTSManagerHandler( RequestHandler ):
 
   types_getFTSFilesIDs = [ ListType ]
   @classmethod
-  def export_getFTSFileIDs( cls, statusList = [ "Waiting" ] ):
+  def export_getFTSFileIDs( cls, statusList = None ):
     """ get FTSFilesIDs for a given status list """
+    statusList = statusList if statusList else [ "Waiting" ]
     try:
       getFTSFileIDs = cls.__ftsDB.getFTSFileIDs( statusList )
       if not getFTSFileIDs["OK"]:
@@ -457,10 +458,11 @@ class FTSManagerHandler( RequestHandler ):
 
   types_getFTSFileList = [ ListType ]
   @classmethod
-  def export_getFTSFileList( cls, statusList = [ "Waiting" ] ):
+  def export_getFTSFileList( cls, statusList = None, limit = 1000 ):
     """ get FTSFiles with status in :statusList: """
+    statusList = statusList if statusList else [ "Waiting" ]
     try:
-      getFTSFileList = cls.__ftsDB.getFTSFileList( statusList )
+      getFTSFileList = cls.__ftsDB.getFTSFileList( statusList, limit )
       if not getFTSFileList["OK"]:
         gLogger.error( getFTSFileList[ "Message" ] )
         return getFTSFileList
@@ -476,13 +478,13 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
-  types_getFTSJobList = [ ListType ]
+  types_getFTSJobList = [ ListType, IntType ]
   @classmethod
-  def export_getFTSJobList( cls, statusList = None ):
+  def export_getFTSJobList( cls, statusList = None, limit = 500 ):
     """ get FTSJobs with statuses in :statusList: """
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     try:
-      ftsJobs = cls.__ftsDB.getFTSJobList( statusList )
+      ftsJobs = cls.__ftsDB.getFTSJobList( statusList, limit )
       if not ftsJobs["OK"]:
         gLogger.error( "getFTSJobList: %s" % ftsJobs["Message"] )
         return ftsJobs

@@ -302,19 +302,21 @@ class FTSDB( DB ):
     # # convert to list of longs
     return S_OK( [ item[0] for item in query["Value"] ] )
 
-  def getFTSFileIDs( self, statusList = [ "Waiting" ] ):
+  def getFTSFileIDs( self, statusList = None ):
     """ select FTSFileIDs for a given status list """
-    query = "SELECT * FROM `FTSFile` WHERE `Status` IN (%s);" % stringListToString( statusList );
+    statusList = statusList if statusList else [ "Waiting" ]
+    query = "SELECT `FTSFileID` FROM `FTSFile` WHERE `Status` IN (%s);" % stringListToString( statusList );
     query = self._query( query )
     if not query["OK"]:
       self.log.error( query["Message"] )
       return query
     return S_OK( [ item[0] for item in query["Value"] ] )
 
-  def getFTSJobList( self, statusList = None ):
+  def getFTSJobList( self, statusList = None, limit = 500 ):
     """ select FTS jobs with statuses in :statusList: """
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
-    query = "SELECT * FROM `FTSJob` WHERE `Status` IN (%s)" % stringListToString( statusList )
+    query = "SELECT * FROM `FTSJob` WHERE `Status` IN (%s) ORDER BY `LastUpdate` DESC LIMIT %s;" % ( stringListToString( statusList ),
+                                                                                                     limit )
     trn = self._transaction( [ query ] )
     if not trn["OK"]:
       self.log.error( "getFTSJobList: %s" % trn["Message"] )
@@ -331,8 +333,11 @@ class FTSDB( DB ):
         ftsJob.addFile( ftsFile )
     return S_OK( ftsJobs )
 
-  def getFTSFileList( self, statusList = ["Waiting"] ):
-    query = "SELECT * FROM `FTSFile` WHERE `Status` IN (%s)" % stringListToString( statusList )
+  def getFTSFileList( self, statusList = None, limit = 1000 ):
+    """ get FTSFiles with status in :statusList: """
+    statusList = statusList if statusList else [ "Waiting" ]
+    query = "SELECT * FROM `FTSFile` WHERE `Status` IN (%s) ORDER BY `LastUpdate` DESC LIMIT %s;" % ( stringListToString( statusList ),
+                                                                                                      limit )
     trn = self._transaction( [query] )
     if not trn["OK"]:
       self.log.error( "getFTSFileList: %s" % trn["Message"] )
