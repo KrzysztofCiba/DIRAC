@@ -50,7 +50,7 @@ class FTSFile( Record ):
     self._parent = None
     self.__data__["Status"] = "Waiting"
     self.__data__["Attempt"] = 0
-    now = datetime.datetime.strptime( str( datetime.datetime.now() ).split( "." )[0], '%Y-%m-%d %H:%M:%S' )
+    now = datetime.datetime.utcnow().replace( microsecond = 0 )
     self.__data__["CreationTime"] = now
     self.__data__["LastUpdate"] = now
     fromDict = fromDict if fromDict else {}
