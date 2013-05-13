@@ -125,8 +125,7 @@ class FTSMonitorAgent( AgentModule ):
   def ftsJobExpired( self, ftsJob ):
     """ clean up when FTS job had expired on the server side
 
-    :param int ftsReqID: FTSReq.FTSReqID
-    :param int channelID: FTSReq.ChannelID
+    :param FTSJob ftsJob: FTSJob instance
     """
     log = gLogger.getSubLogger( "@%s" % str( ftsReqID ) )
     fileIDs = self.transferDB.getFTSReqFileIDs( ftsReqID )
@@ -176,6 +175,8 @@ class FTSMonitorAgent( AgentModule ):
     ftsServer = ftsJob.FTSServer
     sourceSE = ftsJob.SourceSE
     targetSE = ftsJob.TargetSE
+
+    log.info( "monitorTransfer: %s at %s" % ( ftsGUID, ftsServer ) )
 
     #########################################################################
     # Perform summary update of the FTS Request and update FTSReq entries.

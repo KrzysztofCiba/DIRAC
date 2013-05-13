@@ -319,11 +319,17 @@ class FTSDB( DB ):
     if not trn["OK"]:
       self.log.error( "getFTSJobList: %s" % trn["Message"] )
       return trn
-    return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in trn["Value"][query] ] )
-
-  def getFTSFilesForFTSJob( self, FTSGUID ):
-    """ """
-    pass
+    ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in trn["Value"][query] ]
+    for ftsJob in ftsJobs:
+      query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = %s;" % ftsJob.FTSGUID
+      trn = self._transaction( query )
+      if not trn["OK"]:
+        self.log.error( "getFTSJobList: %s" % trn["Message"] )
+        return trn
+      ftsFiles = [ FTSFile( ftsFileDict ) for ftsFileDict in trn["Value"][query] ]
+      for ftsFile in ftsFiles:
+        ftsJob.addFile( ftsFile )
+    return S_OK( ftsJobs )
 
   def getFTSFileList( self, statusList = ["Waiting"] ):
     query = "SELECT * FROM `FTSFile` WHERE `Status` IN (%s)" % stringListToString( statusList )
