@@ -85,7 +85,7 @@ class FTSDBTests( unittest.TestCase ):
 
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
-      ftsJob.FTSServer = "https://fts.service.org"
+      ftsJob.FTSServer = self.ftsSites[0].ServerURI
       ftsJob.Status = statuses[ i % len( statuses ) ]
 
       if ftsJob.Status in FTSJob.FINALSTATES:
