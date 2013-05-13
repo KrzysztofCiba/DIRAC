@@ -396,10 +396,10 @@ class FTSJob( Record ):
   def monitorFTS2( self ):
     """ monitor fts job """
     if not self.FTSGUID:
-      return S_ERROR( "GUID not set, FTS job not submitted?" )
+      return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
     monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.FTSGUID, "-l" ]
-    self._log.always( monitorCommand )
-    return S_OK()
+    # self._log.always( monitorCommand )
+    # return S_OK()
 
     monitor = executeGridCommand( "", monitorCommand )
     if not monitor["OK"]:

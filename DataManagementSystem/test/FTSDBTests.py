@@ -51,13 +51,14 @@ class FTSDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/DBName', 'FTSDB' )
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/User', 'Dirac' )
 
-    self.ftsSites = [ FTSSite( { "ServerURI": "foo://bar.ch/FTSService", "Name": "CERN.ch" } ),
-                      FTSSite( { "ServerURI": "foo://bar.es/FTSService", "Name": "PIC.es" } ),
-                      FTSSite( { "ServerURI": "foo://bar.uk/FTSService", "Name": "RAL.uk" } ),
-                      FTSSite( { "ServerURI": "foo://bar.it/FTSService", "Name": "CNAF.it" } ),
-                      FTSSite( { "ServerURI": "foo://bar.nl/FTSService", "Name": "SARA.nl" } ),
-                      FTSSite( { "ServerURI": "foo://bar.de/FTSService", "Name": "GRIDKA.de" } ),
-                      FTSSite( { "ServerURI": "foo://bar.fr/FTSService", "Name": "IN2P3.fr" } ) ]
+    self.ftsSites = [ FTSSite( { "ServerURI": "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "CERN.ch" } ),
+                      FTSSite( { "ServerURI": "https://fts.pic.es:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "PIC.es" } ),
+                      FTSSite( { "ServerURI": "https://lcgfts.gridpp.rl.ac.uk:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "RAL.uk" } ),
+                      FTSSite( { "ServerURI": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "SARA.nl" } ),
+                      FTSSite( { "ServerURI": "https://fts.cr.cnaf.infn.it:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "CNAF.it" } ),
+                      FTSSite( { "ServerURI": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "NIKHEF.nl" } ),
+                      FTSSite( { "ServerURI": "https://fts-fzk.gridka.de:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "GRIDKA.de" } ),
+                      FTSSite( { "ServerURI": "https://cclcgftsprod.in2p3.fr:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "IN2P3.fr" } ) ]
 
 
     self.ftsFiles = []
