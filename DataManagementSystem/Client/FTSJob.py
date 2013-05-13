@@ -387,6 +387,10 @@ class FTSJob( Record ):
     if not returnCode == 0:
       return S_ERROR( errStr )
     self.FTSGUID = output.replace( "\n", "" )
+    self.Status = "Submitted"
+    for ftsFile in self:
+      ftsFile.FTSGUID = self.FTSGUID
+      ftsFile.Status = "Submitted"
     return S_OK()
 
   def monitorFTS2( self ):
