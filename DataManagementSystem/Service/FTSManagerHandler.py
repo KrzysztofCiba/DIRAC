@@ -64,6 +64,8 @@ class FTSManagerHandler( RequestHandler ):
   def initializeHandler( cls, serviceInfoDict ):
     """ initialize handler """
 
+    gLogger.always( serviceInfoDict )
+
     from DIRAC.DataManagementSystem.DB.FTSDB import FTSDB
     cls.__ftsDB = FTSDB()
     # # connect

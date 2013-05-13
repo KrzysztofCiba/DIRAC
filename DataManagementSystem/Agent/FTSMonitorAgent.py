@@ -77,6 +77,18 @@ class FTSMonitorAgent( AgentModule ):
       self.__requestClient = RequestClient()
     return self.__requestClient
 
+  @classmethod
+  def missingSource( cls, failReason ):
+    """ check if message sent by FTS server is concerning missing source file
+
+    :param str failReason: message sent by FTS server
+    """
+    for error in cls.missingSourceErrors:
+      if error.search( failReason ):
+        return 1
+    return 0
+
+
   def initialize( self ):
     """ agent's initialization """
 
@@ -237,24 +249,6 @@ class FTSMonitorAgent( AgentModule ):
     return S_OK()
 
 
-    #########################################################################
-    # Perform summary update of the FTS Request and update FTSReq entries.
-    log.info( "Perform summary update of the FTS Request" )
-    infoStr = [ "glite-transfer-status -s %s -l %s" % ( ftsServer, ftsGUID ) ]
-    infoStr.append( "FTS GUID:   %s" % ftsGUID )
-    infoStr.append( "FTS Server: %s" % ftsServer )
-    log.info( "\n".join( infoStr ) )
-    res = oFTSRequest.summary()
-    self.transferDB.setFTSReqLastMonitor( ftsReqID )
-    if not res["OK"]:
-      log.error( "Failed to update the FTS request summary", res["Message"] )
-      if "getTransferJobSummary2: Not authorised to query request" in res["Message"]:
-        log.error( "FTS job is not existing at the FTS server anymore, will clean it up on TransferDB side" )
-        cleanUp = self.ftsJobExpired( ftsReqID, channelID )
-        if not cleanUp["OK"]:
-          log.error( cleanUp["Message"] )
-        return cleanUp
-      return res
 
     res = oFTSRequest.dumpSummary()
     if not res['OK']:
@@ -488,14 +482,3 @@ class FTSMonitorAgent( AgentModule ):
       return res
 
     return S_OK()
-
-  @classmethod
-  def missingSource( cls, failReason ):
-    """ check if message sent by FTS server is concerning missing source file
-
-    :param str failReason: message sent by FTS server
-    """
-    for error in cls.missingSourceErrors:
-      if error.search( failReason ):
-        return 1
-    return 0
