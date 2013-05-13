@@ -318,7 +318,7 @@ class FTSFile( Record ):
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
-    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) == str else str( value ) )
+    colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )
                 for column, value in self.__data__.items()
                 if value and column not in ( "FTSFileID", "LastUpdate" )  ]
     colVals.append( ( "LastUpdate", "UTC_TIMESTAMP()" ) )
