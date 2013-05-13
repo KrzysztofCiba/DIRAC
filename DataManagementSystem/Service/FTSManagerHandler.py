@@ -431,8 +431,9 @@ class FTSManagerHandler( RequestHandler ):
 
   types_getFTSJobIDs = [ ListType ]
   @classmethod
-  def export_getFTSJobIDs( cls, statusList = [ "Submitted", "Ready", "Active" ] ):
+  def export_getFTSJobIDs( cls, statusList = None ):
     """ get FTSJobIDs for a given status list """
+    statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     try:
       getFTSJobIDs = cls.__ftsDB.getFTSJobIDs( statusList )
       if not getFTSJobIDs["OK"]:
@@ -456,7 +457,7 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.exception( error )
       return S_ERROR( error )
 
-  types_getFTSFileList = [ ListType ]
+  types_getFTSFileList = [ ListType, IntType ]
   @classmethod
   def export_getFTSFileList( cls, statusList = None, limit = 1000 ):
     """ get FTSFiles with status in :statusList: """
