@@ -81,7 +81,12 @@ class FTSMonitorAgent( AgentModule ):
     """ agent's initialization """
 
     # # gMonitor stuff over here
-    gMonitor.registerActivity( name, description, category, unit, operation, bucketLength )
+    gMonitor.registerActivity( "FTSMonitorAtt", "Monitored FTSJobs",
+                               "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
+
+    for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
+      gMonitor.registerActivity( "FTSJobs%" % status, "%s FTSJobs" % status ,
+                                 "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     self.am_setOption( "shifterProxy", "DataManager" )
 
@@ -115,6 +120,7 @@ class FTSMonitorAgent( AgentModule ):
         self.log.debug( "submitting FTSJob %s" % ( enqueued, ftsJob.FTSJobID ) )
         ret = self.threadPool().generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, sTJId ), sTJId = sTJId )
         if ret["OK"]:
+          gMonitor.addMark( "FTSMonitorAtt", 1 )
           enqueued += 1
           break
         # # sleep 1 second to proceed
