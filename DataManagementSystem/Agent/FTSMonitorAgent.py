@@ -85,7 +85,7 @@ class FTSMonitorAgent( AgentModule ):
                                "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
-      gMonitor.registerActivity( "FTSJobs%" % status, "%s FTSJobs" % status ,
+      gMonitor.registerActivity( "FTSJobs%s" % status, "%s FTSJobs" % status ,
                                  "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     self.am_setOption( "shifterProxy", "DataManager" )
