@@ -237,8 +237,10 @@ class FTSSubmitAgent( AgentModule ):
       if ftsFile.SourceSE not in ftsFileDict:
         ftsFileDict[ftsFile.SourceSE] = {}
       if ftsFile.TargetSE not in ftsFileDict[ftsFile.SourceSE]:
-        ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE] = []
-      ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE].append( ftsFile )
+        ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE] = {}
+      if ftsFile.OperationID not in ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE]:
+        ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE][ftsFile.OperationID] = []
+      ftsFileDict[ftsFile.SourceSE][ftsFile.TargetSE][ftsFile.OperationID].append( ftsFile )
 
     # # thread job counter
     enqueued = 1
@@ -254,7 +256,7 @@ class FTSSubmitAgent( AgentModule ):
         log.error( "source SE %s is banned for reading" % sourceSE )
         continue
 
-      for targetSE, ftsFileList in targetDict.items():
+      for targetSE, operationDict in targetDict.items():
         targetSite = self.__ftsGraph.findSiteForSE( targetSE )
         if not targetSite["OK"]:
           log.error( "unable to find target site for %s SE" % targetSE )
@@ -264,8 +266,8 @@ class FTSSubmitAgent( AgentModule ):
           log.error( "target SE %s is banned for writing" % sourceSE )
           continue
 
-        log.info( "%s files are waiting for transfer from %s to %s" % ( len( ftsFileList ),
-                                                                        sourceSE, targetSE ) )
+        log.info( "%s operations are waiting for transfer from %s to %s" % ( len( operationDict ),
+                                                                             sourceSE, targetSE ) )  
 
         route = self.__ftsGraph.findRoute( sourceSE, targetSE )
         if not route["OK"]:
@@ -273,26 +275,27 @@ class FTSSubmitAgent( AgentModule ):
           return route
         route = route["Value"]
 
-        for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
-
-          minmax = min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs )
-          if route.ActiveJobs > minmax:
-            log.info( "bailing out! maximal number of active jobs (%s) reached at FTS route %s" % ( minmax,
-                                                                                                    route.routeName ) )
-            break
-
-          sTJId = "submit-%s/%s/%s" % ( enqueued, sourceSE, targetSE )
-          while True:
-            queue = self.threadPool().generateJobAndQueueIt( self.submit,
-                                                             args = ( ftsFileListChunk, targetSite.ServerURI,
-                                                                      sourceSE, targetSE, route, sTJId ),
-                                                             sTJId = sTJId )
-            if queue["OK"]:
-              log.info( "'%s' enqueued for execution" % sTJId )
-              enqueued += 1
-              gMonitor.addMark( "FTSJobsAtt", 1 )
+        for opID, ftsFileList in operationDict.items():
+          log.info("processing %s files from Operation %s" % ( len(ftsFileList), opID ) )
+          for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
+            minmax = min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs )
+            if route.ActiveJobs > minmax:
+              log.info( "maximal number of active jobs (%s) reached at FTS route %s" % ( minmax,
+                                                                                         route.routeName ) )
               break
-            time.sleep( 1 )
+
+            sTJId = "submit-%s/%s/%s/%s" % ( enqueued, opID, sourceSE, targetSE )
+            while True:
+              queue = self.threadPool().generateJobAndQueueIt( self.submit,
+                                                               args = ( ftsFileListChunk, targetSite.ServerURI,
+                                                                        sourceSE, targetSE, route, sTJId ),
+                                                               sTJId = sTJId )
+              if queue["OK"]:
+                log.info( "'%s' enqueued for execution" % sTJId )
+                enqueued += 1
+                gMonitor.addMark( "FTSJobsAtt", 1 )
+                break
+              time.sleep( 1 )
 
     # # process all results
     self.threadPool().processAllResults()
