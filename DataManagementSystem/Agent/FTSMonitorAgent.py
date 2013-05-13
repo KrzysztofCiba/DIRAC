@@ -186,7 +186,7 @@ class FTSMonitorAgent( AgentModule ):
     sourceSE = ftsJob.SourceSE
     targetSE = ftsJob.TargetSE
 
-    log.info( "monitorTransfer: %s at %s" % ( ftsGUID, ftsServer ) )
+    log.info( "%s at %s" % ( ftsGUID, ftsServer ) )
 
     monitor = ftsJob.monitorFTS2()
     if not monitor["OK"]:
@@ -199,9 +199,15 @@ class FTSMonitorAgent( AgentModule ):
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
 
     # # list of files to reschedule
-    toReschedule = monitor.get( "toReschedule", [] )
+    # toReschedule = monitor.get( "toReschedule", [] )
     # # list of files to register
-    toRegister = monitor.get( "toRegister", [] )
+    # toRegister = monitor.get( "toRegister", [] )
+
+    putFTSJob = self.ftsClient().putFTSJob( ftsJob )
+    if not putFTSJob["OK"]:
+      log.error( putFTSJob["Message"] )
+      gMonitor.addMark( "FTSMonitorFail", 1 )
+      return putFTSJob
 
     gMonitor.addMark( "FTSMonitorOK", 1 )
     return S_OK()
