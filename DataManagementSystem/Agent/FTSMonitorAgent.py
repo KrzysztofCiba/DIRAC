@@ -110,10 +110,10 @@ class FTSMonitorAgent( AgentModule ):
 
     enqueued = 1
     for ftsJob in ftsJobs:
-      sTJId = "monitor-%s/%s" % ( enqueued, ftsJob.FTSGUID )
+      sTJId = "monitor-%s/%s" % ( enqueued, ftsJob.FTSJobID )
       while True:
-        self.log.debug( "submitting FTSJob %s" % ( enqueued, ftsJob.FTSGUID ) )
-        ret = self.threadPool().generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, ), sTJId = sTJId )
+        self.log.debug( "submitting FTSJob %s" % ( enqueued, ftsJob.FTSJobID ) )
+        ret = self.threadPool().generateJobAndQueueIt( self.monitorTransfer, args = ( ftsJob, sTJId ), sTJId = sTJId )
         if ret["OK"]:
           enqueued += 1
           break
@@ -122,7 +122,7 @@ class FTSMonitorAgent( AgentModule ):
     self.threadPool().processAllResults()
     return S_OK()
 
-  def ftsJobExpired( self, ftsReqID, channelID ):
+  def ftsJobExpired( self, ftsJob ):
     """ clean up when FTS job had expired on the server side
 
     :param int ftsReqID: FTSReq.FTSReqID
@@ -135,7 +135,7 @@ class FTSMonitorAgent( AgentModule ):
       return fileIDs
     fileIDs = fileIDs["Value"]
 
-    # # update FileToFTS table, this is just a clean up, no worry if somethings goes wrong
+    # # update FileToFTS table, this is just a clean up, no worry if something goes wrong
     for fileID in fileIDs:
       fileStatus = self.transferDB.setFileToFTSFileAttribute( ftsReqID, fileID,
                                                               "Status", "Failed" )
@@ -164,25 +164,18 @@ class FTSMonitorAgent( AgentModule ):
     # # if we land here, everything should be OK
     return S_OK()
 
-  def monitorTransfer( self, ftsReqDict ):
-    """ monitors transfer obtained from TransferDB
+  def monitorTransfer( self, ftsJob, sTJId ):
+    """ monitors transfer obtained from FTSDB
 
     :param dict ftsReqDict: FTS job dictionary
     """
-    ftsReqID = ftsReqDict.get( "FTSReqID" )
-    ftsGUID = ftsReqDict.get( "FTSGuid" )
-    ftsServer = ftsReqDict.get( "FTSServer" )
-    channelID = ftsReqDict.get( "ChannelID" )
-    sourceSE = ftsReqDict.get( "SourceSE" )
-    targetSE = ftsReqDict.get( "TargetSE" )
+    log = gLogger.getSubLogger( sTJId )
 
-    oFTSRequest = FTSRequest()
-    oFTSRequest.setFTSServer( ftsServer )
-    oFTSRequest.setFTSGUID( ftsGUID )
-    oFTSRequest.setSourceSE( sourceSE )
-    oFTSRequest.setTargetSE( targetSE )
-
-    log = gLogger.getSubLogger( "@%s" % str( ftsReqID ) )
+    ftsJobID = ftsJob.FTSJobID
+    ftsGUID = ftsJob.FTSGUID
+    ftsServer = ftsJob.FTSServer
+    sourceSE = ftsJob.SourceSE
+    targetSE = ftsJob.TargetSE
 
     #########################################################################
     # Perform summary update of the FTS Request and update FTSReq entries.
