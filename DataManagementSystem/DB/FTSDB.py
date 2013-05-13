@@ -321,7 +321,7 @@ class FTSDB( DB ):
       return trn
     ftsJobs = [ FTSJob( ftsJobDict ) for ftsJobDict in trn["Value"][query] ]
     for ftsJob in ftsJobs:
-      query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = %s;" % ftsJob.FTSGUID
+      query = "SELECT * FROM `FTSFile` WHERE `FTSGUID` = '%s';" % ftsJob.FTSGUID
       trn = self._transaction( query )
       if not trn["OK"]:
         self.log.error( "getFTSJobList: %s" % trn["Message"] )
