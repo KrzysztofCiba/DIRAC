@@ -195,6 +195,7 @@ class FTSDB( DB ):
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into fts db """
     ftsFileSQL = ftsFile.toSQL()
+    gLogger.always( ftsFileSQL )
     if not ftsFileSQL["OK"]:
       self.log.error( ftsFileSQL["Message"] )
       return ftsFileSQL
