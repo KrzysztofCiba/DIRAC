@@ -165,6 +165,13 @@ class FTSManagerHandler( RequestHandler ):
     """
     lfn = fileJSON.get( "LFN", "" )
     size = fileJSON.get( "Size", 0 )
+
+    replicaDict = self.replicaManager().getActiveReplicas( lfn )
+    if not replicaDict["OK"]:
+      gLogger.error( "ftsSchedule: %s" % replicaDict["Message"] )
+      return replicaDict
+    replicaDict = replicaDict["Value"]
+
     tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
     if not tree["OK"]:
       gLogger.error( "ftsSchedule: %s cannot be scheduled: %s" % ( lfn, tree["Message"] ) )
@@ -173,48 +180,41 @@ class FTSManagerHandler( RequestHandler ):
 
     gLogger.info( "LFN=%s tree=%s" % ( lfn, tree ) )
 
+    ftsFiles = []
 
-
-    # # sort by ancestor
-    sortedKeys = self._ancestorSortKeys( tree, "Ancestor" )
-    if not sortedKeys["OK"]:
-      gLogger.warn( "unable to sort replication tree by Ancestor: %s" % sortedKeys["Message"] )
-      sortedKeys = tree.keys()
-    else:
-      sortedKeys = sortedKeys["Value"]
-    # # dict holding swap parent with child for same SURLs
-
-    ancestorSwap = {}
-    for channelID in sortedKeys:
-      repDict = tree[channelID]
+    for path in tree:
+      repDict = tree[path]
       gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
                                                                           repDict["SourceSE"], repDict["TargetSE"] ) )
-      transferSURLs = self._getTransferURLs( repDict, sourceSEs, {} )
+      transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, {} )
       if not transferSURLs["OK"]:
         return transferSURLs
       sourceSURL, targetSURL, fileStatus = transferSURLs["Value"]
-      # # TODO
-      # # save ancestor to swap
-      # if sourceSURL == targetSURL and waitingFileStatus.startswith( "Done" ):
-      #  oldAncestor = str(channelID)
-      #  newAncestor = waitingFileStatus[5:]
-      #  ancestorSwap[ oldAncestor ] = newAncestor
+      if sourceSURL == targetSURL:
+        errMsg = "sourceSURL == targetSURL for %s" % lfn
+        gLogger.error( "ftsSchedule: %s" % errMsg )
+        return S_ERROR( errMsg )
+      gLogger.info( sourceSURL, targetSURL, fileStatus )
 
-    ftsFile = FTSFile()
-    for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
-      setattr( ftsFile, key, fileJSON.get( key ) )
+      ftsFile = FTSFile()
+      for key in ( "LFN", "FileID", "OperationID", "Checksum", "ChecksumType", "Size" ):
+        setattr( ftsFile, key, fileJSON.get( key ) )
+      ftsFile.SourceSURL = sourceSURL
+      ftsFile.TargetSURL = targetSURL
+      ftsFile.Status = fileStatus
+      ftsFiles.append( ftsFile )
 
-    # ftsFile.TargetSE = ",".join( targetSEs )
-    ftsFile.Status = "Waiting"
-
-    try:
-      put = self.__ftsDB.putFTSFile( ftsFile )
-      if not put["OK"]:
-        gLogger.error( put["Message"] )
-        return put
-    except Exception, error:
-      gLogger.exception( error )
-      return S_ERROR( str( error ) )
+    for ftsFile in ftsFiles:
+      try:
+        put = self.__ftsDB.putFTSFile( ftsFile )
+        if not put["OK"]:
+          gLogger.error( put["Message"] )
+          return put
+      except Exception, error:
+        gLogger.exception( error )
+        return S_ERROR( str( error ) )
+    # # if we land here file has been properly scheduled
+    return S_OK()
 
   types_putFTSSite = [ DictType ]
   @classmethod
@@ -555,12 +555,12 @@ class FTSManagerHandler( RequestHandler ):
     """ Get the targetSURL for the storage and LFN supplied.
 
     :param self: self reference
-    :param str targetSURL: target SURL
+    :param str targetSE: target SE
     :param str lfn: LFN
     """
     res = self.storageFactory().getStorages( targetSE, protocolList = ["SRM2"] )
     if not res["OK"]:
-      errStr = "getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res["Message"] )
+      errStr = "_getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res["Message"] )
       gLogger.error( errStr )
       return S_ERROR( errStr )
     storageObjects = res["Value"]["StorageObjects"]
@@ -568,8 +568,8 @@ class FTSManagerHandler( RequestHandler ):
       res = storageObject.getCurrentURL( lfn )
       if res["OK"]:
         return res
-    gLogger.error( "getSurlForLFN: Failed to get SRM compliant storage.", targetSE )
-    return S_ERROR( "getSurlForLFN: Failed to get SRM compliant storage." )
+    gLogger.error( "_getSurlForLFN: Failed to get SRM compliant storage.", targetSE )
+    return S_ERROR( "_getSurlForLFN: Failed to get SRM compliant storage." )
 
   def _getSurlForPFN( self, sourceSE, pfn ):
     """Creates the targetSURL for the storage and PFN supplied.
@@ -585,10 +585,8 @@ class FTSManagerHandler( RequestHandler ):
       return S_ERROR( res["Value"]["Failed"][pfn] )
     return S_OK( res["Value"]["Successful"][pfn] )
 
-  def _getTransferURLs( self, lfn, repDict, replicas, ancestorSwap = None ):
+  def _getTransferURLs( self, lfn, repDict, replicas, replicaDict ):
     """ prepare TURLs for given LFN and replication tree
-
-    TODO: refactor!!!
 
     :param self: self reference
     :param str lfn: LFN
@@ -597,38 +595,29 @@ class FTSManagerHandler( RequestHandler ):
     """
 
     hopSourceSE = repDict["SourceSE"]
-    hopDestSE = repDict["TargetSE"]
+    hopTargetSE = repDict["TargetSE"]
     hopAncestor = repDict["Ancestor"]
 
-    if ancestorSwap and str( hopAncestor ) in ancestorSwap:
-      self.log.debug( "getTransferURLs: swapping Ancestor %s with %s" % ( hopAncestor,
-                                                                         ancestorSwap[str( hopAncestor )] ) )
-      hopAncestor = ancestorSwap[ str( hopAncestor ) ]
-
     # # get targetSURL
-    res = self._getSurlForLFN( hopDestSE, lfn )
+    res = self._getSurlForLFN( hopTargetSE, lfn )
     if not res["OK"]:
-      errStr = res["Message"]
-      self.log.error( errStr )
-      return S_ERROR( errStr )
+      self.log.error( "_getTransferURLs: %s" % res["Message"] )
+      return res
     targetSURL = res["Value"]
 
-    # get the sourceSURL
+    status = "Waiting"
+
+    # # get the sourceSURL
     if hopAncestor:
-      status = "Waiting%s" % ( hopAncestor )
+      status = "Waiting#%s" % ( hopAncestor )
       res = self._getSurlForLFN( hopSourceSE, lfn )
       if not res["OK"]:
-        errStr = res["Message"]
-        self.log.error( errStr )
-        return S_ERROR( errStr )
+        self.log.error( "_getTransferURLs: %s" % res["Message"] )
+        return res
       sourceSURL = res["Value"]
     else:
-      status = "Waiting"
       res = self._getSurlForPFN( hopSourceSE, replicas[hopSourceSE] )
-      if not res["OK"]:
-        sourceSURL = replicas[hopSourceSE]
-      else:
-        sourceSURL = res["Value"]
+      sourceSURL = res["Value"] if res["OK"] else replicaDict[hopSourceSE]
 
     return S_OK( ( sourceSURL, targetSURL, status ) )
 
