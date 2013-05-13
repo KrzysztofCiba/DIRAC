@@ -44,9 +44,9 @@ class RequestManagerHandler( RequestHandler ):
   @classmethod
   def validate( cls, request ):
     """ request validation """
-    if not cls.validator:
-      cls.validator = RequestValidator()
-    return cls.validator.validate( request )
+    if not cls.__validator:
+      cls.__validator = RequestValidator()
+    return cls.__validator.validate( request )
 
   @classmethod
   def __getRequestID( cls, requestName ):
