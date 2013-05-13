@@ -50,7 +50,7 @@ class FTSFile( Record ):
     self._parent = None
     self.__data__["Status"] = "Waiting"
     self.__data__["Attempt"] = 0
-    now = datetime.datetime.now()
+    now = datetime.datetime.strptime( str( datetime.datetime.now() ).split( "." )[0], '%Y-%m-%d %H:%M:%S' )
     self.__data__["CreationTime"] = now
     self.__data__["LastUpdate"] = now
     fromDict = fromDict if fromDict else {}
@@ -287,6 +287,7 @@ class FTSFile( Record ):
 
   def toJSON( self ):
     """ dump FTSFile to JSON format """
+
     return S_OK( dict( zip( self.__data__.keys(),
                       [ val if val != None else "" for val in self.__data__.values() ] ) ) )
 

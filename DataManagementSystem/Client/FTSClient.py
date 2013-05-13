@@ -123,7 +123,6 @@ class FTSClient( Client ):
     getFTSJobList = getFTSJobList["Value"]
     return S_OK( [ FTSJob( ftsJobDict ) for ftsJobDict in getFTSJobList ] )
 
-
   def putFTSFile( self, ftsFile ):
     """ put FTSFile into FTSDB
 
