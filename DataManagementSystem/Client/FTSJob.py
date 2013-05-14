@@ -34,6 +34,7 @@ from xml.parsers.expat import ExpatError
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import checkGuid
+from DIRAC.Core.Utilities.List import sortList
 # from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
@@ -192,7 +193,7 @@ class FTSJob( Record ):
   @property
   def FailedFiles( self ):
     """ nb failed files getter """
-    self.__data__["FailedFiles"] = len( [ ftsFile for ftsFile in self if ftsFile.Status == "Failed" ] )
+    self.__data__["FailedFiles"] = len( [ ftsFile for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES ] )
     return self.__data__["FailedFiles"]
 
   @FailedFiles.setter
@@ -201,7 +202,7 @@ class FTSJob( Record ):
     if value:
       self.__data__["FailedFiles"] = value
     else:
-      self.__data__["FailedFiles"] = sum( [ ftsFile for ftsFile in self if ftsFile.Status == "Failed" ] )
+      self.__data__["FailedFiles"] = sum( [ ftsFile for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES ] )
 
   @property
   def Size( self ):
@@ -222,7 +223,7 @@ class FTSJob( Record ):
   def FailedSize( self ):
     """ size getter """
     if not self.__data__["FailedSize"]:
-      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status == "Failed" ] )
+      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES ] )
     return self.__data__["FailedSize"]
 
   @FailedSize.setter
@@ -231,7 +232,7 @@ class FTSJob( Record ):
     if value:
       self.__data__["FailedSize"] = value
     else:
-      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status == "Failed" ] )
+      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES ] )
 
   @property
   def CreationTime( self ):
@@ -393,14 +394,13 @@ class FTSJob( Record ):
       ftsFile.Status = "Submitted"
     return S_OK()
 
-  def monitorFTS2( self ):
+  def monitorFTS2( self, full = False ):
     """ monitor fts job """
     if not self.FTSGUID:
       return S_ERROR( "FTSGUID not set, FTS job not submitted?" )
-    monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.FTSGUID, "-l" ]
-    # self._log.always( monitorCommand )
-    # return S_OK()
-
+    monitorCommand = [ "glite-transfer-status", "--verbose", "-s", self.FTSServer, self.FTSGUID ]
+    if full:
+      monitorCommand.append( "-l" )
     monitor = executeGridCommand( "", monitorCommand )
     if not monitor["OK"]:
       return monitor
@@ -408,8 +408,87 @@ class FTSJob( Record ):
     # Returns a non zero status if error
     if not returnCode:
       return S_ERROR( errStr )
+    outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
 
-    return S_OK( outputStr )
+    # # set FTS job status
+    regExp = re.compile( "Status:\s+(\S+)" )
+    self.Status = re.search( regExp, outputStr ).group( 1 )
+
+    statusSummary = {}
+    for state in FTSFile.ALL_STATES:
+      regExp = re.compile( "\s+%s:\s+(\d+)" % state )
+      statusSummary[state] = int( re.search( regExp, outputStr ).group( 1 ) )
+
+    total = sum( statusSummary.values() )
+    completed = sum( [ statusSummary.get( state, 0 ) for state in FTSFile.FINAL_STATES ] )
+    self.Completeness = 100 * completed / total
+
+    if not full:
+      return S_OK( statusSummary )
+
+    regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
+    fileInfo = re.findall( regExp, outputStr )
+    for sourceURL, targetURL, fileStatus, retries, reason, duration in fileInfo:
+      candidateFile = None
+      for ftsFile in self:
+        if candidateFile.SourceURL == sourceURL:
+          candidateFile = ftsFile
+          break
+      if not candidateFile:
+        continue
+      candidateFile.Status = fileStatus
+      if candidateFile.Status in FTSFile.FAILED_STATES:
+        pass
+      candidateFile.Error = reason
+
+    return S_OK()
+
+
+  def __parseOutput( self, full = False ):
+    """ execute glite-transfer-status command and parse its output
+
+    :param self: self reference
+    :param bool full: glite-transfer-status verbosity level, when set, collect information of files as well
+    """
+    comm = [ 'glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID ]
+    if full:
+      comm.append( '-l' )
+    res = executeGridCommand( '', comm )
+    if not res['OK']:
+      return res
+    returnCode, output, errStr = res['Value']
+    # Returns a non zero status if error
+    if not returnCode == 0:
+      return S_ERROR( errStr )
+    toRemove = ["'", "<", ">"]
+    for char in toRemove:
+      output = output.replace( char, '' )
+    regExp = re.compile( "Status:\s+(\S+)" )
+    self.Status = re.search( regExp, output ).group( 1 )
+    self.statusSummary = {}
+    for state in self.fileStates:
+      regExp = re.compile( "\s+%s:\s+(\d+)" % state )
+      self.statusSummary[state] = int( re.search( regExp, output ).group( 1 ) )
+    if not full:
+      return S_OK()
+    regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
+    fileInfo = re.findall( regExp, output )
+    for source, target, status, retries, reason, duration in fileInfo:
+      lfn = ''
+      for candidate in sortList( self.fileDict.keys() ):
+        if re.search( candidate, source ):
+          lfn = candidate
+      if not lfn:
+        continue
+      self.__setFileParameter( lfn, 'Source', source )
+      self.__setFileParameter( lfn, 'Target', target )
+      self.__setFileParameter( lfn, 'Status', status )
+      if reason == '(null)':
+        reason = ''
+      self.__setFileParameter( lfn, 'Reason', reason.replace( "\n", " " ) )
+      self.__setFileParameter( lfn, 'Duration', int( duration ) )
+    return S_OK()
+
 
   def submitFTS3( self ):
     """ placeholder for FTS3 """
