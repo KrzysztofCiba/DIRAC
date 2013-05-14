@@ -92,7 +92,6 @@ class RequestDB( DB ):
     try:
       # # execute queries
       for query in queries:
-        self.log.always( query )
         cursor.execute( query )
         queryRes[query] = list( cursor.fetchall() )
       # # commit
@@ -182,10 +181,7 @@ class RequestDB( DB ):
     requestName = requestName["Value"]
     if not requestName:
       return S_OK()
-    get = self.getRequest( requestName[0][0] )
-    self.log.always( get )
-    return S_OK()
-
+    return self.getRequest( requestName[0][0] )
 
   def getRequest( self, requestName = '', assigned = True ):
     """ read request for execution
