@@ -179,8 +179,9 @@ class RequestDB( DB ):
       self.log.error( "getScheduledRequest: %s" % requestName["Message"] )
       return requestName
     requestName = requestName["Value"]
-    self.log.always( "aaaa %s" % requestName )
-    return S_OK()
+    if not requestName:
+      return S_OK()
+    return self.getRequest( requestName[0] )
 
   def getRequest( self, requestName = '', assigned = True ):
     """ read request for execution
