@@ -192,7 +192,7 @@ class RequestDBTests( unittest.TestCase ):
     put = db.putRequest( req )
     self.assertEqual( put["OK"], True, "putRequest failed" )
 
-    peek = db.readRequest( req.RequestName )
+    peek = db.peekRequest( req.RequestName )
     self.assertEqual( peek["OK"], True, "peek failed " )
 
     peek = peek["Value"]
