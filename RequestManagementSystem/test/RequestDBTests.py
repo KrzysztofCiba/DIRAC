@@ -171,15 +171,13 @@ class RequestDBTests( unittest.TestCase ):
     for i in range( self.i ):
       get = db.getRequest( "test-%s" % i )
       self.assertEqual( get["OK"], True, "get failed" )
-      print get
-      # self.assertEqual(get["Value"], , msg)
 
     for i in range( self.i ):
       delete = db.deleteRequest( "test-%s" % i )
       self.assertEqual( delete["OK"], True, "delete failed" )
-      
-      
-  def test05Scheduled(self):
+
+
+  def test05Scheduled( self ):
     """ scheduled request r/w """
 
     db = RequestDB()
@@ -198,7 +196,7 @@ class RequestDBTests( unittest.TestCase ):
     peek = peek["Value"]
     for op in peek:
       opId = op.OperationID
-    
+
     getFTS = db.getScheduledRequest( opId )
     self.assertEqual( getFTS["OK"], True, "getScheduled failed" )
 
