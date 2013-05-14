@@ -209,6 +209,8 @@ class FTSManagerHandler( RequestHandler ):
         setattr( ftsFile, key, fileJSON.get( key ) )
       ftsFile.SourceSURL = sourceSURL
       ftsFile.TargetSURL = targetSURL
+      ftsFile.SourceSE = repDict["SourceSE"]
+      ftsFile.TargetSE = repDict["TargetSE"]
       ftsFile.Status = fileStatus
       ftsFiles.append( ftsFile )
 

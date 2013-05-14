@@ -177,8 +177,32 @@ class RequestDBTests( unittest.TestCase ):
     for i in range( self.i ):
       delete = db.deleteRequest( "test-%s" % i )
       self.assertEqual( delete["OK"], True, "delete failed" )
+      
+      
+  def test05Scheduled(self):
+    """ scheduled request r/w """
 
+    db = RequestDB()
 
+    req = Request( {"RequestName": "FTSTest"} )
+    op = Operation( { "Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"} )
+    op += File( {"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32" } )
+    req += op
+
+    put = db.putRequest( req )
+    self.assertEqual( put["OK"], True, "putRequest failed" )
+
+    peek = db.readRequest( req.RequestName )
+    self.assertEqual( peek["OK"], True, "peek failed " )
+
+    peek = peek["Value"]
+    for op in peek:
+      opId = op.OperationID
+    
+    getFTS = db.getScheduledRequest( opId )
+    self.assertEqual( getFTS["OK"], True, "getScheduled failed" )
+
+    print getFTS["Value"]
 # # test suite execution
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()

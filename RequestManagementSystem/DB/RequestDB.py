@@ -171,6 +171,16 @@ class RequestDB( DB ):
 
     return S_OK()
 
+  def getScheduledRequest( self, operationID ):
+    """ read scheduled request given its FTS operationID """
+    query = "SELECT `RequestName` FROM `Operation` WHERE `OperationID` = %s;" % operationID
+    requestName = self._query( query )
+    if not requestName["OK"]:
+      self.log.error( "getScheduledRequest: %s" % requestName["Message"] )
+    requestName = requestName["Value"]
+    self.log.always( "aaaa %s" % requestName )
+    return S_OK()
+
   def getRequest( self, requestName = '', assigned = True ):
     """ read request for execution
 
