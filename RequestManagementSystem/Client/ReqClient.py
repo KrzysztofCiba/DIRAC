@@ -1,42 +1,45 @@
 ########################################################################################
 # $HeadURL$
 ########################################################################################
-""" 
+"""
     :mod:  RequestClient
     ====================
- 
+
     .. module:  RequestClient
     :synopsis: implementation of client for RequestDB using DISET framework
 """
-## RCSID
+# # RCSID
 __RCSID__ = "$Id$"
-## from DIRAC
+# # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client
-from DIRAC.RequestManagementSystem.Client.RequestContainer import RequestContainer
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 class RequestClient( Client ):
-  """ 
+  """
   .. class:: RequestClient
 
-  RequestClient is a class manipulating and operation on Requests. 
-  
+  RequestClient is a class manipulating and operation on Requests.
+
   :param RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
+  :param RequestValidator requestValidator: RequestValidator instance
   """
   __requestManager = None
   __requestProxiesDict = {}
+  __requestValidator = None
 
-  def __init__( self, **kwargs ):
+  def __init__( self, useCertificates = False ):
     """c'tor
 
     :param self: self reference
     :param bool useCertificates: flag to enable/disable certificates
     """
-    Client.__init__( self, **kwargs )
+    Client.__init__( self )
     self.log = gLogger.getSubLogger( "RequestManagement/RequestClient" )
     self.setServer( "RequestManagement/RequestManager" )
 
@@ -45,8 +48,8 @@ class RequestClient( Client ):
     if not self.__requestManager:
       url = PathFinder.getServiceURL( "RequestManagement/RequestManager" )
       if not url:
-        raise RuntimeError("CS option RequestManagement/RequestManager URL is not set!")
-      self.__requestManager = RPCClient( url, timeout=timeout )
+        raise RuntimeError( "CS option RequestManagement/RequestManager URL is not set!" )
+      self.__requestManager = RPCClient( url, timeout = timeout )
     return self.__requestManager
 
   def requestProxies( self, timeout = 120 ):
@@ -55,126 +58,90 @@ class RequestClient( Client ):
       self.__requestProxiesDict = {}
       proxiesURLs = fromChar( PathFinder.getServiceURL( "RequestManagement/RequestProxyURLs" ) )
       if not proxiesURLs:
-        self.log.warn( "CS option RequestManagement/RequestProxyURLs is not set!")
+        self.log.warn( "CS option RequestManagement/RequestProxyURLs is not set!" )
       for proxyURL in randomize( proxiesURLs ):
         self.log.debug( "creating RequestProxy for url = %s" % proxyURL )
-        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout=timeout )
-    return self.__requestProxiesDict 
+        self.__requestProxiesDict[proxyURL] = RPCClient( proxyURL, timeout = timeout )
+    return self.__requestProxiesDict
 
-  ########################################################################
-  #
-  # These are the methods operating on existing requests and have fixed URLs
-  #
+  def requestValidator( self ):
+    """ get request validator """
+    if not self.__requestValidator:
+      self.__requestValidator = RequestValidator()
+    return self.__requestValidator
 
-  def updateRequest( self, requestName, requestString ):
-    """ update the request
-
-    :param self: self reference
-    :param str requestName: request name
-    :param str requestString: xml string 
-    """
-    self.log.debug("updateRequest: attempt to update '%s' request" % requestName )
-    updateRequest = self.requestManager().updateRequest( requestName, requestString )
-    if not updateRequest["OK"]:
-      self.log.error( "updateRequest: unable to update '%s' request: %s" % ( requestName, 
-                                                                             updateRequest["Message"] ) )
-    return updateRequest
-
-  def deleteRequest( self, requestName ):
-    """ delete the request 
+  def putRequest( self, request ):
+    """ put request to RequestManager
 
     :param self: self reference
-    :param str requestName: request name
+    :param Request request: Request instance
     """
-    self.log.debug("deleteRequest: attempt to delete '%s' request" % requestName )
-    deleteRequest = self.requestManager().deleteRequest( requestName )
-    if not deleteRequest["OK"]:
-      self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName, 
-                                                                             deleteRequest["Message"] ) )
-    return deleteRequest
-
-  def setRequestStatus( self, requestName, requestStatus  ):
-    """ Set the status of a request. If url parameter is not present, the central 
-    request RPC client would be used.
-    
-    :param self: self reference
-    :param str requestName: request name
-    :param str requestStatus: new status
-    """
-    self.log.debug( "setRequestStatus: attempt to set '%s' status for '%s' request" % ( requestStatus, requestName ) )
-    requestStatus = self.requestManager().setRequestStatus( requestName, requestStatus )
-    if not requestStatus["OK"]:
-      self.log.error( "setRequestStatus: unable to set status for '%s' request: %s" % ( requestName, 
-                                                                                        requestStatus["Message"] ) )
-    return requestStatus
-
-  def getRequestForJobs( self, jobID ):
-    """ Get the request names for the supplied jobIDs.
-
-    :param self: self reference
-    :param list jobID: list of job IDs (integers)
-    """
-    self.log.debug( "getRequestForJobs: attempt to get request(s) for job %s" % jobID )
-    requests = self.requestManager().getRequestForJobs( jobID )
-    if not requests["OK"]:
-      self.log.error( "getRequestForJobs: unable to get request(s) for jobs %s: %s" % ( jobID, 
-                                                                                        requests["Message"] ) )
-    return requests
-
-  def setRequest( self, requestName, requestString ):
-    """ set request to RequestManager
- 
-    :param self: self reference
-    :param str requestName: request name
-    :param str requestString: xml string represenation of request
-    """
-    errorsDict = {}
-    setRequestMgr = self.requestManager().setRequest( requestName, requestString )
+    errorsDict = { "OK" : False }
+    valid = self.requestValidator().validate( request )
+    if not valid["OK"]:
+      self.log.error( "putRequest: request not valid: %s" % valid["Message"] )
+      return valid
+    # # dump to xml string
+    requestXML = request.toXML( True )
+    if not requestXML["OK"]:
+      return requestXML
+    requestXML = requestXML["Value"]
+    setRequestMgr = self.requestManager().putRequest( requestXML )
     if setRequestMgr["OK"]:
       return setRequestMgr
     errorsDict["RequestManager"] = setRequestMgr["Message"]
-    self.log.warn( "setRequest: unable to set request '%s' at RequestManager" % requestName )
+    self.log.warn( "putRequest: unable to set request '%s' at RequestManager" % request.RequestName )
     proxies = self.requestProxies()
     for proxyURL, proxyClient in proxies.items():
-      self.log.debug( "setRequest: trying RequestProxy at %s" % proxyURL )
-      setRequestProxy = proxyClient.setRequest( requestName, requestString )
+      self.log.debug( "putRequest: trying RequestProxy at %s" % proxyURL )
+      setRequestProxy = proxyClient.setRequest( requestXML )
       if setRequestProxy["OK"]:
         if setRequestProxy["Value"]["set"]:
-          self.log.debug( "setRequest: request '%s' successfully set using RequestProxy %s" % ( requestName, 
+          self.log.info( "putRequest: request '%s' successfully set using RequestProxy %s" % ( request.RequestName,
                                                                                                proxyURL ) )
         elif setRequestProxy["Value"]["saved"]:
-          self.log.debug( "setRequest: request '%s' successfully forwarded to RequestProxy %s" % ( requestName, 
+          self.log.info( "putRequest: request '%s' successfully forwarded to RequestProxy %s" % ( request.RequestName,
                                                                                                   proxyURL ) )
         return setRequestProxy
       else:
-        self.log.warn( "setRequest: unable to set request using RequestProxy %s: %s" % ( proxyURL, 
+        self.log.warn( "putRequest: unable to set request using RequestProxy %s: %s" % ( proxyURL,
                                                                                          setRequestProxy["Message"] ) )
         errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
-    ## if we're here neither requestManager nor requestProxy were successfull
-    self.log.error( "setRequest: unable to set request '%s'" % requestName )
-    errorsDict["OK"] = False
-    errorsDict["Message"] = "RequestClient.setRequest: unable to set request '%s'"
+    # # if we're here neither requestManager nor requestProxy were successful
+    self.log.error( "putRequest: unable to set request '%s'" % request.RequestName )
+    errorsDict["Message"] = "RequestClient.putRequest: unable to set request '%s'"
     return errorsDict
-      
-  def getRequest( self, requestType  ):
-    """ get request from RequestDB 
-    
+
+  def getRequest( self, requestName = "" ):
+    """ get request from RequestDB
+
     :param self: self reference
     :param str requestType: type of request
-    """
-    self.log.debug( "getRequest: attempting to get '%s' request." % requestType )
-    getRequest = self.requestManager().getRequest( requestType )
-    if not getRequest["OK"]:
-      self.log.error("getRequest: unable to get '%s' request: %s" % ( requestType, getRequest["Message"] ) )
-    return getRequest  
 
-  def serveRequest( self, requestType = "" ):
-    """ Get the request of type :requestType: from RequestDB.   
+    :return: S_OK( Request instance ) or S_OK() or S_ERROR
+    """
+    self.log.debug( "getRequest: attempting to get request." )
+    getRequest = self.requestManager().getRequest( requestName )
+    if not getRequest["OK"]:
+      self.log.error( "getRequest: unable to get '%s' request: %s" % ( requestName, getRequest["Message"] ) )
+      return getRequest
+    if not getRequest["Value"]:
+      return getRequest
+    getRequest = getRequest["Value"]
+    return Request.fromXML( getRequest )
+
+  def deleteRequest( self, requestName ):
+    """ delete request given it's name
 
     :param self: self reference
-    :param str requestType: request type
+    :param str requestName: request name
     """
-    return self.getRequest( requestType  )
+    self.log.debug( "deleteRequest: attempt to delete '%s' request" % requestName )
+    deleteRequest = self.requestManager().deleteRequest( requestName )
+    if not deleteRequest["OK"]:
+      self.log.error( "deleteRequest: unable to delete '%s' request: %s" % ( requestName,
+                                                                             deleteRequest["Message"] ) )
+    return deleteRequest
 
   def getDBSummary( self ):
     """ Get the summary of requests in the RequestDBs. """
@@ -196,20 +163,7 @@ class RequestClient( Client ):
       self.log.error( "getDigest: unable to get digest for '%s' request: %s" % ( requestName, digest["Message"] ) )
     return digest
 
-  def getCurrentExecutionOrder( self, requestName ):
-    """ Get the request execution order given a request name.
-
-    :param self: self reference
-    :param str requestName: name of the request
-    """
-    self.log.debug( "getCurrentExecutionOrder: attempt to get execution order for '%s' request." % requestName )
-    executionOrder = self.requestManager().getCurrentExecutionOrder( requestName )
-    if not executionOrder["OK"]:
-      self.log.error( "getCurrentExecutionOrder: unable to get execution order for '%s' request: %s" %\
-                        ( requestName, executionOrder["Message"] ) )
-    return executionOrder
-
-  def getRequestStatus( self, requestName  ):
+  def getRequestStatus( self, requestName ):
     """ Get the request status given a request name.
 
     :param self: self reference
@@ -218,12 +172,12 @@ class RequestClient( Client ):
     self.log.debug( "getRequestStatus: attempting to get status for '%s' request." % requestName )
     requestStatus = self.requestManager().getRequestStatus( requestName )
     if not requestStatus["OK"]:
-      self.log.error( "getRequestStatus: unable to get status for '%s' request: %s" % ( requestName, 
+      self.log.error( "getRequestStatus: unable to get status for '%s' request: %s" % ( requestName,
                                                                                         requestStatus["Message"] ) )
     return requestStatus
-                     
+
   def getRequestInfo( self, requestName ):
-    """ The the request info given a request name. 
+    """ The the request info given a request name.
 
     :param self: self reference
     :param str requestName: request name
@@ -231,12 +185,12 @@ class RequestClient( Client ):
     self.log.debug( "getRequestInfo: attempting to get info for '%s' request." % requestName )
     requestInfo = self.requestManager().getRequestInfo( requestName )
     if not requestInfo["OK"]:
-      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName, 
+      self.log.error( "getRequestInfo: unable to get status for '%s' request: %s" % ( requestName,
                                                                                       requestInfo["Message"] ) )
     return requestInfo
 
   def getRequestFileStatus( self, requestName, lfns ):
-    """ Get fiel status for request given a request name.
+    """ Get file status for request given a request name.
 
     :param self: self reference
     :param str requestName: request name
@@ -245,12 +199,12 @@ class RequestClient( Client ):
     self.log.debug( "getRequestFileStatus: attempting to get file statuses for '%s' request." % requestName )
     fileStatus = self.requestManager().getRequestFileStatus( requestName, lfns )
     if not fileStatus["OK"]:
-      self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" %\
+      self.log.error( "getRequestFileStatus: unable to get file status for '%s' request: %s" % \
                         ( requestName, fileStatus["Message"] ) )
     return fileStatus
 
   def finalizeRequest( self, requestName, jobID ):
-    """ check request status and perform finalisation if necessary
+    """ check request status and perform finalization if necessary
 
     :param self: self reference
     :param str requestName: request name
@@ -276,12 +230,12 @@ class RequestClient( Client ):
             jobMinorStatus = res["Value"]["MinorStatus"]
             if jobMinorStatus == "Pending Requests":
               if jobStatus == "Completed":
-                self.log.debug( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
+                self.log.info( "finalizeRequest: Updating job status for %d to Done/Requests done" % jobID )
                 res = stateServer.setJobStatus( jobID, "Done", "Requests done", "" )
                 if not res["OK"]:
                   self.log.error( "finalizeRequest: Failed to set job status" )
               elif jobStatus == "Failed":
-                self.log.debug( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
+                self.log.info( "finalizeRequest: Updating job minor status for %d to Requests done" % jobID )
                 res = stateServer.setJobStatus( jobID, "", "Requests done", "" )
                 if not res["OK"]:
                   self.log.error( "finalizeRequest: Failed to set job status" )
@@ -289,7 +243,7 @@ class RequestClient( Client ):
       self.log.error( "finalizeRequest: failed to get request status: %s" % res["Message"] )
 
     # update the job pending request digest in any case since it is modified
-    self.log.debug( "finalizeRequest: Updating request digest for job %d" % jobID )
+    self.log.info( "finalizeRequest: Updating request digest for job %d" % jobID )
     digest = self.getDigest( requestName )
     if digest["OK"]:
       digest = digest["Value"]
@@ -302,25 +256,41 @@ class RequestClient( Client ):
                                                                                      digest["Message"] ) )
 
     return S_OK()
-  
+
+  def getRequestNamesForJobs( self, jobIDs ):
+    """ get the request names for the supplied jobIDs.
+
+    :param self: self reference
+    :param list jobID: list of job IDs (integers)
+    """
+    self.log.info( "getRequestNamesForJobs: attempt to get request(s) for job %s" % jobIDs )
+    requests = self.requestManager().getRequestNamesForJobs( jobIDs )
+    if not requests["OK"]:
+      self.log.error( "getRequestNamesForJobs: unable to get request(s) for jobs %s: %s" % ( jobIDs,
+                                                                                             requests["Message"] ) )
+    return requests
+
   def readRequestsForJobs( self, jobIDs ):
-    """ read requests for jobs 
-    
+    """ read requests for jobs
+
     :param list jobIDs: list with jobIDs
-    
+
     :return: S_OK( { "Successful" : { jobID1 : RequestContainer, ... },
-                     "Failed" : { jobIDn : "Fail reason" } } ) 
+                     "Failed" : { jobIDn : "Fail reason" } } )
     """
     readReqsForJobs = self.requestManager().readRequestsForJobs( jobIDs )
     if not readReqsForJobs["OK"]:
       return readReqsForJobs
     ret = readReqsForJobs["Value"] if readReqsForJobs["Value"] else None
     if not ret:
-      return S_ERROR("No values returned")
-    ## create RequestContainers out of xml strings for successful reads
-    if "Successful" in ret:    
+      return S_ERROR( "No values returned" )
+    # # create RequestContainers out of xml strings for successful reads
+    if "Successful" in ret:
       for jobID, xmlStr in ret["Successful"].items():
-        req = RequestContainer( init = False )
-        req.parseRequest( request=xmlStr )
+        req = Request.fromXML( xmlStr )
+        if not req["OK"]:
+          ret["Failed"][jobID] = req["Message"]
+          continue
+        req = req["Value"]
         ret["Successful"][jobID] = req
     return S_OK( ret )
