@@ -39,12 +39,13 @@ class FTSFile( Record ):
 
   class representing a single file in the FTS job
   """
+  # # all FTS states
   ALL_STATES = ( "Submitted", "Ready", "Active", "Failed", "Finished", "Staging", "Canceled" )
-
+  # # final FTS states
   FINAL_STATES = ( "Canceled" "Failed", "Finished" )
-
+  # # successful states
   SUCCESS_STATES = ( "Finished" )
-
+  # # failed states
   FAILED_STATES = ( "Canceled", "Failed" )
 
   def __init__( self, fromDict = None ):
