@@ -173,10 +173,11 @@ class RequestDB( DB ):
 
   def getScheduledRequest( self, operationID ):
     """ read scheduled request given its FTS operationID """
-    query = "SELECT `RequestName` FROM `Operation` WHERE `OperationID` = %s;" % operationID
+    query = "SELECT `RequestName` FROM `Request` JOIN `Operation` ON `Request.RequestID` = `Operation`.`OperationID`  WHERE `OperationID` = %s;" % operationID
     requestName = self._query( query )
     if not requestName["OK"]:
       self.log.error( "getScheduledRequest: %s" % requestName["Message"] )
+      return requestName
     requestName = requestName["Value"]
     self.log.always( "aaaa %s" % requestName )
     return S_OK()
