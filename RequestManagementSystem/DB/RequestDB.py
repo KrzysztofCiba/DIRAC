@@ -189,6 +189,7 @@ class RequestDB( DB ):
     :param str requestName: request's name (default None)
     """
     requestID = None
+    connection = None
     if requestName:
       self.log.info( "getRequest: selecting request '%s'" % requestName )
       reqIDQuery = "SELECT `RequestID`, `Status` FROM `Request` WHERE `RequestName` = '%s';" % str( requestName )
@@ -198,6 +199,7 @@ class RequestDB( DB ):
         return reqID
       requestID = reqID["Value"][reqIDQuery][0]["RequestID"] if "RequestID" in reqID["Value"][reqIDQuery][0] else None
       status = reqID["Value"][reqIDQuery][0]["Status"] if "Status" in reqID["Value"][reqIDQuery][0] else None
+      connection = reqID["connection"]
       if not all( ( requestID, status ) ):
         return S_ERROR( "getRequest: request '%s' not exists" % requestName )
       if requestID and status and status == "Assigned" and assigned:
@@ -209,7 +211,7 @@ class RequestDB( DB ):
         self.log.error( "getRequest: %s" % reqIDs["Message"] )
         return reqIDs
       reqIDs = reqIDs["Value"][reqIDsQuery]
-
+      connection = reqIDs["connection"]
       reqIDs = [ reqID["RequestID"] for reqID in reqIDs ]
       if not reqIDs:
         return S_OK()
@@ -218,7 +220,7 @@ class RequestDB( DB ):
 
     selectQuery = [ "SELECT * FROM `Request` WHERE `RequestID` = %s;" % requestID,
                     "SELECT * FROM `Operation` WHERE `RequestID` = %s;" % requestID ]
-    selectReq = self._transaction( selectQuery )
+    selectReq = self._transaction( selectQuery, connection = connection )
     if not selectReq["OK"]:
       self.log.error( "getRequest: %s" % selectReq["Message"] )
       return S_ERROR( selectReq["Message"] )
@@ -230,7 +232,7 @@ class RequestDB( DB ):
       del records["Order"]
       operation = Operation( records )
       getFilesQuery = "SELECT * FROM `File` WHERE `OperationID` = %s;" % operation.OperationID
-      getFiles = self._transaction( getFilesQuery )
+      getFiles = self._transaction( getFilesQuery, connection = connection )
       if not getFiles["OK"]:
         self.log.error( "getRequest: %s" % getFiles["Message"] )
         return getFiles
@@ -241,7 +243,8 @@ class RequestDB( DB ):
       request.addOperation( operation )
 
     if assigned:
-      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID )
+      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID,
+                                       connection = connection )
       if not setAssigned["OK"]:
         self.log.error( "getRequest: %s" % setAssigned["Message"] )
         return setAssigned
