@@ -362,7 +362,7 @@ class FTSJob( Record ):
       checksum = "%s:%s" % ( ftsFile.ChecksumType, ftsFile.Checksum )
       if len( checksum ) == 1:
         checksum = ""
-      surls.append( "%s %s %s" % ( ftsFile.SourceSURL, ftsFile.TargetSURL, checksum ) )
+      surls.append( "%s %s %s" % ( ftsFile.SourceURL, ftsFile.TargetURL, checksum ) )
     return "\n".join( surls )
 
   def submitFTS2( self ):
@@ -437,10 +437,10 @@ class FTSJob( Record ):
       if not candidateFile:
         continue
       candidateFile.Status = fileStatus
-      if candidateFile.Status in FTSFile.FAILED_STATES:
-        pass
       candidateFile.Error = reason
+      if candidateFile.Status in FTSFile.FAILED_STATES:
 
+        pass
     return S_OK()
 
 
