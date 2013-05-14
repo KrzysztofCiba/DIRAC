@@ -182,7 +182,7 @@ class RequestDB( DB ):
     requestName = requestName["Value"]
     if not requestName:
       return S_OK()
-    get = self.getRequest( requestName[0] )
+    get = self.getRequest( requestName[0][0] )
     self.log.always( get )
     return S_OK()
 
