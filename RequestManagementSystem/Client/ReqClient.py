@@ -2,10 +2,10 @@
 # $HeadURL$
 ########################################################################################
 """
-    :mod:  RequestClient
+    :mod:  ReqClient
     ====================
 
-    .. module:  RequestClient
+    .. module:  ReqClient
     :synopsis: implementation of client for RequestDB using DISET framework
 """
 # # RCSID
@@ -19,11 +19,11 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
-class RequestClient( Client ):
+class ReqClient( Client ):
   """
-  .. class:: RequestClient
+  .. class:: ReqClient
 
-  RequestClient is a class manipulating and operation on Requests.
+  ReqClient is a class manipulating and operation on Requests.
 
   :param RPCClient requestManager: RPC client to RequestManager
   :param dict requestProxiesDict: RPC client to ReqestProxy
@@ -40,15 +40,15 @@ class RequestClient( Client ):
     :param bool useCertificates: flag to enable/disable certificates
     """
     Client.__init__( self )
-    self.log = gLogger.getSubLogger( "RequestManagement/RequestClient" )
-    self.setServer( "RequestManagement/RequestManager" )
+    self.log = gLogger.getSubLogger( "RequestManagement/ReqClient" )
+    self.setServer( "RequestManagement/ReqManager" )
 
   def requestManager( self, timeout = 120 ):
     """ facade for RequestManager RPC client """
     if not self.__requestManager:
-      url = PathFinder.getServiceURL( "RequestManagement/RequestManager" )
+      url = PathFinder.getServiceURL( "RequestManagement/ReqManager" )
       if not url:
-        raise RuntimeError( "CS option RequestManagement/RequestManager URL is not set!" )
+        raise RuntimeError( "CS option RequestManagement/ReqManager URL is not set!" )
       self.__requestManager = RPCClient( url, timeout = timeout )
     return self.__requestManager
 
@@ -109,7 +109,7 @@ class RequestClient( Client ):
         errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
     # # if we're here neither requestManager nor requestProxy were successful
     self.log.error( "putRequest: unable to set request '%s'" % request.RequestName )
-    errorsDict["Message"] = "RequestClient.putRequest: unable to set request '%s'"
+    errorsDict["Message"] = "ReqClient.putRequest: unable to set request '%s'"
     return errorsDict
 
   def getRequest( self, requestName = "" ):

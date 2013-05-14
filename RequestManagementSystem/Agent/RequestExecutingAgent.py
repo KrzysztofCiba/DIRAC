@@ -30,7 +30,7 @@ from DIRAC import gMonitor, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 # # agent name
@@ -155,7 +155,7 @@ class RequestExecutingAgent( AgentModule ):
   def requestClient( self ):
     """ RequestClient getter """
     if not self.__requestClient:
-      self.__requestClient = RequestClient()
+      self.__requestClient = ReqClient()
     return self.__requestClient
 
   def cleanCache( self, requestName = None ):
