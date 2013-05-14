@@ -181,7 +181,10 @@ class RequestDB( DB ):
     requestName = requestName["Value"]
     if not requestName:
       return S_OK()
-    return self.getRequest( requestName[0] )
+    get = self.getRequest( requestName[0] )
+    self.log.always( get )
+    return S_OK()
+
 
   def getRequest( self, requestName = '', assigned = True ):
     """ read request for execution
