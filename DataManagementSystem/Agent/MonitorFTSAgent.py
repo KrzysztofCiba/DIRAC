@@ -2,14 +2,14 @@
 # $HeadURL$
 ########################################################################
 """
-  :mod: FTSMonitorAgent
+  :mod: MonitorFTSAgent
   =====================
 
-  .. module: FTSMonitorAgent
+  .. module: MonitorFTSAgent
   :synopsis: agent monitoring FTS jobs at the external FTS services
   .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-  The FTSMonitorAgent takes FTS jobs from the FTSDB and monitors their execution.
+  The MonitorFTSAgent takes FTS jobs from the FTSDB and monitors their execution.
 """
 # # imports
 import time
@@ -28,11 +28,11 @@ from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
 __RCSID__ = "$Id$"
 # # agent's name
 
-AGENT_NAME = 'DataManagement/FTSMonitorAgent'
+AGENT_NAME = 'DataManagement/MonitorFTSAgent'
 
-class FTSMonitorAgent( AgentModule ):
+class MonitorFTSAgent( AgentModule ):
   """
-  .. class:: FTSMonitorAgent
+  .. class:: MonitorFTSAgent
 
   Monitor submitted FTS jobs.
   """
@@ -94,15 +94,15 @@ class FTSMonitorAgent( AgentModule ):
 
     # # gMonitor stuff over here
     gMonitor.registerActivity( "FTSMonitorAtt", "FTSJobs monitor attempts",
-                               "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
+                               "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSMonitorOK", "Successful FTSJobs monitor attempts",
-                               "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
+                               "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSMonitorFail", "Failed FTSJobs monitor attempts",
-                               "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
+                               "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
       gMonitor.registerActivity( "FTSJobs%s" % status, "%s FTSJobs" % status ,
-                                 "FTSMonitorAgent", "FTSJobs/min", gMonitor.OP_SUM )
+                                 "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     self.am_setOption( "shifterProxy", "DataManager" )
 

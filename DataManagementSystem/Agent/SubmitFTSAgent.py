@@ -1,10 +1,10 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
-""" :mod: FTSSubmitAgent
+""" :mod: SubmitFTSAgent
     ====================
 
-    .. module: FTSSubmitAgent
+    .. module: SubmitFTSAgent
     :synopsis: agent submitting FTS jobs to the external FTS services
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
@@ -33,9 +33,9 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 __RCSID__ = "$Id$"
 
-class FTSSubmitAgent( AgentModule ):
+class SubmitFTSAgent( AgentModule ):
   """
-  .. class:: FTSSubmitAgent
+  .. class:: SubmitFTSAgent
 
   This class is submitting previously scheduled files to the FTS system using helper class FTSJob.
 
@@ -77,7 +77,7 @@ class FTSSubmitAgent( AgentModule ):
   def updateLock( self ):
     """ update lock """
     if not self.__updateLock:
-      self.__updateLock = LockRing().getLock( "FTSSubmitAgentLock" )
+      self.__updateLock = LockRing().getLock( "SubmitFTSAgentLock" )
     return self.__updateLock
 
   def ftsClient( self ):
@@ -187,16 +187,16 @@ class FTSSubmitAgent( AgentModule ):
 
     # # gMonitor stuff here
     gMonitor.registerActivity( "FTSJobsAtt", "FTSJob created",
-                               "FTSSubmitAgent", "Created FTSJobs/min", gMonitor.OP_SUM )
+                               "SubmitFTSAgent", "Created FTSJobs/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSJobsOK", "FTSJobs submitted",
-                               "FTSSubmitAgent", "Submitted FTSJobs/min", gMonitor.OP_SUM )
+                               "SubmitFTSAgent", "Submitted FTSJobs/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "FTSJobsFail", "FTSJobs submissions failed",
-                               "FTSSubmitAgent", "Failed FTSJobs/min", gMonitor.OP_SUM )
+                               "SubmitFTSAgent", "Failed FTSJobs/min", gMonitor.OP_SUM )
 
     gMonitor.registerActivity( "FTSFilesPerJob", "FTSFiles per FTSJob",
-                               "FTSSubmitAgent", "Number of FTSFiles per FTSJob", gMonitor.OP_MEAN )
+                               "SubmitFTSAgent", "Number of FTSFiles per FTSJob", gMonitor.OP_MEAN )
     gMonitor.registerActivity( "FTSSizePerJob", "Average FTSFiles size per FTSJob",
-                               "FTSSubmitAgent", "Average submitted size per FTSJob", gMonitor.OP_MEAN )
+                               "SubmitFTSAgent", "Average submitted size per FTSJob", gMonitor.OP_MEAN )
     return S_OK()
 
   def execute( self ):
