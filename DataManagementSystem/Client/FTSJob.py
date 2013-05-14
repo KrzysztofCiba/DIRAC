@@ -34,11 +34,14 @@ from xml.parsers.expat import ExpatError
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import checkGuid
-from DIRAC.Core.Utilities.List import sortList
 # from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Utilities.TypedList import TypedList
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
+# # from RMS
 from DIRAC.RequestManagementSystem.private.Record import Record
+# # from Resources
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
 class FTSJob( Record ):
@@ -47,6 +50,9 @@ class FTSJob( Record ):
 
   class describing one FTS job
   """
+  # # replica manager
+  __replicaManager = None
+
   # # initial states
   INITSTATES = ( "Submitted", "Ready", "Staging" )
   # # ongoing transfer states
@@ -83,6 +89,13 @@ class FTSJob( Record ):
         raise AttributeError( "Unknown FTSJob attribute '%s'" % key )
       if value:
         setattr( self, key, value )
+
+  @classmethod
+  def replicaManager( cls ):
+    """ get replica manager """
+    if not cls.__replicaManager:
+      cls.__replicaManager = ReplicaManager()
+    return cls.__replicaManager
 
   @staticmethod
   def tableDesc():
@@ -438,58 +451,31 @@ class FTSJob( Record ):
         continue
       candidateFile.Status = fileStatus
       candidateFile.Error = reason
-      if candidateFile.Status in FTSFile.FAILED_STATES:
 
-        pass
+    # # register successful files
+    if self.Status in FTSJob.FINALSTATES:
+      return self.registerFiles()
+
     return S_OK()
 
-
-  def __parseOutput( self, full = False ):
-    """ execute glite-transfer-status command and parse its output
-
-    :param self: self reference
-    :param bool full: glite-transfer-status verbosity level, when set, collect information of files as well
-    """
-    comm = [ 'glite-transfer-status', '--verbose', '-s', self.ftsServer, self.ftsGUID ]
-    if full:
-      comm.append( '-l' )
-    res = executeGridCommand( '', comm )
-    if not res['OK']:
-      return res
-    returnCode, output, errStr = res['Value']
-    # Returns a non zero status if error
-    if not returnCode == 0:
-      return S_ERROR( errStr )
-    toRemove = ["'", "<", ">"]
-    for char in toRemove:
-      output = output.replace( char, '' )
-    regExp = re.compile( "Status:\s+(\S+)" )
-    self.Status = re.search( regExp, output ).group( 1 )
-    self.statusSummary = {}
-    for state in self.fileStates:
-      regExp = re.compile( "\s+%s:\s+(\d+)" % state )
-      self.statusSummary[state] = int( re.search( regExp, output ).group( 1 ) )
-    if not full:
-      return S_OK()
-    regExp = re.compile( "[ ]+Source:[ ]+(\S+)\n[ ]+Destination:[ ]+(\S+)\n[ ]+State:[ ]+(\S+)\n[ ]+Retries:[ ]+(\d+)\n[ ]+Reason:[ ]+([\S ]+).+?[ ]+Duration:[ ]+(\d+)", re.S )
-    fileInfo = re.findall( regExp, output )
-    for source, target, status, retries, reason, duration in fileInfo:
-      lfn = ''
-      for candidate in sortList( self.fileDict.keys() ):
-        if re.search( candidate, source ):
-          lfn = candidate
-      if not lfn:
+  def registerFiles( self ):
+    """ register successful files """
+    toRegister = {}
+    targetSE = StorageElement( self.TargetSE )
+    for ftsFile in self:
+      if ftsFile.Status != "Finished":
         continue
-      self.__setFileParameter( lfn, 'Source', source )
-      self.__setFileParameter( lfn, 'Target', target )
-      self.__setFileParameter( lfn, 'Status', status )
-      if reason == '(null)':
-        reason = ''
-      self.__setFileParameter( lfn, 'Reason', reason.replace( "\n", " " ) )
-      self.__setFileParameter( lfn, 'Duration', int( duration ) )
+      pfn = targetSE.getPfnForProtocol( ftsFile.TargetSURL, "SRM2", withPort = False )
+      if not pfn["OK"]:
+        continue
+      pfn = pfn["Value"]
+      toRegister[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
+    if toRegister:
+      return self.replicaManager().addCatalogReplica( toRegister )
+
     return S_OK()
-
-
+    
+        
   def submitFTS3( self ):
     """ placeholder for FTS3 """
     pass
