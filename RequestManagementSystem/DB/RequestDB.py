@@ -210,8 +210,8 @@ class RequestDB( DB ):
       if not reqIDs["OK"]:
         self.log.error( "getRequest: %s" % reqIDs["Message"] )
         return reqIDs
-      reqIDs = reqIDs["Value"][reqIDsQuery]
       connection = reqIDs["connection"]
+      reqIDs = reqIDs["Value"][reqIDsQuery]
       reqIDs = [ reqID["RequestID"] for reqID in reqIDs ]
       if not reqIDs:
         return S_OK()
