@@ -220,7 +220,8 @@ class RequestDB( DB ):
                     "SELECT * FROM `Operation` WHERE `RequestID` = %s;" % requestID ]
     selectReq = self._transaction( selectQuery )
     if not selectReq["OK"]:
-      self.log.error( "getRequest: %s" % selectReq )
+      self.log.error( "getRequest: %s" % selectReq["Message"] )
+      return S_ERROR( selectReq["Message"] )
     selectReq = selectReq["Value"]
 
     request = Request( selectReq[selectQuery[0]][0] )
