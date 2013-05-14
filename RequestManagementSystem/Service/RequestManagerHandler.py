@@ -2,210 +2,229 @@
 # $HeadURL $
 # File: RequestManagerHandler.py
 ########################################################################
-""" :mod: RequestManagerHandler
+""" :mod: RequestManagerHandler 
     ===========================
 
     .. module: RequestManagerHandler
     :synopsis: Implementation of the RequestDB service in the DISET framework
 """
-__RCSID__ = "$Id$"
-# # imports
-from types import DictType, IntType, ListType, StringTypes
-# # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-# # from RMS
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
-class RequestManagerHandler( RequestHandler ):
+__RCSID__ = "$Id$"
+
+## imports 
+from types import DictType, IntType, ListType, LongType, StringTypes
+## from DIARC
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client import PathFinder
+
+## global RequestDB instance
+gRequestDB = False
+
+def initializeRequestManagerHandler(serviceInfo):
+  """ initialise handler """
+  global gRequestDB
+  csSection = PathFinder.getServiceSection( "RequestManagement/RequestManager" )
+  backend = gConfig.getValue('%s/Backend' % csSection)
+  if not backend:
+    fatStr = "RequestManager.initializeRequestManagerHandler: Failed to get backed for RequestDB from CS."
+    gLogger.fatal(fatStr)
+    return S_ERROR(fatStr)
+  gLogger.info("RequestManager.initializeRequestManagerHandler: Initialising with backend", backend)
+  if backend == 'file':
+    from DIRAC.RequestManagementSystem.DB.RequestDBFile import RequestDBFile
+    gRequestDB = RequestDBFile()
+  elif backend == 'mysql':
+    from DIRAC.RequestManagementSystem.DB.RequestDBMySQL import RequestDBMySQL
+    gRequestDB = RequestDBMySQL()
+  else:
+    fatStr = "RequestManager.initializeRequestManagerHandler: Supplied backend is not supported."
+    gLogger.fatal(fatStr, backend)
+    return S_ERROR(fatStr)
+  return S_OK()
+
+class RequestManagerHandler(RequestHandler):
   """
   .. class:: RequestManagerHandler
-
-  RequestDB interface in the DISET framework.
   """
-  # # request validator
-  __validator = None
-  # # request DB instance
-  __requestDB = None
 
-  @classmethod
-  def initializeHandler( cls, serviceInfoDict ):
-    """ initialize handler """
-    try:
-      cls.__requestDB = RequestDB()
-    except RuntimeError, error:
-      gLogger.exception( error )
-      return S_ERROR( error )
-    return S_OK()
-
-  # # helper functions
-  @classmethod
-  def validate( cls, request ):
-    """ request validation """
-    if not cls.__validator:
-      cls.__validator = RequestValidator()
-    return cls.__validator.validate( request )
-
-  @classmethod
-  def __getRequestID( cls, requestName ):
+  @staticmethod
+  def __getRequestID( requestName ):
     """ get requestID for given :requestName: """
     requestID = requestName
-    if type( requestName ) in StringTypes:
-      result = cls.__requestDB.getRequestProperties( requestName, [ "RequestID" ] )
+    if type(requestName) in StringTypes:
+      result = gRequestDB._getRequestAttribute( "RequestID", requestName=requestName )
       if not result["OK"]:
         return result
       requestID = result["Value"]
     return S_OK( requestID )
 
-  types_putRequest = [ StringTypes ]
-  @classmethod
-  def export_putRequest( cls, requestString ):
-    """ put a new request into RequestDB
-
-    :param cls: class ref
-    :param str requestString: xml string
-    """
-    gLogger.debug( "RequestManager.putRequest: Setting request %s" % requestString )
-    requestName = "***UNKNOWN***"
+  types_setRequest = [ StringTypes, StringTypes ]
+  @staticmethod
+  def export_setRequest( requestName, requestString ):
+    """ Set a new request """
+    gLogger.info("RequestManagerHandler.setRequest: Attempting to set %s." % requestName)
     try:
-      request = Request.fromXML( requestString )
-      if not request["OK"]:
-        gLogger.error( "RequestManager.putRequest: %s" % request["Message"] )
-        return request
-      request = request["Value"]
-      valid = cls.validate( request )
-      if not valid["OK"]:
-        gLogger.error( "RequestManagerHandler.putRequest: request not valid: %s" % valid["Message"] )
-        return valid
-      requestName = request.RequestName
-      gLogger.info( "RequestManagerHandler.putRequest: Attempting to set request '%s'" % requestName )
-      return cls.__requestDB.putRequest( request )
+      return gRequestDB.setRequest( requestName, requestString )
     except Exception, error:
-      errStr = "RequestManagerHandler.putRequest: Exception while setting request."
-      gLogger.exception( errStr, requestName, lException = error )
-      return S_ERROR( errStr )
+      errStr = "RequestManagerHandler.setRequest: Exception while setting request."
+      gLogger.exception( errStr, requestName, lException=error )
+      return S_ERROR(errStr)
+
+  types_setRequestStatus = [ StringTypes, StringTypes ]
+  @staticmethod
+  def export_setRequestStatus( requestName, requestStatus ):
+    """ Set status of a request """
+    gLogger.info("RequestHandler.setRequestStatus: Setting status of %s to %s." % ( requestName, requestStatus ) )
+    try:
+      return gRequestDB.setRequestStatus( requestName, requestStatus )
+    except Exception, error:
+      errStr = "RequestHandler.setRequestStatus: Exception while setting request status."
+      gLogger.exception( errStr, requestName, lException=error )
+      return S_ERROR(errStr)
+
+  types_updateRequest = [ StringTypes, StringTypes ]
+  @staticmethod
+  def export_updateRequest( requestName, requestString ):
+    """ Update the request with the supplied string """
+    gLogger.info("RequestManagerHandler.updateRequest: Attempting to update %s." % requestName)
+    try:
+      return gRequestDB.updateRequest( requestName, requestString )
+    except Exception, error:
+      errStr = "RequestManagerHandler.updateRequest: Exception which updating request."
+      gLogger.exception( errStr, requestName, lException=error )
+      return S_ERROR(errStr)
 
   types_getDBSummary = []
-  @classmethod
-  def export_getDBSummary( cls ):
+  @staticmethod
+  def export_getDBSummary():
     """ Get the summary of requests in the Request DB """
-    gLogger.info( "RequestManagerHandler.getDBSummary: Attempting to obtain database summary." )
+    gLogger.info("RequestManagerHandler.getDBSummary: Attempting to obtain database summary.")
     try:
-      return cls.__requestDB.getDBSummary()
+      return gRequestDB.getDBSummary()
     except Exception, error:
       errStr = "RequestManagerHandler.getDBSummary: Exception while getting database summary."
-      gLogger.exception( errStr, lException = error )
-      return S_ERROR( errStr )
+      gLogger.exception( errStr, lException=error )
+      return S_ERROR(errStr)
 
-  types_getRequest = [ StringTypes ]
-  @classmethod
-  def export_getRequest( cls, requestName = "" ):
+  types_getRequest = [StringTypes]
+  @staticmethod
+  def export_getRequest( requestType ):
     """ Get a request of given type from the database """
-    gLogger.info( "RequestHandler.getRequest: Attempting to get request" )
+    gLogger.info("RequestHandler.getRequest: Attempting to get request type", requestType)
     try:
-      getRequest = cls.__requestDB.getRequest( requestName )
-      if not getRequest["OK"]:
-        gLogger.error( "RequestHandler.getRequest: %s" % getRequest["Message"] )
-        return getRequest
-      if getRequest["Value"]:
-        getRequest = getRequest["Value"].toXML( True )
-        if not getRequest["OK"]:
-          gLogger.error( getRequest["Message"] )
-      return getRequest
+      return gRequestDB.getRequest(requestType)
     except Exception, error:
       errStr = "RequestManagerHandler.getRequest: Exception while getting request."
-      gLogger.exception( errStr, lException = error )
-      return S_ERROR( errStr )
+      gLogger.exception( errStr, requestType, lException=error )
+      return S_ERROR(errStr)
 
-  types_peekRequest = [ StringTypes ]
-  @classmethod
-  def export_peekRequest( cls, requestName = "" ):
-    """ peek request given its name """
-    gLogger.info( "RequestHandler.peekRequest: Attempting to get request" )
+  types_serveRequest = []
+  @staticmethod
+  def export_serveRequest( requestType ):
+    """ Serve a request of a given type from the database """
+    gLogger.info("RequestHandler.serveRequest: Attempting to serve request type", requestType)
     try:
-      peekRequest = cls.__requestDB.peekRequest( requestName )
-      if not peekRequest["OK"]:
-        gLogger.error( "RequestHandler.peekRequest: %s" % peekRequest["Message"] )
-        return peekRequest
-      if peekRequest["Value"]:
-        peekRequest = peekRequest["Value"].toXML( True )
-        if not peekRequest["OK"]:
-          gLogger.error( peekRequest["Message"] )
-      return peekRequest
+      return gRequestDB.serveRequest(requestType)
     except Exception, error:
-      errStr = "RequestManagerHandler.peekRequest: Exception while getting request."
-      gLogger.exception( errStr, lException = error )
-      return S_ERROR( errStr )
+      errStr = "RequestManagerHandler.serveRequest: Exception while serving request."
+      gLogger.exception( errStr, requestType, lException=error )
+      return S_ERROR(errStr)
 
   types_getRequestSummaryWeb = [ DictType, ListType, IntType, IntType ]
-  @classmethod
-  def export_getRequestSummaryWeb( cls, selectDict, sortList, startItem, maxItems ):
-    """ Get summary of the request/operations info in the standard form for the web
+  @staticmethod
+  def export_getRequestSummaryWeb( selectDict, sortList, startItem, maxItems):
+    """ Get summary of the request/subrequest info in the standard form for the web """
+    return gRequestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
+  
+  types_getDistinctValues = [ StringTypes ]
+  @staticmethod
+  def export_getDistinctValues( attribute ):
+    """ Get distinct values for a given (sub)request attribute """
+    snames = ['RequestType', 'Operation', 'Status']
+    rnames = ['OwnerDN', 'OwnerGroup']
+    if attribute in snames:
+      return gRequestDB.getDistinctAttributeValues('SubRequests', attribute)
+    elif attribute in rnames:
+      return gRequestDB.getDistinctAttributeValues('Requests', attribute)  
+    return S_ERROR('Invalid attribute %s' % attribute)
 
-    :param dict selectDict: selection dict
-    :param list sortList: ???
-    :param int startItem: start item
-    :param int maxItems: max items
-    """
-    gLogger.info( "RequestManagerHandler.getRequestSummeryWeb called" )
-    try:
-      return cls.__requestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
-    except Exception, error:
-      errStr = "RequestManagerHandler.getRequestSummaryWeb: Exception while getting request."
-      gLogger.exception( errStr, lException = error )
-      return S_ERROR( errStr )
+  types_getDigest = [ list(StringTypes) + [ IntType, LongType ] ]
+  def export_getDigest( self, requestName ):
+    """ Get the digest of the request identified by its name """
+    requestID = self.__getRequestID( requestName )
+    return gRequestDB.getDigest( requestID["Value"] ) if requestID["OK"] else requestID
+   
+  types_getCurrentExecutionOrder = [ list(StringTypes) + [ IntType, LongType ] ]
+  def export_getCurrentExecutionOrder( self, requestName ):
+    """ Get the current execution order of the given request """
+    requestID = self.__getRequestID( requestName )
+    return gRequestDB.getCurrentExecutionOrder( requestID["Value"] ) if requestID["OK"] else requestID
+
+  types_getRequestFileStatus = [ list(StringTypes) + [ IntType, LongType ], ListType ]
+  def export_getRequestFileStatus( self, requestName, lfns ):
+    """ Get the current status of the provided files for the request """
+    requestID = self.__getRequestID( requestName )
+    return gRequestDB.getRequestFileStatus( requestID["Value"], lfns ) if requestID["OK"] else requestID
+
+  types_getRequestStatus = [ list(StringTypes) + [ IntType, LongType ] ]
+  def export_getRequestStatus( self, requestName ):
+    """ Get request status given :requestName: """
+    requestID = self.__getRequestID( requestName )
+    return gRequestDB.getRequestStatus( requestID["Value"] ) if requestID["OK"] else requestID
+
+  types_getRequestInfo = [ list(StringTypes) + [ IntType, LongType ] ]
+  def export_getRequestInfo( self, requestName ):
+    """ get request info for given :requestName: """
+    requestID = self.__getRequestID( requestName )
+    return gRequestDB.getRequestInfo( requestID["Value"] ) if requestID["OK"] else requestID
 
   types_deleteRequest = [ StringTypes ]
-  @classmethod
-  def export_deleteRequest( cls, requestName ):
+  @staticmethod
+  def export_deleteRequest( requestName ):
     """ Delete the request with the supplied name"""
-    gLogger.info( "deleteRequest: Deleting request '%s'..." % requestName )
+    gLogger.info("RequestManagerHandler.deleteRequest: Attempting to delete %s." % requestName)
     try:
-      return cls.__requestDB.deleteRequest( requestName )
+      return gRequestDB.deleteRequest( requestName )
     except Exception, error:
-      errStr = "deleteRequest: Exception which deleting request '%s'." % requestName
-      gLogger.exception( errStr, lException = error )
-      return S_ERROR( errStr )
+      errStr = "RequestManagerHandler.deleteRequest: Exception which deleting request."
+      gLogger.exception( errStr, requestName, lException=error )
+      return S_ERROR(errStr)
 
-  types_getRequestNamesForJobs = [ ListType ]
-  @classmethod
-  def export_getRequestNamesForJobs( cls, jobIDs ):
+  types_getRequestForJobs = [ ListType ]
+  @staticmethod
+  def export_getRequestForJobs( jobIDs ):
     """ Select the request names for supplied jobIDs """
-    gLogger.info( "getRequestNamesForJobs: Attempting to get request names for %s jobs." % len( jobIDs ) )
+    gLogger.info("RequestManagerHandler.getRequestForJobs: Attempting to get request names for %s jobs." % len(jobIDs))
     try:
-      return cls.__requestDB.getRequestNamesForJobs( jobIDs )
+      return gRequestDB.getRequestForJobs( jobIDs )
     except Exception, error:
-      errStr = "getRequestNamesForJobs: Exception which getting request names."
-      gLogger.exception( errStr, '', lException = error )
-      return S_ERROR( errStr )
+      errStr = "RequestManagerHandler.getRequestForJobs: Exception which getting request names."
+      gLogger.exception( errStr, '', lException=error )
+      return S_ERROR(errStr)
+    
+  types_selectRequests = [ DictType ]
+  @staticmethod
+  def export_selectRequests( selectDict, limit=100 ):
+    """ Select requests according to supplied criteria """
+    gLogger.verbose("RequestManagerHandler.selectRequests: Attempting to select requests." )
+    try:
+      return gRequestDB.selectRequests( selectDict, limit )
+    except Exception, error:
+      errStr = "RequestManagerHandler.selectRequests: Exception while selecting requests."
+      gLogger.exception( errStr, '', lException=error)
+      return S_ERROR(errStr)  
 
   types_readRequestsForJobs = [ ListType ]
-  @classmethod
-  def export_readRequestsForJobs( cls, jobIDs ):
+  @staticmethod
+  def export_readRequestsForJobs( jobIDs ):
     """ read requests for jobs given list of jobIDs """
-    gLogger.verbose( "readRequestsForJobs: Attempting to read requests associated to the jobs." )
+    gLogger.verbose("RequestManagerHandler.readRequestsForJobs: Attepting to read requests associated to the jobs." )
     try:
-      res = cls.__requestDB.readRequestsForJobs( jobIDs )
+      res = gRequestDB.readRequestsForJobs( jobIDs )
       return res
     except Exception, error:
-      errStr = "readRequestsForJobs: Exception while selecting requests."
-      gLogger.exception( errStr, '', lException = error )
-      return S_ERROR( errStr )
+      errStr = "RequestManagerHandler.readRequestsForJobs: Exception while selecting requests."
+      gLogger.exception( errStr, '', lException=error )
+      return S_ERROR( errStr )  
 
-  types_getDigest = [ StringTypes ]
-  @classmethod
-  def export_getDigest( cls, requestName ):
-    """ get digest for a request given its name
-
-    :param str requestName: request's name
-    :return: S_OK( json_str )
-    """
-    gLogger.verbose( "RequestManagerHandler.getDigest: Attempting to get digest for request '%s'" % requestName )
-    try:
-      return cls.__requestDB.getDigest( requestName )
-    except Exception , error:
-      errStr = "RequestManagerHandler.getDigest: exception when getting digest for '%s'" % requestName
-      gLogger.exception( errStr, '', lException = error )
-      return S_ERROR( errStr )
