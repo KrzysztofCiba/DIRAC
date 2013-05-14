@@ -221,19 +221,19 @@ class FTSSubmitAgent( AgentModule ):
         self.__rwAccessValidStamp = now
 
     log.debug( "reading FTSFiles..." )
-    ftsFileList = self.ftsClient().getFTSFileList( ["Waiting"] )
-    if not ftsFileList["OK"]:
-      log.error( "unable to read Waiting FTSFiles: %s" % ftsFileList["Message"] )
-      return ftsFileList
-    ftsFileList = ftsFileList["Value"]
+    self.ftsFileList = self.ftsClient().getFTSFileList( ["Waiting"] )
+    if not self.ftsFileList["OK"]:
+      log.error( "unable to read Waiting FTSFiles: %s" % self.ftsFileList["Message"] )
+      return self.ftsFileList
+    self.ftsFileList = self.ftsFileList["Value"]
 
-    if not ftsFileList:
+    if not self.ftsFileList:
       log.info( "no waiting FTSFiles to submit found in FTSDB" )
       return S_OK()
 
     # #  ftsFileDict[sourceSE][targetSE] = [ FTSFile, FTSFile, ... ]
     ftsFileDict = {}
-    for ftsFile in ftsFileList:
+    for ftsFile in self.ftsFileList:
       if ftsFile.SourceSE not in ftsFileDict:
         ftsFileDict[ftsFile.SourceSE] = {}
       if ftsFile.TargetSE not in ftsFileDict[ftsFile.SourceSE]:

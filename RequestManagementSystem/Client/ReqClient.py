@@ -3,7 +3,7 @@
 ########################################################################################
 """
     :mod:  ReqClient
-    ====================
+    ================
 
     .. module:  ReqClient
     :synopsis: implementation of client for RequestDB using DISET framework
