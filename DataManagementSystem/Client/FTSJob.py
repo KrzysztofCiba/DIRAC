@@ -421,7 +421,10 @@ class FTSJob( Record ):
     # Returns a non zero status if error
     if not returnCode:
       return S_ERROR( errStr )
+
     outputStr = outputStr.replace( "'" , "" ).replace( "<", "" ).replace( ">", "" )
+
+    return S_OK( outputStr )
 
     # # set FTS job status
     regExp = re.compile( "Status:\s+(\S+)" )
