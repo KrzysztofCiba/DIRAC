@@ -125,8 +125,8 @@ class Request( Record ):
     if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
       if self.Status != "Waiting":
         self.Status = "Waiting"
-    # elif "Scheduled" in self.subStatusList():
-    #  self.Status = "Scheduled"
+    elif "Scheduled" in self.subStatusList():
+      self.Status = "Scheduled"
     else:
       self.Status = "Done"
 

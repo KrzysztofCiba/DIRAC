@@ -82,7 +82,7 @@ class ReplicateAndRegister( BaseOperation ):
     if not checkReplicas["OK"]:
       self.log.error( checkReplicas["Message"] )
     if hasattr( self, "FTSMode" ) and getattr( self, "FTSMode" ):
-      bannedGroups = getattr( self, "FTSBannedGroups" ) if hasattr( self, "FTSBannedGroups" ) else () 
+      bannedGroups = getattr( self, "FTSBannedGroups" ) if hasattr( self, "FTSBannedGroups" ) else ()
       if self.request.OwnerGroup in bannedGroups:
         self.log.info( "usage of FTS system is banned for request's owner" )
         return self.rmTransfer()
@@ -132,6 +132,7 @@ class ReplicateAndRegister( BaseOperation ):
       return S_ERROR( failed )
 
     replicas = replicas["Successful"]
+
     for repSEName in replicas:
 
       seRead = self.rssSEStatus( repSEName, "Read" )
@@ -152,8 +153,8 @@ class ReplicateAndRegister( BaseOperation ):
         self.log.warn( "unable to create pfn for %s lfn: %s" % ( opFile.LFN, pfn["Message"] ) )
         ret["Banned"].append( repSEName )
         continue
-
       pfn = pfn["Value"]
+
       repSEMetadata = repSE.getFileMetadata( pfn, singleFile = True )
       if not repSEMetadata["OK"]:
         self.log.warn( repSEMetadata["Message"] )
@@ -199,7 +200,7 @@ class ReplicateAndRegister( BaseOperation ):
 
       if not replicas["Valid"] and replicas["Banned"]:
         self.log.warn( "unable to schedule '%s', replicas only at banned SEs" % opFile.LFN )
-        gMonitor.addMark( "FTSScheduleFail", 1 )          
+        gMonitor.addMark( "FTSScheduleFail", 1 )
         continue
 
       validReplicas = replicas["Valid"]

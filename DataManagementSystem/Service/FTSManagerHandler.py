@@ -178,6 +178,8 @@ class FTSManagerHandler( RequestHandler ):
       gLogger.error( "ftsSchedule: %s" % replicaDict["Message"] )
       return replicaDict
     replicaDict = replicaDict["Value"]
+    # # filter out not-valid replicas
+    replicaDict = dict( [( key, value ) for key, value in replicaDict if key in sourceSEs ] )
 
     tree = self.ftsStrategy().replicationTree( sourceSEs, targetSEs, size )
     if not tree["OK"]:
@@ -189,7 +191,7 @@ class FTSManagerHandler( RequestHandler ):
 
     ftsFiles = []
 
-    for route, repDict in tree.items():
+    for repDict in tree.values():
       gLogger.info( "Strategy=%s Ancestor=%s SourceSE=%s TargetSE=%s" % ( repDict["Strategy"], repDict["Ancestor"],
                                                                           repDict["SourceSE"], repDict["TargetSE"] ) )
       transferSURLs = self._getTransferURLs( lfn, repDict, sourceSEs, {} )
