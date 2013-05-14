@@ -68,6 +68,7 @@ class RequestDB( DB ):
     if not conn:
       retDict = self._getConnection()
       if not retDict["OK"]:
+        self.log.error( retDict["Message"] )
         return retDict
       conn = retDict["Value"]
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
@@ -79,6 +80,7 @@ class RequestDB( DB ):
     # # get cursor and connection
     getCursorAndConnection = self.dictCursor( connection )
     if not getCursorAndConnection["OK"]:
+      self.log.error( getCursorAndConnection["Message"] )
       return getCursorAndConnection
     cursor = getCursorAndConnection["Value"]["cursor"]
     connection = getCursorAndConnection["Value"]["connection"]
