@@ -170,8 +170,8 @@ class RequestDBTests( unittest.TestCase ):
 
     for i in range( self.i ):
       get = db.getRequest( "test-%s" % i )
-      self.assertEqual( get["OK"], True, "get failed" )
       print get["Message"] if "Message" in get else get["Value"]
+      self.assertEqual( get["OK"], True, "get failed" )
 
     for i in range( self.i ):
       delete = db.deleteRequest( "test-%s" % i )
