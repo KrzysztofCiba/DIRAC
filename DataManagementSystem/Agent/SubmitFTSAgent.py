@@ -326,10 +326,8 @@ class SubmitFTSAgent( AgentModule ):
     ftsJob.SourceSE = sourceSE
     ftsJob.TargetSE = targetSE
 
-    # # TODO: filter out files without replica at sourceSE
-    rejectedFiles = []
+    # # metadata check is done during scheduling, so just add files to job
     for ftsFile in ftsFileList:
-      # # TODO: check source file presence and its metadata
       ftsJob.addFile( ftsFile )
 
     log.debug( "submitting..." )

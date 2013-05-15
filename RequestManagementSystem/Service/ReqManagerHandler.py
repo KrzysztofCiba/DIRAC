@@ -3,7 +3,7 @@
 # File: ReqManagerHandler.py
 ########################################################################
 """ :mod: ReqManagerHandler
-    ===========================
+    =======================
 
     .. module: ReqManagerHandler
     :synopsis: Implementation of the RequestDB service in the DISET framework
