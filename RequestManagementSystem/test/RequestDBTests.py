@@ -59,7 +59,7 @@ class RequestDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/DBName', 'ReqDB' )
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/User', 'Dirac' )
 
-    self.i = 1000
+    self.i = 5000
 
   def tearDown( self ):
     """ test case tear down """
@@ -170,7 +170,8 @@ class RequestDBTests( unittest.TestCase ):
 
     for i in range( self.i ):
       get = db.getRequest( "test-%s" % i )
-      print get["Message"] if "Message" in get else get["Value"]
+      if "Message" in get:
+        print get["Message"]
       self.assertEqual( get["OK"], True, "get failed" )
 
     for i in range( self.i ):
