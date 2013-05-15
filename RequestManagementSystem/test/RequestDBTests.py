@@ -60,7 +60,7 @@ class RequestDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/DBName', 'ReqDB' )
     gConfig.setOptionValue( '/Systems/RequestManagement/Test/Databases/ReqDB/User', 'Dirac' )
 
-    self.i = 5000
+    self.i = 1000
 
   def tearDown( self ):
     """ test case tear down """
