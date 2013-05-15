@@ -72,7 +72,7 @@ class RequestDB( DB ):
         return retDict
       conn = retDict["Value"]
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
-    return S_OK( cursor )
+    return S_OK( ( conn, cursor ) )
 
   def _transaction( self, queries ):
     """ execute transaction """
@@ -82,9 +82,7 @@ class RequestDB( DB ):
     if not getCursorAndConnection["OK"]:
       self.log.error( getCursorAndConnection["Message"] )
       return getCursorAndConnection
-    cursor = getCursorAndConnection["Value"]["cursor"]
-    connection = getCursorAndConnection["Value"]["connection"]
-
+    connection, cursor = getCursorAndConnection["Value"]
     # # this iwll be returned as query result
     ret = { "OK" : True }
     queryRes = { }
