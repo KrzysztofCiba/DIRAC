@@ -72,13 +72,13 @@ class RequestDB( DB ):
         return retDict
       conn = retDict["Value"]
     cursor = conn.cursor( cursorclass = MySQLdb.cursors.DictCursor )
-    return S_OK( { "cursor" : cursor, "connection" : conn  } )
+    return S_OK( cursor )
 
-  def _transaction( self, queries, connection = None ):
+  def _transaction( self, queries ):
     """ execute transaction """
     queries = [ queries ] if type( queries ) == str else queries
     # # get cursor and connection
-    getCursorAndConnection = self.dictCursor( connection )
+    getCursorAndConnection = self.dictCursor()
     if not getCursorAndConnection["OK"]:
       self.log.error( getCursorAndConnection["Message"] )
       return getCursorAndConnection
@@ -86,8 +86,7 @@ class RequestDB( DB ):
     connection = getCursorAndConnection["Value"]["connection"]
 
     # # this iwll be returned as query result
-    ret = { "OK" : True,
-            "connection" : connection }
+    ret = { "OK" : True }
     queryRes = { }
     # # switch off autocommit
     connection.autocommit( False )
@@ -115,19 +114,16 @@ class RequestDB( DB ):
       cursor.close()
       return S_ERROR( str( error ) )
 
-  def putRequest( self, request, connection = None ):
+  def putRequest( self, request ):
     """ update or insert request into db
 
     :param Request request: Request instance
     """
     query = "SELECT `RequestID` from `Request` WHERE `RequestName` = '%s'" % request.RequestName
-    exists = self._transaction( query, connection = connection )
+    exists = self._transaction( query )
     if not exists["OK"]:
       self.log.error( "putRequest: %s" % exists["Message"] )
       return exists
-
-    # # save connection for further use
-    connection = exists["connection"]
     exists = exists["Value"]
 
     if exists[query] and exists[query][0]["RequestID"] != request.RequestID:
@@ -137,7 +133,7 @@ class RequestDB( DB ):
     if not reqSQL["OK"]:
       return reqSQL
     reqSQL = reqSQL["Value"]
-    putRequest = self._transaction( reqSQL, connection = connection )
+    putRequest = self._transaction( reqSQL )
     if not putRequest["OK"]:
       self.log.error( "putRequest: %s" % putRequest["Message"] )
       return putRequest
@@ -150,11 +146,11 @@ class RequestDB( DB ):
 
     for operation in request:
       opSQL = operation.toSQL()["Value"]
-      putOperation = self._transaction( opSQL, connection = connection )
+      putOperation = self._transaction( opSQL )
       if not putOperation["OK"]:
         self.log.error( "putRequest: unable to put operation %d: %s" % ( request.indexOf( operation ),
                                                                         putOperation["Message"] ) )
-        deleteRequest = self.deleteRequest( request.requestName, connection = connection )
+        deleteRequest = self.deleteRequest( request.requestName )
         if not deleteRequest["OK"]:
           self.log.error( "putRequest: unable to delete request '%s': %s" % ( request.requestName, deleteRequest["Message"] ) )
         return putOperation
@@ -164,11 +160,11 @@ class RequestDB( DB ):
         operation.OperationID = lastrowid
       filesToSQL = [ opFile.toSQL()["Value"] for opFile in operation ]
       if filesToSQL:
-        putFiles = self._transaction( filesToSQL, connection = connection )
+        putFiles = self._transaction( filesToSQL )
         if not putFiles["OK"]:
           self.log.error( "putRequest: unable to put files for operation %d: %s" % ( request.indexOf( operation ),
                                                                                     putFiles["Message"] ) )
-          deleteRequest = self.deleteRequest( request.requestName, connection = connection )
+          deleteRequest = self.deleteRequest( request.requestName )
           return putFiles
 
     return S_OK()
@@ -191,7 +187,6 @@ class RequestDB( DB ):
     :param str requestName: request's name (default None)
     """
     requestID = None
-    connection = None
     if requestName:
       self.log.info( "getRequest: selecting request '%s'" % requestName )
       reqIDQuery = "SELECT `RequestID`, `Status` FROM `Request` WHERE `RequestName` = '%s';" % str( requestName )
@@ -201,7 +196,6 @@ class RequestDB( DB ):
         return reqID
       requestID = reqID["Value"][reqIDQuery][0]["RequestID"] if "RequestID" in reqID["Value"][reqIDQuery][0] else None
       status = reqID["Value"][reqIDQuery][0]["Status"] if "Status" in reqID["Value"][reqIDQuery][0] else None
-      connection = reqID["connection"]
       if not all( ( requestID, status ) ):
         return S_ERROR( "getRequest: request '%s' not exists" % requestName )
       if requestID and status and status == "Assigned" and assigned:
@@ -212,7 +206,6 @@ class RequestDB( DB ):
       if not reqIDs["OK"]:
         self.log.error( "getRequest: %s" % reqIDs["Message"] )
         return reqIDs
-      connection = reqIDs["connection"]
       reqIDs = reqIDs["Value"][reqIDsQuery]
       reqIDs = [ reqID["RequestID"] for reqID in reqIDs ]
       if not reqIDs:
@@ -222,7 +215,7 @@ class RequestDB( DB ):
 
     selectQuery = [ "SELECT * FROM `Request` WHERE `RequestID` = %s;" % requestID,
                     "SELECT * FROM `Operation` WHERE `RequestID` = %s;" % requestID ]
-    selectReq = self._transaction( selectQuery, connection = connection )
+    selectReq = self._transaction( selectQuery )
     if not selectReq["OK"]:
       self.log.error( "getRequest: %s" % selectReq["Message"] )
       return S_ERROR( selectReq["Message"] )
@@ -234,7 +227,7 @@ class RequestDB( DB ):
       del records["Order"]
       operation = Operation( records )
       getFilesQuery = "SELECT * FROM `File` WHERE `OperationID` = %s;" % operation.OperationID
-      getFiles = self._transaction( getFilesQuery, connection = connection )
+      getFiles = self._transaction( getFilesQuery )
       if not getFiles["OK"]:
         self.log.error( "getRequest: %s" % getFiles["Message"] )
         return getFiles
@@ -245,8 +238,7 @@ class RequestDB( DB ):
       request.addOperation( operation )
 
     if assigned:
-      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID,
-                                       connection = connection )
+      setAssigned = self._transaction( "UPDATE `Request` SET `Status` = 'Assigned' WHERE RequestID = %s;" % requestID )
       if not setAssigned["OK"]:
         self.log.error( "getRequest: %s" % setAssigned["Message"] )
         return setAssigned
@@ -260,7 +252,7 @@ class RequestDB( DB ):
     """
     return self.getRequest( requestName, False )
 
-  def deleteRequest( self, requestName, connection = None ):
+  def deleteRequest( self, requestName ):
     """ delete request given its name
 
     :param str requestName: request.RequestName
@@ -268,13 +260,11 @@ class RequestDB( DB ):
     """
     requestIDs = self._transaction( 
       "SELECT r.RequestID, o.OperationID FROM `Request` r LEFT JOIN `Operation` o "\
-        "ON r.RequestID = o.RequestID WHERE `RequestName` = '%s'" % requestName, connection )
+        "ON r.RequestID = o.RequestID WHERE `RequestName` = '%s'" % requestName )
 
     if not requestIDs["OK"]:
       self.log.error( "deleteRequest: unable to read RequestID and OperationIDs: %s" % requestIDs["Message"] )
       return requestIDs
-    # # save connection for further use
-    connection = requestIDs["connection"]
     requestIDs = requestIDs["Value"]
     trans = []
     requestID = None
@@ -289,7 +279,7 @@ class RequestDB( DB ):
     if requestID:
       trans.append( "DELETE FROM `Request` WHERE `RequestID` = %s;" % requestID )
 
-    delete = self._transaction( trans, connection )
+    delete = self._transaction( trans )
     if not delete["OK"]:
       self.log.error( "deleteRequest: unable to delete request '%s': %s" % ( requestName, delete["Message"] ) )
       return delete
