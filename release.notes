@@ -1,4 +1,4 @@
-[v7r0-pre5]
+[v7r0-pre6]
 
 FIX: removed __init__ files from test directories to avoid importing
 
@@ -40,6 +40,8 @@ CHANGE: FileCatalogClient - list meta data sets
 FIX: FileCatalog - extra check while new user registration for already existing entry
 FIX: FileManagerBase - clean the FC_FileAncestors table when removing a file
 BUGFIX: ReplicaManager - pass catalog argument in putAndRegister to registerFile call, closes #1369
+FIX: SRM2Storage - in getCurrentStatus() use pythonCall to impose a timeout on top of
+     lcg_util.lcg_stmd call
 
 *WMS
 CHANGE: JobScheduling - is now extensible. Added unit test
@@ -59,6 +61,10 @@ NEW: StorageElement - enable Storage Element proxy configuration by protocol nam
 CHANGE: glexecComputingElement - updated to reflect new glexec evolution, added DIRAC_GLEXEC 
         to the environment when running under glexec     
 NEW: XXXStorage - added getCurrentStatus() method        
+
+[v6r8p12]
+
+NEW: Applied patches from v6r7p29
 
 [v6r8p11]
 
@@ -201,6 +207,18 @@ BUGFIX: ResourceStatus, RSSCacheNoThread - ensure that locks are always released
 FIX: TaskManager - site in the job definition is taken into account when submitting
 NEW: Transformation - get the allowed plugins from the CS /Operations/Transformations/AllowedPlugins
 FIX: ValidateOutputDataAgent - self not needed for static methods
+
+[v6r7p29]
+
+*DMS
+CHANGE: FileCatalog - selection metadata is also returned as compatible metadata in the result
+        of getCompatibleMetadata() call
+NEW: FileCatalog - added path argument to getCompatibleMetadata() call
+NEW: FileCatalogClient - added getFileUserMetadata()
+BUGFIX: dirac-dms-fts-monitor - exit with code -1 in case of error
+
+*Resources
+FIX: CREAMComputingElement - check globus-url-copy result for errors when retrieving job output
 
 [v6r7p28]
 
