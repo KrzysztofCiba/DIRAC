@@ -170,23 +170,11 @@ class RequestDBTests( unittest.TestCase ):
       self.assertEqual( put["OK"], True, "put failed" )
 
 
-    q1 = []
-    q2 = []
     for i in range( self.i ):
-      start = datetime.datetime.now()
       get = db.getRequest( "test-%s" % i, False )
-      q1.append( datetime.datetime.now() - start )
       if "Message" in get:
         print get["Message"]
       self.assertEqual( get["OK"], True, "get failed" )
-
-      start = datetime.datetime.now()
-      get = db.getRequest()
-      q2.append( datetime.datetime.now() - start )
-
-    print "named query avg time", sum( [ td.seconds for td in  q1 ] ) / self.i
-    print "anon query avg time", sum( [ td.seconds for td in q2 ] ) / self.i
-    
 
     for i in range( self.i ):
       delete = db.deleteRequest( "test-%s" % i )
@@ -215,8 +203,9 @@ class RequestDBTests( unittest.TestCase ):
 
     getFTS = db.getScheduledRequest( opId )
     self.assertEqual( getFTS["OK"], True, "getScheduled failed" )
+    self.assertEqual( getFTS["Value"].RequestName, "FTSTest", "wrong request selected" )
 
-    print getFTS["Value"]
+
 # # test suite execution
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()
