@@ -184,8 +184,8 @@ class RequestDBTests( unittest.TestCase ):
       get = db.getRequest()
       q2.append( datetime.datetime.now() - start )
 
-    print "named query avg time", sum( [ td.total_seconds() for td in  q1 ] ) / self.i
-    print "anon query avg time", sum( [ td.total_seconds() for td in q2 ] ) / self.i
+    print "named query avg time", sum( [ td.seconds for td in  q1 ] ) / self.i
+    print "anon query avg time", sum( [ td.seconds for td in q2 ] ) / self.i
     
 
     for i in range( self.i ):
