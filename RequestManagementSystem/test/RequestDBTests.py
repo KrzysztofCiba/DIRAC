@@ -25,6 +25,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import unittest
+import datetime
 # # from DIRAC
 from DIRAC import gConfig
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -168,11 +169,24 @@ class RequestDBTests( unittest.TestCase ):
       put = db.putRequest( request )
       self.assertEqual( put["OK"], True, "put failed" )
 
+
+    q1 = []
+    q2 = []
     for i in range( self.i ):
-      get = db.getRequest( "test-%s" % i )
+      start = datetime.datetime.now()
+      get = db.getRequest( "test-%s" % i, False )
+      q1.append( datetime.datetime.now() - start )
       if "Message" in get:
         print get["Message"]
       self.assertEqual( get["OK"], True, "get failed" )
+
+      start = datetime.datetime.now()
+      get = db.getRequest()
+      q2.append( datetime.datetime.now() - start )
+
+    print "named query avg time", sum( q1 ) / self.i
+    print "anon query avg time", sum( q2 ) / self.i
+
 
     for i in range( self.i ):
       delete = db.deleteRequest( "test-%s" % i )
