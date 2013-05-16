@@ -21,7 +21,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSManagerHandler class.
 
 # # imports
-from types import DictType, LongType, ListType, IntType
+from types import DictType, LongType, ListType, IntType, StringTypes
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -156,6 +156,31 @@ class FTSManagerHandler( RequestHandler ):
     if not cls.__replicaManager:
       cls.__replicaManager = ReplicaManager()
     return cls.__replicaManager
+
+  types_setFTSFilesWaiting = [ IntType, StringTypes, ListType ]
+  def export_setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
+    """ update states for waiting replications """
+    try:
+      update = self.__ftsDB.setFTSFilesWaiting( operationID, sourceSE, opFileIDList )
+      if not update["OK"]:
+        gLogger.error( "setFTSFilesWaiting: %s" % update["Message"] )
+      return update
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( str( error ) )
+
+  types_deleteFTSFiles = [ IntType, ListType ]
+  def export_deleteFTSFiles( self, operationID, opFileIDList = None ):
+    """ cleanup FTSFiles for rescheduling """
+    opFileIDList = opFileIDList if opFileIDList else []
+    try:
+      delete = self.__ftsDB.deleteFTSFiles( operationID, opFileIDList )
+      if not delete["OK"]:
+        gLogger.error( "deleteFTSFiles: %s" % delete["Message"] )
+      return delete
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( str( error ) )
 
   types_ftsSchedule = [ DictType, ListType, ListType ]
   def export_ftsSchedule( self, fileJSON, sourceSEs, targetSEs ):

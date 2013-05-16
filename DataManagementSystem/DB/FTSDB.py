@@ -217,15 +217,24 @@ class FTSDB( DB ):
     ftsFile = FTSFile( select.values()[0][0] )
     return S_OK( ftsFile )
 
-  def deleteFTSFiles( self, opFileIDList, operationID ):
-    """ delete FTSFiles for reschedule """
-    query = "DELETE FROM `FTSFile` WHERE FileID IN (%s) AND OperationID = %s" % ( intListToString( opFileIDList ), operationID )
-    delete = self._update( query )
+  def deleteFTSFiles( self, operationID, opFileIDList ):
+    """ delete FTSFiles for reschedule
+
+    :param int operationID: ReqDB.Operation.OperationID
+    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
+    """
+    query = [ "DELETE FROM `FTSFile` WHERE OperationID = %s" % operationID ]
+    if opFileIDList:
+      query.append( " AND `FileID` IN (%s)" % intListToString( opFileIDList ) )
+    else:
+      self.log.warn( "deleteFTSFile: will remove all FTSFiles for OperationID = %s" % operationID )
+    query.append( ";" )
+    delete = self._update( "".join( query ) )
     if not delete["OK"]:
       self.log.error( "deleteFTSFiles: %s" % delete["Message"] )
     return delete
 
-  def setFTSFilesWaiting( self, opFileIDList, operationID, sourceSE ):
+  def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
     """ propagate states for descendants in replication tree
 
     :param list opFileIDList: [ ReqDB.File.FileID, ... ]

@@ -109,7 +109,7 @@ class ReplicateAndRegister( BaseOperation ):
         waitingFiles[failedLFN].Status = "Failed"
 
     for successfulLFN, reps in replicas["Value"]["Successful"]:
-      if targetSESet == set( reps ):
+      if targetSESet.issubset( set( reps ) ):
         self.log.info( "file %s has been replicated to all targets" % successfulLFN )
         waitingFiles[successfulLFN].Status = "Done"
 

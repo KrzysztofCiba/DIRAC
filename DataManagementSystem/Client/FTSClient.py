@@ -235,6 +235,24 @@ class FTSClient( Client ):
     getFTSHistory = getFTSHistory["Value"]
     return S_OK( [ FTSHistoryView( ftsHistory ) for ftsHistory in getFTSHistory ] )
 
+
+  def setFTSFilesWaiting( self, operationID, sourceSE, opFileIDList ):
+    """ update status for waiting FTSFiles from 'Waiting#SourceSE' to 'Waiting'
+
+    :param int operationID: ReqDB.Operation.OperationID
+    :param str sourceSE: source SE name
+    :param opFileIDList: [ ReqDB.File.FileID, ... ]
+    """
+    return self.ftsManager().setFTSFilesWaiting( operationID, sourceSE, opFileIDList )
+
+  def deleteFTSFiles( self, operationID, opFileIDList ):
+    """ delete FTSFiles for rescheduling
+
+    :param int operationID: ReqDB.Operation.OperationID
+    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
+    """
+    return self.ftsManager().deleteFTSFiles( operationID, opFileIDList )
+
   def ftsSchedule( self, opFile, sourceSEs, targetSEs ):
     """ schedule lfn for FTS job
 

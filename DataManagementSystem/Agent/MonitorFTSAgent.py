@@ -161,61 +161,100 @@ class MonitorFTSAgent( AgentModule ):
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
     # # placeholder for request
     request = None
+    # # flag
+    transferOpFinished = False
 
     if ftsJob.Status in FTSJob.FINALSTATES:
+
+      # # perform getting full monitoring info
       monitor = ftsJob.monitorFTS2( full = True )
       if not monitor["OK"]:
         log.error( monitor["Message"] )
         return monitor
 
+      # # split FTSFiles to different classes
       processFiles = self.filterFiles( ftsJob )
       if not processFiles["OK"]:
         log.error( processFiles["Message"] )
         return processFiles
       processFiles = processFiles["Value"]
 
+      # # ... and keep them for further processing
       toReschedule = processFiles.get( "toReschedule", [] )
       toUpdate = processFiles.get( "toUpdate", [] )
       toRetry = processFiles.get( "toRetry", [] )
       toRegister = processFiles.get( "toRegister", [] )
 
-      # # ftsFiles to retry
+      # # update ftsFiles to retry
       for ftsFile in toRetry:
         ftsFile.Status = "Waiting"
         putFile = self.ftsManager().putFile( ftsFile )
         if not putFile["OK"]:
+          # # bail out - unable to put file back
           log.error( "unable to put file for retry: %s" % putFile["Message"] )
-          continue
-
-      # # do I need to read request?
-      if toReschedule + toUpdate + toRegister:
-
-        # # get OperationID
-        opId = ftsJob[0].OperationID
-        request = self.requestClient().getScheduledRequest( opId )
-        if not request["OK"]:
-          log.error( request["Message"] )
-          return request
-        request = request["Value"]
-        # # get transfer operation
-        transferOp = None
-        for op in request:
-          if op.OperationID == opId:
-            transferOp = op
-            break
-
-        if not transferOp:
-          log.warn( "unable to find 'ReplicateAndRegister' operation %d in request %s" % ( opId, request.RequestID ) )
+          ftsJob.Status = "Submitted"
           break
 
-        if toReschedule:
-          self.rescheduleFiles( transferOp, toReschedule )
+      opId = ftsJob[0].OperationID
+      request = self.requestClient().getScheduledRequest( opId )
+      if not request["OK"]:
+        # # bailout - request can not be read
+        log.error( request["Message"] )
+        # # will retry later
+        ftsJob.Status = "Submitted"
+        break
 
-        if toRegister:
-          self.registerFiles( request, transferOp, toRegister )
+      request = request["Value"]
+      if not request:
+        log.warn( "Request for FTSJob not found in ReqDB, probably deleted" )
+        for ftsFile in ftsJob:
+          ftsFile.Status = "Canceled"
+          ftsFile.Error = "Request deleted"
+        ftsJob.Status = "Canceled"
+        break
 
+      transferOp = None
+      for op in request:
+        if op.OperationID == opId:
+          transferOp = op
+          break
 
+      missingReplicas = self.checkReadyReplicas( transferOp )
+      if not missingReplicas["OK"]:
+        # # bail out on error
+        log.error( missingReplicas["Message"] )
+        break
+      missingReplicas = missingReplicas["Value"]
 
+      if not missingReplicas:
+        log.info( "all files replicated in 'ReplicateAndRegister' OperationID=%s Request '%s'" % ( opId,
+                                                                                                   request.RequestName ) )
+        for ftsFile in ftsJob:
+          ftsFile.Status = "Finished"
+        ftsJob.Status = "Finished"
+        break
+
+      if toReschedule:
+        self.rescheduleFiles( transferOp, toReschedule )
+
+      if toRegister:
+        self.registerFiles( request, transferOp, toRegister )
+
+      if toUpdate:
+        update = self.ftsClient().setFTSFilesWaiting( opId,
+                                                      ftsJob.TargetSE,
+                                                      [ ftsFile.FileID for ftsFile in toUpdate ] )
+        if not update["OK"]:
+          log.error( "unable to update descendants for finished FTSFiles: %s" % update["Message"] )
+          ftsJob.Status = "Submitted"
+          break
+
+    # # put back request if any
+    if request:
+      putRequest = self.requestClient().putRequest( request )
+      if not putRequest["OK"]:
+        log.error( "unable to put back request: %s" % putRequest["Message"] )
+      return putRequest
 
     putFTSJob = self.ftsClient().putFTSJob( ftsJob )
     if not putFTSJob["OK"]:
@@ -225,6 +264,37 @@ class MonitorFTSAgent( AgentModule ):
 
     gMonitor.addMark( "FTSMonitorOK", 1 )
     return S_OK()
+
+  def checkReadyReplicas( self, transferOperation ):
+    """ check ready replicas for transferOperation """
+    targetSESet = set( transferOperation.targetSEList )
+
+    # # { LFN: [ targetSE, ... ] }
+    missingReplicas = {}
+
+    scheduledFiles = dict( [ ( opFile.LFN, opFile ) for opFile in transferOperation
+                              if opFile.Status in ( "Scheduled", "Waiting" ) ] )
+    # # get replicas
+    replicas = self.replicaManager().getCatalogReplicas( scheduledFiles.keys() )
+
+    if not replicas["OK"]:
+      self.log.error( replicas["Message"] )
+      return replicas
+    replicas = replicas["Value"]
+
+    for successfulLFN, reps in replicas["Successful"]:
+      if targetSESet.issubset( set( reps ) ):
+        scheduledFiles[successfulLFN].Status = "Done"
+      else:
+        missingReplicas[successfulLFN] = list( set( reps ) - targetSESet )
+
+    reMissing = re.compile( "no such file or directory" )
+    for failedLFN, errStr in replicas["Failed"]:
+      scheduledFiles[failedLFN].Error = errStr
+      if reMissing.search( errStr.lower() ):
+        scheduledFiles[failedLFN].Status = "Failed"
+
+    return S_OK( missingReplicas )
 
   def rescheduleFiles( self, operation = None, toReschedule = None ):
     """ update statues for Operation.Files to waiting """
