@@ -200,18 +200,27 @@ class MonitorFTSAgent( AgentModule ):
     if not monitor["OK"]:
       gMonitor.addMark( "FTSMonitorFail", 1 )
       log.error( monitor["Message"] )
-      if "getTransferJobSummary2: Not authorised to query request" in res["Message"]:
+      if "getTransferJobSummary2: Not authorised to query request" in monitor["Message"]:
         log.error( "FTSJob expired at server" )
-        return self.cleanUpExpiredJob( ftsJob )
+        return self.resetFiles( ftsJob, "FTSJob expired on server", sTJId )
       return monitor
     monitor = monitor["Value"]
 
     # # monitor status change
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
 
+    succFiles = []
+    failFiles = []
     if ftsJob.Status in FTSJob.FINALSTATES:
+      # #  read request
+      for ftsFile in ftsJob:
+        # # successful files
+        if ftsFile.Status == "Finished":
+          succFiles.append( ftsFile )
+        else:
+          failFiles.append( ftsFile )
 
-      pass
+
 
     # # list of files to reschedule
     # toReschedule = monitor.get( "toReschedule", [] )
@@ -228,24 +237,33 @@ class MonitorFTSAgent( AgentModule ):
     return S_OK()
 
 
-  def resetFiles( self, ftsJob ):
+  def processSuccFiles( self, ftsJob ):
+    """ """
+    pass
+
+  def processFailedFiles( self, ftsJob ):
+    """ """
+    pass
+
+  def resetFiles( self, ftsJob, reason, sTJId ):
     """ clean up when FTS job had expired on the server side
 
     :param FTSJob ftsJob: FTSJob instance
     """
-
+    log = gLogger.getSubLogger( sTJId )
     for ftsFile in ftsJob:
       ftsFile.Status = "Waiting"
       ftsFile.FTSGUID = ""
       ftsFile.Error = "FTSJob expired on server"
       putFile = self.ftsClient().putFTSFile( ftsFile )
       if not putFile["OK"]:
-        pass
+        log.error( putFile["Message"] )
+        return putFile
     ftsJob.Status = "Failed"
-    putJob = self.ftsClient()
+    putJob = self.ftsClient().putFTSJob( ftsJob )
     if not putJob["OK"]:
-      pass
-
+      log.error( putJob["Message"] )
+      return putJob
     return S_OK()
 
 
