@@ -336,8 +336,6 @@ class FTSDB( DB ):
   def getFTSFileList( self, statusList = None, limit = 1000 ):
     """ get FTSFiles with status in :statusList: """
     statusList = statusList if statusList else [ "Waiting" ]
-    # # TODO: use regexp
-    query = "SELECT * FROM `FTSFile`"
     reStatus = []
     inStatus = []
     for status in statusList:
