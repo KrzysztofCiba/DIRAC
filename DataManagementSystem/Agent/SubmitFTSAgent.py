@@ -276,8 +276,15 @@ class SubmitFTSAgent( AgentModule ):
         route = route["Value"]
 
         for opID, ftsFileList in operationDict.items():
-          log.info("processing %s files from Operation %s" % ( len(ftsFileList), opID ) )
-          for ftsFileListChunk in getChunk( ftsFileList, self.MAX_FILES_PER_JOB ):
+
+          log.info( "processing %s files from Operation %s" % ( len( ftsFileList ), opID ) )
+
+          waitingFileList = [ ftsFile for ftsFile in ftsFileList if ftsFile.Status == "Waiting" ]
+          if not waitingFileList:
+            self.log.debug( "no waiting files for transfer found" )
+            continue
+
+          for ftsFileListChunk in getChunk( waitingFileList, self.MAX_FILES_PER_JOB ):
             minmax = min( self.MAX_ACTIVE_JOBS, route.toNode.MaxActiveJobs )
             if route.ActiveJobs > minmax:
               log.info( "maximal number of active jobs (%s) reached at FTS route %s" % ( minmax,

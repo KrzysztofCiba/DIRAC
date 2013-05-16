@@ -349,7 +349,6 @@ class FTSDB( DB ):
     if whereClause:
       whereClause = "WHERE %s" % whereClause
     query = "SELECT * FROM `FTSFile` %s ORDER BY `LastUpdate` DESC LIMIT %s;" % ( whereClause, limit )
-    self.log.always( query )
     trn = self._transaction( [query] )
     if not trn["OK"]:
       self.log.error( "getFTSFileList: %s" % trn["Message"] )
@@ -370,7 +369,7 @@ class FTSDB( DB ):
     # # this will be returned
     retDict = { "FTSSite": {}, "FTSJob": {}, "FTSFile": {}, "FTSHistory": {} }
     transQueries = { "SELECT * FROM `FTSSite`;": "FTSSite",
-                    "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
+                     "SELECT `Status`, COUNT(`Status`) FROM `FTSJob` GROUP BY `Status`;" : "FTSJob",
                      "SELECT `Status`, COUNT(`Status`) FROM `FTSFile` GROUP BY `Status`;" : "FTSFile",
                      "SELECT * FROM `FTSHistoryView`;": "FTSHistory" }
     ret = self._transaction( transQueries.keys() )
