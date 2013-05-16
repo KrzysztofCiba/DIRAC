@@ -339,7 +339,7 @@ class FTSDB( DB ):
     reStatus = []
     inStatus = []
     for status in statusList:
-      if "%" in status:
+      if "%" in status or ".*" in status or ".+" in status:
         reStatus.append( status )
       else:
         inStatus.append( status )
