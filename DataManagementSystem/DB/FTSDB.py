@@ -345,7 +345,7 @@ class FTSDB( DB ):
         inStatus.append( status )
     reQuery = "`Status` REGEXP '%s'" % "|".join( reStatus ) if reStatus else ""
     inQuery = "`Status` IN (%s)" % stringListToString( inStatus ) if inStatus else ""
-    whereClause = " AND ".join( [ q for q in ( reQuery, inQuery ) if q ] )
+    whereClause = " OR ".join( [ q for q in ( reQuery, inQuery ) if q ] )
     if whereClause:
       whereClause = "WHERE %s" % whereClause
     query = "SELECT * FROM `FTSFile` %s ORDER BY `LastUpdate` DESC LIMIT %s;" % ( whereClause, limit )
