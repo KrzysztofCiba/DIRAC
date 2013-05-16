@@ -211,7 +211,8 @@ class FTSDBTests( unittest.TestCase ):
 
     ftsFileList = db.getFTSFileList( ["Waiting.*" ] )
     self.assertEqual( ftsFileList["OK"], True, "getFTSFileList error" )
-    print ftsFileList
+    self.assertEqual( type( ftsFileList["Value"] ), list, "fgetFTSFileList wrong value returned" )
+
 
   def test05Delete( self ):
     """ delete files and jobs """
