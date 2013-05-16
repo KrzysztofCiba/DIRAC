@@ -22,7 +22,11 @@ from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 # # from RMS
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
+# # from Resources
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 # # RCSID
 __RCSID__ = "$Id$"
@@ -43,20 +47,13 @@ class MonitorFTSAgent( AgentModule ):
   # # request client
   __requestClient = None
 
+  # # SE cache
+  __seCache = {}
+
   # # min threads
   MIN_THREADS = 1
   # # max threads
   MAX_THREADS = 10
-
-  # # missing source regexp patterns
-  missingSourceErrors = [
-    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed" ),
-    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory" ),
-    re.compile( r"SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed" ),
-    re.compile( r"SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist" ),
-    re.compile( r"TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500"\
-               " Command failed. : open error: No such file or directory" ),
-    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist" ) ]
 
   def ftsClient( self ):
     """ FTSClient getter """
@@ -74,20 +71,15 @@ class MonitorFTSAgent( AgentModule ):
   def requestClient( self ):
     """ request client getter """
     if not self.__requestClient:
-      self.__requestClient = RequestClient()
+      self.__requestClient = ReqClient()
     return self.__requestClient
 
   @classmethod
-  def missingSource( cls, failReason ):
-    """ check if message sent by FTS server is concerning missing source file
-
-    :param str failReason: message sent by FTS server
-    """
-    for error in cls.missingSourceErrors:
-      if error.search( failReason ):
-        return 1
-    return 0
-
+  def getSE( cls, seName ):
+    """ keep se in cache"""
+    if seName not in cls.__seCache:
+      cls.__seCache[seName] = StorageElement( seName )
+    return cls.__seCache[seName]
 
   def initialize( self ):
     """ agent's initialization """
@@ -167,12 +159,63 @@ class MonitorFTSAgent( AgentModule ):
 
     # # monitor status change
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
+    # # placeholder for request
+    request = None
 
     if ftsJob.Status in FTSJob.FINALSTATES:
-      processFiles = self.processFiles( ftsJob, sTJId )
+      monitor = ftsJob.monitorFTS2( full = True )
+      if not monitor["OK"]:
+        log.error( monitor["Message"] )
+        return monitor
+
+      processFiles = self.filterFiles( ftsJob )
       if not processFiles["OK"]:
         log.error( processFiles["Message"] )
         return processFiles
+      processFiles = processFiles["Value"]
+
+      toReschedule = processFiles.get( "toReschedule", [] )
+      toUpdate = processFiles.get( "toUpdate", [] )
+      toRetry = processFiles.get( "toRetry", [] )
+      toRegister = processFiles.get( "toRegister", [] )
+
+      # # ftsFiles to retry
+      for ftsFile in toRetry:
+        ftsFile.Status = "Waiting"
+        putFile = self.ftsManager().putFile( ftsFile )
+        if not putFile["OK"]:
+          log.error( "unable to put file for retry: %s" % putFile["Message"] )
+          continue
+
+      # # do I need to read request?
+      if toReschedule + toUpdate + toRegister:
+
+        # # get OperationID
+        opId = ftsJob[0].OperationID
+        request = self.requestClient().getScheduledRequest( opId )
+        if not request["OK"]:
+          log.error( request["Message"] )
+          return request
+        request = request["Value"]
+        # # get transfer operation
+        transferOp = None
+        for op in request:
+          if op.OperationID == opId:
+            transferOp = op
+            break
+
+        if not transferOp:
+          log.warn( "unable to find 'ReplicateAndRegister' operation %d in request %s" % ( opId, request.RequestID ) )
+          break
+
+        if toReschedule:
+          self.rescheduleFiles( transferOp, toReschedule )
+
+        if toRegister:
+          self.registerFiles( request, transferOp, toRegister )
+
+
+
 
     putFTSJob = self.ftsClient().putFTSJob( ftsJob )
     if not putFTSJob["OK"]:
@@ -183,24 +226,66 @@ class MonitorFTSAgent( AgentModule ):
     gMonitor.addMark( "FTSMonitorOK", 1 )
     return S_OK()
 
-  def processFiles( self, ftsJob, sTJId ):
+  def rescheduleFiles( self, operation = None, toReschedule = None ):
+    """ update statues for Operation.Files to waiting """
+    if not operation:
+      return S_OK()
+    toReschedule = toReschedule if toReschedule else []
+    ids = [ ftsFile.FileID for ftsFile in toReschedule ]
+    for opFile in operation:
+      if opFile.FileID in ids:
+        opFile.Status = "Waiting"
+    return S_OK()
+
+  def registerFiles( self, request = None, transferOp = None, toRegister = None ):
+      """ add file registration """
+      if not request or not transferOp:
+        return S_OK()
+      toRegister = toRegister if toRegister else []
+      if toRegister:
+        registerOp = Operation()
+        registerOp.Type = "RegisterReplica"
+        registerOp.Status = "Waiting"
+        registerOp.TargetSE = toRegister[0].TargetSE
+        targetSE = self.getSE( registerOp.TargetSE )
+        for ftsFile in toRegister:
+          opFile = File()
+          opFile.LFN = ftsFile.LFN
+          pfn = targetSE.getPfnForProtocol( ftsFile.TargetSURL, "SRM2", withPort = False )
+          if not pfn["OK"]:
+            continue
+          opFile.PFN = pfn["Value"]
+          registerOp.addFile( opFile )
+        request.insertBefore( registerOp, transferOp )
+      return S_OK()
+
+
+  def filterFiles( self, ftsJob ):
     """ process ftsFiles from finished ftsJob  """
-    log = gLogger.getSubLogger( "%s/processFiles" % sTJId )
-    succFiles = []
-    failFiles = []
+
+    toUpdate = []
+    toReschedule = []
+    toRegister = []
+    toRetry = []
+
     # #  read request
     for ftsFile in ftsJob:
       # # successful files
       if ftsFile.Status == "Finished":
-        succFiles.append( ftsFile )
-      else:
-        failFiles.append( ftsFile )
+        if ftsFile.Error == "AddCatalogReplicaFailed":
+          toRegister.append( ftsFile )
+        toUpdate.append( ftsFile )
+        continue
+      if ftsFile.Status == "Failed":
+        if ftsFile.Error == "MissingSource":
+          toReschedule.append( ftsFile )
+        else:
+          toRetry.append( ftsFile )
 
-    # if succFiles:
-    #  for ftsFile in succFiles:
-    #    self.ftsClient().getFTSFile()
-
-
+    return S_OK( { "toUpdate": toUpdate,
+                   "toRetry": toRetry,
+                   "toRegister": toRegister,
+                   "toReschedule": toReschedule } )
 
   def resetFiles( self, ftsJob, reason, sTJId ):
     """ clean up when FTS job had expired on the server side

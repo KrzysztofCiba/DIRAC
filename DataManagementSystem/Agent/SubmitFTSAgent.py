@@ -334,6 +334,9 @@ class SubmitFTSAgent( AgentModule ):
 
     # # metadata check is done during scheduling, so just add files to job
     for ftsFile in ftsFileList:
+      # # reset error
+      ftsFile.Error = ""
+      # # add file to job
       ftsJob.addFile( ftsFile )
 
     log.debug( "submitting..." )

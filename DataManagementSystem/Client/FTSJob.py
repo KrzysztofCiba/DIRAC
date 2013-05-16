@@ -472,12 +472,16 @@ class FTSJob( Record ):
 
     # # register successful files
     if self.Status in FTSJob.FINALSTATES:
-      return self.registerFiles()
+      return self.finalize()
 
     return S_OK()
 
-  def registerFiles( self ):
+  def finalize( self ):
     """ register successfully transferred  files """
+
+    if self.Status not in FTSJob.FINALSTATES:
+      return S_OK()
+
     targetSE = StorageElement( self.TargetSE )
     toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
     toRegisterDict = {}
@@ -500,15 +504,6 @@ class FTSJob( Record ):
         if ftsFile.LFN in failedFiles:
           ftsFile.Error = "AddCatalogReplicaFailed"
     return S_OK()
-
-
-  def submitFTS3( self ):
-    """ placeholder for FTS3 """
-    pass
-
-  def monitorFTS3( self ):
-    """ placeholder for FTS3 """
-    pass
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement

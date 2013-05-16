@@ -29,7 +29,7 @@ from MySQLdb import Error as MySQLdbError
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.Core.Utilities.List import stringListToString
+from DIRAC.Core.Utilities.List import stringListToString, intListToString
 # # ORMs
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 from DIRAC.DataManagementSystem.Client.FTSFile import FTSFile
@@ -216,6 +216,29 @@ class FTSDB( DB ):
       return S_OK()
     ftsFile = FTSFile( select.values()[0][0] )
     return S_OK( ftsFile )
+
+  def deleteFTSFiles( self, opFileIDList, operationID ):
+    """ delete FTSFiles for reschedule """
+    query = "DELETE FROM `FTSFile` WHERE FileID IN (%s) AND OperationID = %s" % ( intListToString( opFileIDList ), operationID )
+    delete = self._update( query )
+    if not delete["OK"]:
+      self.log.error( "deleteFTSFiles: %s" % delete["Message"] )
+    return delete
+
+  def setFTSFilesWaiting( self, opFileIDList, operationID, sourceSE ):
+    """ propagate states for descendants in replication tree
+
+    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
+    :param int operationID: ReqDB.Operation.OperationID
+    :param str sourceSE: waiting source SE
+    """
+    status = "Waiting#%s" % sourceSE
+    query = "UPDATE `FTSFile` SET `Status` = `Waiting` WHERE `Status` = '%s' "\
+      "AND `FileID` IN (%s) AND `OperationID` = %s;" % ( status, intListToString( opFileIDList ), operationID )
+    update = self._update( query )
+    if not update["OK"]:
+      self.log.error( "setFTSFilesWaiting: %s" % update["Message"] )
+    return update
 
   def peekFTSFile( self, ftsFileID ):
     """ peek FTSFile given FTSFileID """
