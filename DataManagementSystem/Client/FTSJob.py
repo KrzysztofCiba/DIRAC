@@ -499,7 +499,6 @@ class FTSJob( Record ):
       for ftsFile in toRegister:
         if ftsFile.LFN in failedFiles:
           ftsFile.Error = "AddCatalogReplicaFailed"
-
     return S_OK()
 
 
