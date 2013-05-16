@@ -267,7 +267,7 @@ class SubmitFTSAgent( AgentModule ):
           continue
 
         log.info( "%s operations are waiting for transfer from %s to %s" % ( len( operationDict ),
-                                                                             sourceSE, targetSE ) )  
+                                                                             sourceSE, targetSE ) )
 
         route = self.__ftsGraph.findRoute( sourceSE, targetSE )
         if not route["OK"]:
