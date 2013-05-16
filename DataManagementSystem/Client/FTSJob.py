@@ -361,6 +361,11 @@ class FTSJob( Record ):
     """ add :ftsFile: to FTS job """
     self +=ftsFile
 
+  def subFile( self, ftsFile ):
+    """ remove ftsFile from this job """
+    if ftsFile in self:
+      self.__files__.remove( ftsFile )
+
   # # helpers for looping
   def __iter__( self ):
     """ files iterator """
