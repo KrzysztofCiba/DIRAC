@@ -62,6 +62,16 @@ class FTSJob( Record ):
   # # finished
   FINALSTATES = ( "Finished", "FinishedDirty" )
 
+  # # missing source regexp patterns
+  missingSourceErrors = [
+    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] Failed" ),
+    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[INVALID_PATH\] No such file or directory" ),
+    re.compile( r"SOURCE error during PREPARATION phase: \[INVALID_PATH\] Failed" ),
+    re.compile( r"SOURCE error during PREPARATION phase: \[INVALID_PATH\] The requested file either does not exist" ),
+    re.compile( r"TRANSFER error during TRANSFER phase: \[INVALID_PATH\] the server sent an error response: 500 500"\
+               " Command failed. : open error: No such file or directory" ),
+    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist" ) ]
+
   def __init__( self, fromDict = None ):
     """c'tor
 
@@ -455,6 +465,11 @@ class FTSJob( Record ):
       candidateFile.Status = fileStatus
       candidateFile.Error = reason
 
+      if candidateFile.Status == "Failed":
+        for missingSource in self.missingSourceErrors:
+          if missingSource.match( reason ):
+            candidateFile.Error = "MissingSource"
+
     # # register successful files
     if self.Status in FTSJob.FINALSTATES:
       return self.registerFiles()
@@ -462,23 +477,32 @@ class FTSJob( Record ):
     return S_OK()
 
   def registerFiles( self ):
-    """ register successful files """
-    toRegister = {}
+    """ register successfully transferred  files """
     targetSE = StorageElement( self.TargetSE )
-    for ftsFile in self:
-      if ftsFile.Status != "Finished":
-        continue
+    toRegister = [ ftsFile for ftsFile in self if ftsFile.Status == "Finished" ]
+    toRegisterDict = {}
+    for ftsFile in toRegister:
       pfn = targetSE.getPfnForProtocol( ftsFile.TargetSURL, "SRM2", withPort = False )
       if not pfn["OK"]:
         continue
       pfn = pfn["Value"]
-      toRegister[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
-    if toRegister:
-      return self.replicaManager().addCatalogReplica( toRegister )
+      toRegisterDict[ ftsFile.LFN ] = { "PFN": pfn, "SE": self.TargetSE }
+
+    if toRegisterDict:
+      register = self.replicaManager().addCatalogReplica( toRegister )
+      if not register["OK"]:
+        for ftsFile in toRegister:
+          ftsFile.Error = "AddCatalogReplicaFailed"
+        return register
+      register = register["Value"]
+      failedFiles = register["Failed"] if "Failed" in register else {}
+      for ftsFile in toRegister:
+        if ftsFile.LFN in failedFiles:
+          ftsFile.Error = "AddCatalogReplicaFailed"
 
     return S_OK()
-    
-        
+
+
   def submitFTS3( self ):
     """ placeholder for FTS3 """
     pass

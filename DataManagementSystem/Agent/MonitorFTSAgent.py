@@ -146,47 +146,6 @@ class MonitorFTSAgent( AgentModule ):
     self.threadPool().processAllResults()
     return S_OK()
 
-  def ftsJobExpired( self, ftsJob ):
-    """ clean up when FTS job had expired on the server side
-
-    :param FTSJob ftsJob: FTSJob instance
-    """
-    log = gLogger.getSubLogger( "@%s" % str( ftsReqID ) )
-    fileIDs = self.transferDB.getFTSReqFileIDs( ftsReqID )
-    if not fileIDs["OK"]:
-      log.error( "Unable to retrieve FileIDs associated to %s request" % ftsReqID )
-      return fileIDs
-    fileIDs = fileIDs["Value"]
-
-    # # update FileToFTS table, this is just a clean up, no worry if something goes wrong
-    for fileID in fileIDs:
-      fileStatus = self.transferDB.setFileToFTSFileAttribute( ftsReqID, fileID,
-                                                              "Status", "Failed" )
-      if not fileStatus["OK"]:
-        log.error( "Unable to set FileToFTS status to 'Failed' for FileID %s: %s" % ( fileID,
-                                                                                     fileStatus["Message"] ) )
-
-      failReason = self.transferDB.setFileToFTSFileAttribute( ftsReqID, fileID,
-                                                              "Reason", "FTS job expired on server" )
-      if not failReason["OK"]:
-        log.error( "Unable to set FileToFTS reason for FileID %s: %s" % ( fileID,
-                                                                         failReason["Message"] ) )
-    # # update Channel table
-    resetChannels = self.transferDB.resetFileChannelStatus( channelID, fileIDs )
-    if not resetChannels["OK"]:
-      log.error( "Failed to reset Channel table for files to retry" )
-      return resetChannels
-
-    # # update FTSReq table
-    log.info( "Setting FTS request status to 'Finished'" )
-    ftsReqStatus = self.transferDB.setFTSReqStatus( ftsReqID, "Finished" )
-    if not ftsReqStatus["OK"]:
-      log.error( "Failed update FTS Request status", ftsReqStatus["Message"] )
-      return ftsReqStatus
-
-    # # if we land here, everything should be OK
-    return S_OK()
-
   def monitorTransfer( self, ftsJob, sTJId ):
     """ monitors transfer obtained from FTSDB
 
@@ -209,23 +168,11 @@ class MonitorFTSAgent( AgentModule ):
     # # monitor status change
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
 
-    succFiles = []
-    failFiles = []
     if ftsJob.Status in FTSJob.FINALSTATES:
-      # #  read request
-      for ftsFile in ftsJob:
-        # # successful files
-        if ftsFile.Status == "Finished":
-          succFiles.append( ftsFile )
-        else:
-          failFiles.append( ftsFile )
-
-
-
-    # # list of files to reschedule
-    # toReschedule = monitor.get( "toReschedule", [] )
-    # # list of files to register
-    # toRegister = monitor.get( "toRegister", [] )
+      processFiles = self.processFiles( ftsJob, sTJId )
+      if not processFiles["OK"]:
+        log.error( processFiles["Message"] )
+        return processFiles
 
     putFTSJob = self.ftsClient().putFTSJob( ftsJob )
     if not putFTSJob["OK"]:
@@ -236,21 +183,31 @@ class MonitorFTSAgent( AgentModule ):
     gMonitor.addMark( "FTSMonitorOK", 1 )
     return S_OK()
 
+  def processFiles( self, ftsJob, sTJId ):
+    """ process ftsFiles from finished ftsJob  """
+    log = gLogger.getSubLogger( "%s/processFiles" % sTJId )
+    succFiles = []
+    failFiles = []
+    # #  read request
+    for ftsFile in ftsJob:
+      # # successful files
+      if ftsFile.Status == "Finished":
+        succFiles.append( ftsFile )
+      else:
+        failFiles.append( ftsFile )
 
-  def processSuccFiles( self, ftsJob ):
-    """ """
-    pass
+    # if succFiles:
+    #  for ftsFile in succFiles:
+    #    self.ftsClient().getFTSFile()
 
-  def processFailedFiles( self, ftsJob ):
-    """ """
-    pass
+
 
   def resetFiles( self, ftsJob, reason, sTJId ):
     """ clean up when FTS job had expired on the server side
 
     :param FTSJob ftsJob: FTSJob instance
     """
-    log = gLogger.getSubLogger( sTJId )
+    log = gLogger.getSubLogger( "%s/resetFiles" % sTJId )
     for ftsFile in ftsJob:
       ftsFile.Status = "Waiting"
       ftsFile.FTSGUID = ""
@@ -266,20 +223,6 @@ class MonitorFTSAgent( AgentModule ):
       return putJob
     return S_OK()
 
-
-
-    res = oFTSRequest.dumpSummary()
-    if not res['OK']:
-      log.error( "Failed to get FTS request summary", res["Message"] )
-      return res
-    log.info( res['Value'] )
-    res = oFTSRequest.getPercentageComplete()
-    if not res['OK']:
-      log.error( "Failed to get FTS percentage complete", res["Message"] )
-      return res
-    log.info( 'FTS Request found to be %.1f percent complete' % res["Value"] )
-    self.transferDB.setFTSReqAttribute( ftsReqID, "PercentageComplete", res["Value"] )
-    self.transferDB.addLoggingEvent( ftsReqID, res["Value"] )
 
     #########################################################################
     # Update the information in the TransferDB if the transfer is terminal.
