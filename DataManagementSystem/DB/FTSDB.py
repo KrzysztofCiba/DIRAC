@@ -109,8 +109,7 @@ class FTSDB( DB ):
     connection = getCursorAndConnection["Value"]["connection"]
 
     # # this iwll be returned as query result
-    ret = { "OK" : True,
-            "connection" : connection }
+    ret = { "OK" : True }
     queryRes = { }
     # # switch off autocommit
     connection.autocommit( False )
@@ -127,6 +126,7 @@ class FTSDB( DB ):
       cursor.close()
       ret["Value"] = queryRes
       ret["lastrowid"] = lastrowid
+      connection.autocommit( True )
       return ret
     except MySQLdbError, error:
       self.log.exception( error )
@@ -336,8 +336,22 @@ class FTSDB( DB ):
   def getFTSFileList( self, statusList = None, limit = 1000 ):
     """ get FTSFiles with status in :statusList: """
     statusList = statusList if statusList else [ "Waiting" ]
-    query = "SELECT * FROM `FTSFile` WHERE `Status` IN (%s) ORDER BY `LastUpdate` DESC LIMIT %s;" % ( stringListToString( statusList ),
-                                                                                                      limit )
+    # # TODO: use regexp
+    query = "SELECT * FROM `FTSFile`"
+    reStatus = []
+    inStatus = []
+    for status in statusList:
+      if "%" in status:
+        reStatus.append( status )
+      else:
+        inStatus.append( status )
+    reQuery = "`Status` REGEXP '%s'" % "|".join( reStatus ) if reStatus else ""
+    inQuery = "`Status` IN '%s'" % stringListToString( inStatus ) if inStatus else ""
+    whereClause = " AND ".join( [ q for q in ( reQuery, inQuery ) if q ] )
+    if whereClause:
+      whereClause = "WHERE %s" % whereClause
+    query = "SELECT * FROM `FTSFile` %s ORDER BY `LastUpdate` DESC LIMIT %s;" % ( whereClause, limit )
+    self.log.always( query )
     trn = self._transaction( [query] )
     if not trn["OK"]:
       self.log.error( "getFTSFileList: %s" % trn["Message"] )
