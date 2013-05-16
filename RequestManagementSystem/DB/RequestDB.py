@@ -83,7 +83,7 @@ class RequestDB( DB ):
       self.log.error( getCursorAndConnection["Message"] )
       return getCursorAndConnection
     connection, cursor = getCursorAndConnection["Value"]
-    # # this iwll be returned as query result
+    # # this will be returned as query result
     ret = { "OK" : True }
     queryRes = { }
     # # switch off autocommit
@@ -101,6 +101,7 @@ class RequestDB( DB ):
       cursor.close()
       ret["Value"] = queryRes
       ret["lastrowid"] = lastrowid
+      connection.autocommit( True )
       return ret
     except MySQLdbError, error:
       self.log.exception( error )
