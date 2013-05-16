@@ -209,7 +209,7 @@ class FTSDBTests( unittest.TestCase ):
     self.assertEqual( ftsFileIDs["OK"], True, "getFTSFileIDs error" )
     self.assertEqual( type( ftsFileIDs["Value"] ), list, "getFTSFileIDs wrong value returned" )
 
-    ftsFileList = db.getFTSFileList( ["Waiting.*", "Submitted"] )
+    ftsFileList = db.getFTSFileList( ["Waiting.*" ] )
     self.assertEqual( ftsFileList["OK"], True, "getFTSFileList error" )
     print ftsFileList
 
