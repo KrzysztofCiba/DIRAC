@@ -21,6 +21,7 @@ from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
+from DIRAC.DataManagementSystem.Client.ReplicaManager import ReplicaManager
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -46,6 +47,8 @@ class MonitorFTSAgent( AgentModule ):
   __threadPool = None
   # # request client
   __requestClient = None
+  # # replica manager
+  __replicaManager = None
   # # SE cache
   __seCache = {}
   # # min threads
@@ -72,6 +75,12 @@ class MonitorFTSAgent( AgentModule ):
       self.__requestClient = ReqClient()
     return self.__requestClient
 
+  def replicaManager( self ):
+    """ replica manager getter """
+    if not self.__replicaManager:
+      self.__replicaManager = ReplicaManager()
+    return self.__replicaManager
+
   @classmethod
   def getSE( cls, seName ):
     """ keep se in cache"""
@@ -91,7 +100,7 @@ class MonitorFTSAgent( AgentModule ):
                                "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     for status in list( FTSJob.INITSTATES + FTSJob.TRANSSTATES + FTSJob.FAILEDSTATES + FTSJob.FINALSTATES ):
-      gMonitor.registerActivity( "FTSJobs%s" % status, "%s FTSJobs" % status ,
+      gMonitor.registerActivity( "FTSJobs%s" % status, "FTSJobs %s" % status ,
                                  "MonitorFTSAgent", "FTSJobs/min", gMonitor.OP_SUM )
 
     self.am_setOption( "shifterProxy", "DataManager" )
@@ -158,91 +167,115 @@ class MonitorFTSAgent( AgentModule ):
     # # monitor status change
     gMonitor.addMark( "FTSJobs%s" % ftsJob.Status, 1 )
 
-    # # placeholder for request
-    request = None
-
     if ftsJob.Status in FTSJob.FINALSTATES:
+      finalize = self.finalizeFTSJob( ftsJob, sTJId )
+      if not finalize["OK"]:
+        log.error( "unable to finalize ftsJob: %s" % finalize["Message"] )
 
-      # # perform full monitor
-      monitor = ftsJob.monitorFTS2( full = True )
-      if not monitor["OK"]:
-        log.error( monitor["Message"] )
-        return monitor
 
-      getRequest = self.getRequest( ftsJob )
-      if not getRequest["OK"]:
-        log.error( getRequest["Message"] )
+    putFTSJob = self.ftsClient().putFTSJob( ftsJob )
+    if not putFTSJob["OK"]:
+      log.error( putFTSJob["Message"] )
+      gMonitor.addMark( "FTSMonitorFail", 1 )
+      return putFTSJob
 
-        if "Request not found" in getRequest["Message"]:
-          log.warn( "request not found, will cancel FTSJob" )
-          for ftsFile in ftsJob:
-            ftsFile.Status = "Canceled"
-          ftsJob.Status = "Canceled"
-        # # will try again later - reset FTSJob status to 'Submitted'
-        ftsJob.Status = "Submitted"
-        break
-      getRequest = getRequest["Value"]
+    gMonitor.addMark( "FTSMonitorOK", 1 )
+    return S_OK()
 
-      request = getRequest["request"] if "request" in getRequest else None
-      transferOperation = getRequest["operation"] if "operation" in getRequest else None
+  def finalizeFTSJob( self, ftsJob, sTJId ):
+    """ finalize FTSJob
 
-      if None in ( request, transferOperation ):
-        log.error( "request or operation is missing" )
+    :param FTSJob ftsJob: FTSJob instance
+    :param cTJId: thread id for logger
+    """
+    log = gLogger.getSubLogger( "%s/finalize" % sTJId )
+
+    # # placeholder for request and transfer operation
+    request = None
+    transferOperation = None
+
+    # # perform full monitor
+    monitor = ftsJob.monitorFTS2( full = True )
+    if not monitor["OK"]:
+      log.error( monitor["Message"] )
+      return monitor
+
+    getRequest = self.getRequest( ftsJob )
+    if not getRequest["OK"]:
+      log.error( getRequest["Message"] )
+
+      if "Request not found" in getRequest["Message"]:
+        log.warn( "request not found, will cancel FTSJob" )
         for ftsFile in ftsJob:
           ftsFile.Status = "Canceled"
         ftsJob.Status = "Canceled"
-        break
+        return getRequest
+        # # will try again later - reset FTSJob status to 'Submitted'
+      ftsJob.Status = "Submitted"
 
-      # # split FTSFiles to different categories
-      processFiles = self.filterFiles( ftsJob )
-      if not processFiles["OK"]:
-        log.error( processFiles["Message"] )
-        return processFiles
-      processFiles = processFiles["Value"]
+    getRequest = getRequest["Value"]
 
-      # # ... and keep them for further processing
-      toReschedule = processFiles.get( "toReschedule", [] )
-      toUpdate = processFiles.get( "toUpdate", [] )
-      toRetry = processFiles.get( "toRetry", [] )
-      toRegister = processFiles.get( "toRegister", [] )
+    request = getRequest["request"] if "request" in getRequest else None
+    transferOperation = getRequest["operation"] if "operation" in getRequest else None
 
-      # # update ftsFiles to retry
-      if toRetry:
-        for ftsFile in toRetry:
-          ftsFile.Status = "Waiting"
+    if None in ( request, transferOperation ):
+      log.error( "request or operation is missing" )
+      for ftsFile in ftsJob:
+        ftsFile.Status = "Canceled"
+      ftsJob.Status = "Canceled"
+      return S_ERROR( "unable to read request" )
 
-      missingReplicas = self.checkReadyReplicas( transferOperation )
-      if not missingReplicas["OK"]:
-        # # bail out on error
-        log.error( missingReplicas["Message"] )
-        break
-      missingReplicas = missingReplicas["Value"]
-      if not missingReplicas:
-        log.info( "all files replicated in 'ReplicateAndRegister' OperationID=%s Request '%s'" % ( transferOperation.operationID,
-                                                                                                   request.RequestName ) )
-        transferOperation.Status = "Done"
-        for ftsFile in ftsJob:
-          ftsFile.Status = "Finished"
-        ftsJob.Status = "Finished"
-        break
-      else:
-        if toRegister:
-          self.registerFiles( request, transferOperation, toRegister )
+    # # split FTSFiles to different categories
+    processFiles = self.filterFiles( ftsJob )
+    if not processFiles["OK"]:
+      log.error( processFiles["Message"] )
+      return processFiles
+    processFiles = processFiles["Value"]
 
-        if toReschedule:
-          # # remove ftsFIle from job
-          for ftsFile in toReschedule:
-            ftsJob.subFile( ftsFile )
-          self.rescheduleFiles( transferOperation, toReschedule )
+    # # ... and keep them for further processing
+    toReschedule = processFiles.get( "toReschedule", [] )
+    toUpdate = processFiles.get( "toUpdate", [] )
+    toRetry = processFiles.get( "toRetry", [] )
+    toRegister = processFiles.get( "toRegister", [] )
 
-        if toUpdate:
-          update = self.ftsClient().setFTSFilesWaiting( transferOperation.OperationID,
-                                                        ftsJob.TargetSE,
-                                                        [ ftsFile.FileID for ftsFile in toUpdate ] )
-          if not update["OK"]:
-            log.error( "unable to update descendants for finished FTSFiles: %s" % update["Message"] )
-            ftsJob.Status = "Submitted"
-            break
+    # # update ftsFiles to retry
+    if toRetry:
+      for ftsFile in toRetry:
+        ftsFile.Status = "Waiting"
+
+    missingReplicas = self.checkReadyReplicas( transferOperation )
+    if not missingReplicas["OK"]:
+    # # bail out on error
+      log.error( missingReplicas["Message"] )
+      return missingReplicas
+
+    missingReplicas = missingReplicas["Value"]
+    if not missingReplicas:
+      log.info( "all files replicated in OperationID=%s Request '%s'" % ( transferOperation.operationID,
+                                                                          request.RequestName ) )
+      transferOperation.Status = "Done"
+      for ftsFile in ftsJob:
+        ftsFile.Status = "Finished"
+      ftsJob.Status = "Finished"
+      return S_OK( ( request ) )
+    else:
+      if toRegister:
+        self.registerFiles( request, transferOperation, toRegister )
+
+      if toReschedule:
+        # # remove ftsFIle from job
+        for ftsFile in toReschedule:
+          ftsJob.subFile( ftsFile )
+        self.rescheduleFiles( transferOperation, toReschedule )
+
+      if toUpdate:
+        update = self.ftsClient().setFTSFilesWaiting( transferOperation.OperationID,
+                                                      ftsJob.TargetSE,
+                                                      [ ftsFile.FileID for ftsFile in toUpdate ] )
+        if not update["OK"]:
+          log.error( "unable to update descendants for finished FTSFiles: %s" % update["Message"] )
+          ftsJob.Status = "Submitted"
+          return update
 
     # # put back request if any
     if request:
@@ -259,18 +292,14 @@ class MonitorFTSAgent( AgentModule ):
         log.error( "unable to put back request: %s" % putRequest["Message"] )
       return putRequest
 
-    putFTSJob = self.ftsClient().putFTSJob( ftsJob )
-    if not putFTSJob["OK"]:
-      log.error( putFTSJob["Message"] )
-      gMonitor.addMark( "FTSMonitorFail", 1 )
-      return putFTSJob
+    return S_OK( request )
 
-    gMonitor.addMark( "FTSMonitorOK", 1 )
-    return S_OK()
 
-  def getRequest( self, ftsJob, sTJId ):
-    """ get request for this ftsJob """
+  def getRequest( self, ftsJob ):
+    """ get request for this ftsJob
 
+    :param FTSJob ftsJob: monitored FTSJob
+    """
     opId = ftsJob[0].OperationID
     request = self.requestClient().getScheduledRequest( opId )
     if not request["OK"]:
@@ -284,7 +313,7 @@ class MonitorFTSAgent( AgentModule ):
       if op.OperationID == opId:
         return S_OK( { "request": request, "operation": op } )
 
-    return S_ERROR( "Request %s is missing 'ReplicateAndRegister' OperationID=%s" % ( request.RequestName, opId ) )
+    return S_ERROR( "Request '%s' is missing 'ReplicateAndRegister' OperationID=%s" % ( request.RequestName, opId ) )
 
 
   def checkReadyReplicas( self, transferOperation ):
@@ -358,9 +387,13 @@ class MonitorFTSAgent( AgentModule ):
       request.insertBefore( registerOperation, transferOp )
       return S_OK()
 
-  def filterFiles( self, ftsJob ):
-    """ process ftsFiles from finished ftsJob  """
+  @staticmethod
+  def filterFiles( ftsJob ):
+    """ process ftsFiles from finished ftsJob
 
+    :param FTSJob ftsJob: monitored FTSJob instance
+    """
+    # # lists for different categories
     toUpdate = []
     toReschedule = []
     toRegister = []

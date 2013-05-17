@@ -48,6 +48,8 @@ class Operation( Record ):
   :param str Error: error string if any
   :param Request parent: parent Request instance
   """
+  # # max files in a single operation
+  MAX_FILES = 100
 
   def __init__( self, fromDict = None ):
     """ c'tor
@@ -71,8 +73,9 @@ class Operation( Record ):
     # # init from dict
     fromDict = fromDict if fromDict else {}
     for fileDict in fromDict.get( "Files", [] ):
-      self +=File( fileDict )
-    if "Files" in fromDict: del fromDict["Files"]
+      self.addFile( File( fileDict ) )
+    if "Files" in fromDict:
+      del fromDict["Files"]
     for key, value in fromDict.items():
       if key not in self.__data__:
         raise AttributeError( "Unknown Operation attribute '%s'" % key )
@@ -133,6 +136,8 @@ class Operation( Record ):
 
   def __iadd__( self, subFile ):
     """ += operator """
+    if len( self ) >= Operation.MAX_FILES:
+      raise RuntimeError( "too many Files in a single Operation" )
     self.addFile( subFile )
     return self
 
@@ -150,6 +155,15 @@ class Operation( Record ):
   def __getitem__( self, i ):
     """ [] op for files """
     return self.__files__.__getitem__( i )
+
+  def __delitem__( self, i ):
+    """ remove file from op, only if OperationID is NOT set """
+    if not self.OperationID:
+      return self.__files__.__delitem__( i )
+
+  def __setitem__( self, i, opFile ):
+    """ overwrite file """
+    return self.__files__.__setitem__(i, opFile )
 
   def fileStatusList( self ):
     """ get list of files statuses """
@@ -322,7 +336,8 @@ class Operation( Record ):
 
   def toXML( self, dumpToStr = False ):
     """ dump operation to XML """
-    data = dict( [ ( key, str( getattr( self, key ) ) if getattr( self, key ) != None else "" ) for key in self.__data__ ] )
+    data = dict( [ ( key, str( getattr( self, key ) )
+                    if getattr( self, key ) != None else "" ) for key in self.__data__ ] )
     for key, value in data.items():
       if isinstance( value, datetime.datetime ):
         data[key] = str( value )
@@ -354,7 +369,7 @@ class Operation( Record ):
       opFile = File.fromXML( fileElement )
       if not opFile["OK"]:
         return opFile
-      operation += opFile["Value"]
+      operation.addFile( opFile["Value"] )
     return S_OK( operation )
 
   def __str__( self ):
