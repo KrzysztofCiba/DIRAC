@@ -108,13 +108,16 @@ class Operation( Record ):
     newStatus = self.Status
     print "1 _notify", fStatus, self.Status, newStatus
     if "Done" in fStatus:
+      fStatus = fStatus - set( [ "Done" ] )
       newStatus = "Done"
-    elif "Failed" in fStatus:
+    if "Failed" in fStatus:
+      fStatus = fStatus - set( [ "Failed" ] )
       newStatus = "Failed"
-    elif "Waiting" in fStatus:
+    if "Waiting" in fStatus:
+      fStatus = fStatus - set( "Waiting" )
       newStatus = "Queued"
-    elif "Scheduled" in fStatus:
-      newStatus = "Queued"
+    if "Scheduled" in fStatus:
+      newStatus = "Scheduled"
 
     print "2 _notify", fStatus, self.Status, newStatus
     if newStatus != self.Status:
