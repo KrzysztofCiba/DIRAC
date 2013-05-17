@@ -118,11 +118,11 @@ class Operation( Record ):
     if "Failed" in fStatus:
       fStatus = fStatus - set( [ "Failed" ] )
       newStatus = "Failed"
+    if "Scheduled" in fStatus:
+      newStatus = "Scheduled"
     if "Waiting" in fStatus:
       fStatus = fStatus - set( "Waiting" )
       newStatus = "Queued"
-    if "Scheduled" in fStatus:
-      newStatus = "Scheduled"
 
     # print "2 _notify", fStatus, self.Status, newStatus
     if newStatus != self.Status:
@@ -284,7 +284,7 @@ class Operation( Record ):
     """ Status setter """
     if value not in Operation.ALL_STATES:
       raise ValueError( "unknown Status '%s'" % str( value ) )
-    if value in ( "Failed", "Done" ) and self.__files__:
+    if value in Operation.FINAL_STATES and self.__files__:
       fStatuses = self.fileStatusList()
       # # no update
       if "Scheduled" in fStatuses or "Waiting" in fStatuses:
