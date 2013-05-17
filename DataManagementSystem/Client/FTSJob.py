@@ -28,8 +28,6 @@ import datetime
 import re
 import tempfile
 import uuid
-import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Grid import executeGridCommand
@@ -531,63 +529,6 @@ class FTSJob( Record ):
       query.append( " VALUES %s;" % values )
 
     return S_OK( "".join( query ) )
-
-  @classmethod
-  def fromXML( cls, element ):
-    """ create FTSJob object from xmlString or xml.ElementTree.Element
-
-    :param mixed element: XML fragment or ElementTree.Element
-    :return: S_OK( FTSJob instance )
-    """
-    if type( element ) == str:
-      try:
-        element = ElementTree.fromstring( element )
-      except ExpatError, error:
-        return S_ERROR( "unable to de-serialize FTSJob from xml: %s" % str( error ) )
-    if element.tag != "ftsjob":
-      return S_ERROR( "unable to de-serialize FTSJob, xml root element is not a 'ftsjob'" )
-    ftsJob = FTSJob( element.attrib )
-    for ftsFileElement in element.findall( "ftsfile" ):
-      ftsFile = FTSFile.fromXML( ftsFileElement )
-      if not ftsFile["OK"]:
-        return S_ERROR( ftsFile["Message"] )
-      ftsJob.addFile( ftsFile["Value"] )
-    return S_OK( ftsJob )
-
-  def toXML( self, dumpToStr = False ):
-    """ dump request to XML
-
-    :param self: self reference
-    :return: S_OK( xmlString )/S_ERROR
-    """
-    dumpToStr = bool( dumpToStr )
-    root = ElementTree.Element( "ftsjob" )
-    # # attributes
-    root.attrib["FTSJobID"] = str( self.FTSJobID ) if self.FTSJobID else ""
-    root.attrib["Error"] = str( self.Error ) if self.Error else ""
-    root.attrib["FTSGUID"] = str( self.FTSGUID ) if self.FTSGUID else ""
-    root.attrib["FTSServer"] = str( self.FTSServer ) if self.FTSServer else ""
-    root.attrib["SourceSE"] = self.SourceSE if self.SourceSE else ""
-    root.attrib["TargetSE"] = self.TargetSE if self.TargetSE else ""
-    root.attrib["SourceToken"] = self.SourceToken if self.SourceToken else ""
-    root.attrib["TargetToken"] = self.TargetToken if self.TargetToken else ""
-    root.attrib["Status"] = str( self.Status )
-    # # datetime up to seconds
-    root.attrib["CreationTime"] = self.CreationTime.isoformat( " " ).split( "." )[0] if self.CreationTime else ""
-    root.attrib["SubmitTime"] = self.SubmitTime.isoformat( " " ).split( "." )[0] if self.SubmitTime else ""
-    root.attrib["LastUpdate"] = self.LastUpdate.isoformat( " " ).split( "." )[0] if self.LastUpdate else ""
-    # # failed files
-    root.attrib["Files"] = str( self.Files )
-    root.attrib["Size"] = str( self.Size )
-    root.attrib["FailedFiles"] = str( self.FailedFiles )
-    root.attrib["FailedSize"] = str( self.FailedSize )
-    # # trigger xml dump of a whole operations and their files tree
-    for ftsFile in self.__files__:
-      fileXML = ftsFile.toXML()
-      if not fileXML["OK"]:
-        return fileXML
-      root.append( fileXML["Value"] )
-    return S_OK( { False: root, True: ElementTree.tostring( root ) }[dumpToStr] )
 
   def toJSON( self ):
     """ dump to JSON format """

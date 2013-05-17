@@ -66,16 +66,6 @@ class FTSJobTests( unittest.TestCase ):
     ftsJobJSON = FTSJob( json["Value"] )
     self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True, "JSON de-serialization error" )
 
-    XML = ftsJob.toXML()
-    self.assertEqual( XML["OK"], True, "XML serialization error" )
-    self.assertEqual( XML["Value"].tag, "ftsjob", "XML serialization error - wrong tag" )
-
-    ftsJobXML = FTSJob.fromXML( XML["Value"] )
-    self.assertEqual( ftsJobXML["OK"], True, "XML de-serialization error" )
-    self.assertEqual( isinstance( ftsJobXML["Value"], FTSJob ), True, "XML de-serilization error - wrong type" )
-
-    self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True )
-
     ftsJob.addFile( self.fileA )
     ftsJob.addFile( self.fileB )
 
@@ -86,10 +76,6 @@ class FTSJobTests( unittest.TestCase ):
     json = ftsJob.toJSON()
     ftsJobJSON = FTSJob( json["Value"] )
     self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True, "JSON de-serilization error" )
-
-    XML = ftsJob.toXML()
-    ftsJobXML = FTSJob.fromXML( XML["Value"] )
-    self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True, "XML de-serialization error" )
 
     SQL = ftsJob.toSQL()
     self.assertEqual( SQL["OK"], True, "SQL serialization error" )
