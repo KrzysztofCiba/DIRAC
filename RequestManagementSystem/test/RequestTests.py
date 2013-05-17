@@ -183,7 +183,7 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], transfer )
 
-  def test03FTS( self ):
+  def test05FTS( self ):
     """ FTS state machine """
     req = Request()
     req.RequestName = "FTSTest"
