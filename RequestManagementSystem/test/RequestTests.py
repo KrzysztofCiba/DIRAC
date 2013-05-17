@@ -204,8 +204,23 @@ class RequestTests( unittest.TestCase ):
 
     ftsFile.Status = "Scheduled"
 
-    print ftsTransfer.Status
-    print req.Status
+    self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong operation status" )
+    self.assertEqual( req.Status, "Scheduled", "wrong request status" )
+
+    insertBefore = Operation()
+    insertBefore.Type = "RegisterReplica"
+    insertBefore.TargetSE = "CERN-USER"
+    insertFile = File()
+    insertFile.LFN = "/a/b/c"
+    insertFile.PFN = "http://foo/bar"
+    insertBefore.addFile( insertFile )
+
+    req.insertBefore( insertBefore, ftsTransfer )
+
+    print insertBefore.Status, ftsTransfer.Status, req.Status
+
+
+
 
 # # test execution
 if __name__ == "__main__":
