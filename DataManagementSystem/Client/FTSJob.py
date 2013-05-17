@@ -214,7 +214,8 @@ class FTSJob( Record ):
   @property
   def FailedFiles( self ):
     """ nb failed files getter """
-    self.__data__["FailedFiles"] = len( [ ftsFile for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES ] )
+    self.__data__["FailedFiles"] = len( [ ftsFile for ftsFile in self
+                                         if ftsFile.Status in FTSFile.FAILED_STATES ] )
     return self.__data__["FailedFiles"]
 
   @FailedFiles.setter
@@ -223,7 +224,8 @@ class FTSJob( Record ):
     if value:
       self.__data__["FailedFiles"] = value
     else:
-      self.__data__["FailedFiles"] = sum( [ ftsFile for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedFiles"] = sum( [ ftsFile for ftsFile in self
+                                           if ftsFile.Status in FTSFile.FAILED_STATES ] )
 
   @property
   def Size( self ):
@@ -244,7 +246,8 @@ class FTSJob( Record ):
   def FailedSize( self ):
     """ size getter """
     if not self.__data__["FailedSize"]:
-      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self
+                                          if ftsFile.Status in FTSFile.FAILED_STATES ] )
     return self.__data__["FailedSize"]
 
   @FailedSize.setter
@@ -253,7 +256,8 @@ class FTSJob( Record ):
     if value:
       self.__data__["FailedSize"] = value
     else:
-      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self if ftsFile.Status in FTSFile.FAILED_STATES ] )
+      self.__data__["FailedSize"] = sum( [ ftsFile.Size for ftsFile in self
+                                          if ftsFile.Status in FTSFile.FAILED_STATES ] )
 
   @property
   def CreationTime( self ):
@@ -373,6 +377,14 @@ class FTSJob( Record ):
   def __getitem__( self, i ):
     """ [] op for files """
     return self.__files__.__getitem__( i )
+
+  def __delitem__( self, i ):
+    """ del ftsJob[i] """
+    self.__files__.__delitem__( i )
+
+  def __setitem__( self, i, ftsFile ):
+    """ ftsJob[i] = ftsFile """
+    self.__files__.__setitem__( i, ftsFile )
 
   def fileStatusList( self ):
     """ get list of files statuses """
