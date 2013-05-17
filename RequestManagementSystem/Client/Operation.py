@@ -111,7 +111,7 @@ class Operation( Record ):
     """ notify self about file status change """
     fStatus = set( self.fileStatusList() )
     newStatus = self.Status
-    print "1 _notify", fStatus, self.Status, newStatus
+    # print "1 _notify", fStatus, self.Status, newStatus
     if "Done" in fStatus:
       fStatus = fStatus - set( [ "Done" ] )
       newStatus = "Done"
@@ -124,10 +124,10 @@ class Operation( Record ):
     if "Scheduled" in fStatus:
       newStatus = "Scheduled"
 
-    print "2 _notify", fStatus, self.Status, newStatus
+    # print "2 _notify", fStatus, self.Status, newStatus
     if newStatus != self.Status:
       self.Status = newStatus
-    print "3 _notify", fStatus, self.Status, newStatus
+    # print "3 _notify", fStatus, self.Status, newStatus
 
   def _setQueued( self, caller ):
     """ don't touch """
