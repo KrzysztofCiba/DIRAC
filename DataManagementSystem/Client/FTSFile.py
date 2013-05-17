@@ -54,6 +54,7 @@ class FTSFile( Record ):
     :param self: self reference
     :param dict fromDict: data dict
     """
+    _parent = None
     Record.__init__( self )
     self._parent = None
     self.__data__["Status"] = "Waiting"

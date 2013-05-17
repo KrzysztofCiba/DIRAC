@@ -364,6 +364,7 @@ class FTSJob( Record ):
   def subFile( self, ftsFile ):
     """ remove ftsFile from this job """
     if ftsFile in self:
+      ftsFile._parent = None
       self.__files__.remove( ftsFile )
 
   # # helpers for looping
