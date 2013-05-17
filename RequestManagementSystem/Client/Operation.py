@@ -106,7 +106,7 @@ class Operation( Record ):
     """ notify self about file status change """
     fStatus = self.fileStatusList()
     newStatus = self.Status
-    # print "1 _notify", fStatus, self.Status, newStatus
+    print "1 _notify", fStatus, self.Status, newStatus
     if "Done" in fStatus:
       newStatus = "Done"
     if "Failed" in fStatus:
@@ -114,10 +114,10 @@ class Operation( Record ):
     if "Waiting" in fStatus or "Scheduled" in fStatus:
       newStatus = "Queued"
 
-    # print "2 _notify", fStatus, self.Status, newStatus
+    print "2 _notify", fStatus, self.Status, newStatus
     if newStatus != self.Status:
       self.Status = newStatus
-    # print "3 _notify", fStatus, self.Status, newStatus
+    print "3 _notify", fStatus, self.Status, newStatus
 
   def _setQueued( self, caller ):
     """ don't touch """
