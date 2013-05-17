@@ -169,6 +169,21 @@ class ReqManagerHandler( RequestHandler ):
       gLogger.exception( errStr, lException = error )
       return S_ERROR( errStr )
 
+  types_getRequestNameList = [ ListType, IntType ]
+  @classmethod
+  def export_getRequestNamesList( cls, statusList = None, limit = None ):
+    """ get requests' names with status in :statusList: """
+    statusList = statusList if statusList else list( Request.FINAL_STATES )
+    limit = limit if limit else 100
+    try:
+      reqNamesList = cls.__ftsDB.getRequestNamesList( statusList, limit )
+      if not reqNamesList["OK"]:
+        gLogger.error( "getRequestNamesList: %s" % reqNamesList["Message"] )
+      return reqNamesList
+    except Exception, error:
+      gLogger.exception( error )
+      return S_ERROR( str( error ) )
+
   types_getRequestNamesForJobs = [ ListType ]
   @classmethod
   def export_getRequestNamesForJobs( cls, jobIDs ):

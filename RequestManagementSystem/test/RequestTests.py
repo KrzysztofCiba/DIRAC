@@ -124,7 +124,7 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( len( req ), 0 )
 
     transfer = Operation()
-    transfer.Type = "replicateAndRegister"
+    transfer.Type = "ReplicateAndRegister"
     transfer.addFile( File( { "LFN" : "/a/b/c", "Status" : "Waiting" } ) )
 
     getWaiting = req.getWaiting()
