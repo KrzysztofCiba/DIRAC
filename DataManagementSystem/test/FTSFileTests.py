@@ -31,7 +31,6 @@ class FTSFileTests( unittest.TestCase ):
   .. class:: FTSFileTests
 
   """
-
   def setUp( self ):
     """ test set up   """
     self.fromDict = { "FileID": 123456,
@@ -47,8 +46,8 @@ class FTSFileTests( unittest.TestCase ):
     """ test tear down """
     del self.fromDict
 
-  def testCtor( self ):
-    """ test ctor and (de-)serialisation """
+  def test01Ctor( self ):
+    """ test ctor and (de-)serialization """
 
     ftsFile = FTSFile( self.fromDict )
     self.assertEqual( isinstance( ftsFile, FTSFile ), True )
@@ -60,7 +59,6 @@ class FTSFileTests( unittest.TestCase ):
     self.assertEqual( isinstance( ftsFileJSON, FTSFile ), True )
     for k, v in self.fromDict.items():
       self.assertEqual( getattr( ftsFileJSON, k ), v )
-
 
 
 # # test execution
