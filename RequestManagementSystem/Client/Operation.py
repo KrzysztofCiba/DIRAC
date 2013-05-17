@@ -51,6 +51,11 @@ class Operation( Record ):
   # # max files in a single operation
   MAX_FILES = 100
 
+  # # all states
+  ALL_STATES = ( "Queued", "Waiting", "Scheduled", "Assigned", "Failed", "Done", "Canceled" )
+  # # final states
+  FINAL_STATES = ( "Failed", "Done", "Canceled" )
+
   def __init__( self, fromDict = None ):
     """ c'tor
 
@@ -277,7 +282,7 @@ class Operation( Record ):
   @Status.setter
   def Status( self, value ):
     """ Status setter """
-    if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done", "Canceled", "Scheduled" ):
+    if value not in Operation.ALL_STATES:
       raise ValueError( "unknown Status '%s'" % str( value ) )
     if value in ( "Failed", "Done" ) and self.__files__:
       fStatuses = self.fileStatusList()

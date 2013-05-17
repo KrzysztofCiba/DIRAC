@@ -52,6 +52,8 @@ class Request( Record ):
   :param TypedList operations: list of operations
   """
 
+  ALL_STATES = ( "Waiting", "Failed", "Done", "Scheduled", "Assigned", "Canceled" )
+
   FINAL_STATES = ( "Done", "Failed", "Canceled" )
 
   def __init__( self, fromDict = None ):
@@ -124,11 +126,12 @@ class Request( Record ):
           self.__waiting = operation
 
     # now update self status
+    if "Scheduled" in self.subStatusList():
+      self.Status = "Scheduled"
+
     if "Queued" in self.subStatusList() or "Waiting" in self.subStatusList():
       if self.Status != "Waiting":
         self.Status = "Waiting"
-    elif "Scheduled" in self.subStatusList():
-      self.Status = "Scheduled"
     else:
       self.Status = "Done"
 
@@ -355,17 +358,17 @@ class Request( Record ):
       status = "Done"
     if "Assigned" in opStatuses:
       status = "Assigned"
-    if "Waiting" in opStatuses:
-      status = "Waiting"
     if "Scheduled" in opStatuses:
       status = "Scheduled"
+    if "Waiting" in opStatuses:
+      status = "Waiting"
     self.__data__["Status"] = status
     return self.__data__["Status"]
 
   @Status.setter
   def Status( self, value ):
     """ status setter """
-    if value not in ( "Done", "Waiting", "Failed", "Assigned", "Scheduled" ):
+    if value not in Request.ALL_STATES:
       raise ValueError( "Unknown status: %s" % str( value ) )
     self.__data__["Status"] = value
 
