@@ -107,6 +107,8 @@ class FTSFile( Record ):
   @property
   def FTSGUID( self ):
     """ FTSGUID getter """
+    if self._parent:
+      self.__data__["FTSGUID"] = self._parent.FTSGUID
     return self.__data__["FTSGUID"]
 
   @FTSGUID.setter
