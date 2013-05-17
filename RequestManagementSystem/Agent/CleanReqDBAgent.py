@@ -48,7 +48,7 @@ class CleanReqDBAgent( AgentModule ):
   # # request client
   __requestClient = None
 
-  def requestCLient( self ):
+  def requestClient( self ):
     """ request client getter """
     if not self.__requestClient:
       self.__requestClient = ReqClient()
@@ -56,7 +56,6 @@ class CleanReqDBAgent( AgentModule ):
 
   def initialize( self ):
     """ initialization """
-
     self.DEL_GRACE_DAYS = self.am_getOption( "DeleteGraceDays", self.DEL_GRACE_DAYS )
     self.log.info( "Delete grace period = %s days" % self.DEL_GRACE_DAYS )
     self.DEL_LIMIT = self.am_getOption( "DeleleLimit", self.DEL_LIMIT )
@@ -72,7 +71,6 @@ class CleanReqDBAgent( AgentModule ):
 
     gMonitor.registerActivity( "KickedRequests", "Assigned requests kicked",
                                "CleanReqDBAgent", "Requests/min", gMonitor.OP_SUM )
-
     return S_OK()
 
   def execute( self ):
