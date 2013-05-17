@@ -52,6 +52,8 @@ class Request( Record ):
   :param TypedList operations: list of operations
   """
 
+  FINAL_STATES = ( "Done", "Failed", "Canceled" )
+
   def __init__( self, fromDict = None ):
     """c'tor
 
@@ -93,7 +95,7 @@ class Request( Record ):
                "RequestName" : "VARCHAR(255) NOT NULL",
                "OwnerDN" : "VARCHAR(255)",
                "OwnerGroup" : "VARCHAR(32)",
-               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Cancelled') DEFAULT 'Waiting'",
+               "Status" : "ENUM('Waiting', 'Assigned', 'Done', 'Failed', 'Canceled') DEFAULT 'Waiting'",
                "Error" : "VARCHAR(255)",
                "DIRACSetup" : "VARCHAR(32)",
                "SourceComponent" : "BLOB",

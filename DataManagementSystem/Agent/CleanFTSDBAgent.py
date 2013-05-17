@@ -82,8 +82,8 @@ class CleanFTSDBAgent( AgentModule ):
     """ one cycle execution """
 
     now = datetime.datetime.now()
-    kickLimit = now - datetime.timedelta( hours = self.KICK_ASSIGNED_HOURS )
-    rmLimit = now - datetime.timedelta( days = self.DEL_GRACE_DAYS )
+    kickTime = now - datetime.timedelta( hours = self.KICK_ASSIGNED_HOURS )
+    rmTime = now - datetime.timedelta( days = self.DEL_GRACE_DAYS )
 
     kicked = 0
     deleted = 0
@@ -96,7 +96,7 @@ class CleanFTSDBAgent( AgentModule ):
     assignedFTSJobList = assignedFTSJobList["Value"]
 
     for ftsJob in assignedFTSJobList:
-      if ftsJob.LastUpdate > kickLimit:
+      if ftsJob.LastUpdate > kickTime:
         self.log.debug( "FTSJob %s is Assigned for too long and has to be kicked" % ftsJob.FTSGUID )
         kicked += 1
         ftsJob.Status = "Submitted"
@@ -112,7 +112,7 @@ class CleanFTSDBAgent( AgentModule ):
     finishedFTSJobList = finishedFTSJobList["Value"]
 
     for ftsJob in finishedFTSJobList:
-      if ftsJob.LastUpdate > rmLimit:
+      if ftsJob.LastUpdate > rmTime:
         self.log.debug( "FTSJob %s is too old and has to be deleted" % ftsJob.FTSGUID )
         delJob = self.ftsClient().deleteFTSJob( ftsJob.FTSJobID )
         if not delJob["OK"]:
