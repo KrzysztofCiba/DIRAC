@@ -67,23 +67,23 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestString: xml string
     """
-    gLogger.debug( "RequestManager.putRequest: Setting request %s" % requestString )
+    gLogger.debug( "putRequest: Setting request %s" % requestString )
     requestName = "***UNKNOWN***"
     try:
       request = Request.fromXML( requestString )
       if not request["OK"]:
-        gLogger.error( "RequestManager.putRequest: %s" % request["Message"] )
+        gLogger.error( "putRequest: %s" % request["Message"] )
         return request
       request = request["Value"]
       valid = cls.validate( request )
       if not valid["OK"]:
-        gLogger.error( "ReqManagerHandler.putRequest: request not valid: %s" % valid["Message"] )
+        gLogger.error( "putRequest: request not valid: %s" % valid["Message"] )
         return valid
       requestName = request.RequestName
-      gLogger.info( "ReqManagerHandler.putRequest: Attempting to set request '%s'" % requestName )
+      gLogger.info( "putRequest: Attempting to set request '%s'" % requestName )
       return cls.__requestDB.putRequest( request )
     except Exception, error:
-      errStr = "ReqManagerHandler.putRequest: Exception while setting request."
+      errStr = "putRequest: Exception while setting request."
       gLogger.exception( errStr, requestName, lException = error )
       return S_ERROR( errStr )
 
@@ -91,11 +91,11 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_getDBSummary( cls ):
     """ Get the summary of requests in the Request DB """
-    gLogger.info( "ReqManagerHandler.getDBSummary: Attempting to obtain database summary." )
+    gLogger.info( "getDBSummary: Attempting to obtain database summary." )
     try:
       return cls.__requestDB.getDBSummary()
     except Exception, error:
-      errStr = "ReqManagerHandler.getDBSummary: Exception while getting database summary."
+      errStr = "getDBSummary: Exception while getting database summary."
       gLogger.exception( errStr, lException = error )
       return S_ERROR( errStr )
 
@@ -103,11 +103,11 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_getRequest( cls, requestName = "" ):
     """ Get a request of given type from the database """
-    gLogger.info( "RequestHandler.getRequest: Attempting to get request" )
+    gLogger.info( "getRequest: Attempting to get request" )
     try:
       getRequest = cls.__requestDB.getRequest( requestName )
       if not getRequest["OK"]:
-        gLogger.error( "RequestHandler.getRequest: %s" % getRequest["Message"] )
+        gLogger.error( "getRequest: %s" % getRequest["Message"] )
         return getRequest
       if getRequest["Value"]:
         getRequest = getRequest["Value"].toXML( True )
@@ -115,7 +115,7 @@ class ReqManagerHandler( RequestHandler ):
           gLogger.error( getRequest["Message"] )
       return getRequest
     except Exception, error:
-      errStr = "ReqManagerHandler.getRequest: Exception while getting request."
+      errStr = "getRequest: Exception while getting request."
       gLogger.exception( errStr, lException = error )
       return S_ERROR( errStr )
 
@@ -123,11 +123,11 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_peekRequest( cls, requestName = "" ):
     """ peek request given its name """
-    gLogger.info( "RequestHandler.peekRequest: Attempting to get request" )
+    gLogger.info( "peekRequest: Attempting to get request" )
     try:
       peekRequest = cls.__requestDB.peekRequest( requestName )
       if not peekRequest["OK"]:
-        gLogger.error( "RequestHandler.peekRequest: %s" % peekRequest["Message"] )
+        gLogger.error( "peekRequest: %s" % peekRequest["Message"] )
         return peekRequest
       if peekRequest["Value"]:
         peekRequest = peekRequest["Value"].toXML( True )
@@ -135,7 +135,7 @@ class ReqManagerHandler( RequestHandler ):
           gLogger.error( peekRequest["Message"] )
       return peekRequest
     except Exception, error:
-      errStr = "ReqManagerHandler.peekRequest: Exception while getting request."
+      errStr = "peekRequest: Exception while getting request."
       gLogger.exception( errStr, lException = error )
       return S_ERROR( errStr )
 
@@ -149,11 +149,11 @@ class ReqManagerHandler( RequestHandler ):
     :param int startItem: start item
     :param int maxItems: max items
     """
-    gLogger.info( "ReqManagerHandler.getRequestSummeryWeb called" )
+    gLogger.info( "getRequestSummeryWeb called" )
     try:
       return cls.__requestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
     except Exception, error:
-      errStr = "ReqManagerHandler.getRequestSummaryWeb: Exception while getting request."
+      errStr = "getRequestSummaryWeb: Exception while getting request."
       gLogger.exception( errStr, lException = error )
       return S_ERROR( errStr )
 
@@ -217,10 +217,10 @@ class ReqManagerHandler( RequestHandler ):
     :param str requestName: request's name
     :return: S_OK( json_str )
     """
-    gLogger.verbose( "ReqManagerHandler.getDigest: Attempting to get digest for request '%s'" % requestName )
+    gLogger.verbose( "getDigest: Attempting to get digest for request '%s'" % requestName )
     try:
       return cls.__requestDB.getDigest( requestName )
     except Exception , error:
-      errStr = "ReqManagerHandler.getDigest: exception when getting digest for '%s'" % requestName
+      errStr = "getDigest: exception when getting digest for '%s'" % requestName
       gLogger.exception( errStr, '', lException = error )
       return S_ERROR( errStr )
