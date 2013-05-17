@@ -48,8 +48,8 @@ class RequestTests( unittest.TestCase ):
     """ tear down """
     del self.fromDict
 
-  def test_ctor( self ):
-    """ test c'tor and serialisation """
+  def test01CtorSerilization( self ):
+    """ test c'tor and serialization """
     # # empty c'tor
     req = Request()
     self.assertEqual( isinstance( req, Request ), True )
@@ -87,7 +87,7 @@ class RequestTests( unittest.TestCase ):
     toSQL = toSQL["Value"]
     self.assertEqual( toSQL.startswith( "UPDATE" ), True )
 
-  def test_props( self ):
+  def test02Props( self ):
     """ test props """
     # # valid values
     req = Request()
@@ -118,7 +118,7 @@ class RequestTests( unittest.TestCase ):
     req.LastUpdate = datetime.datetime( 1970, 1, 1, 0, 0, 0 )
     self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
 
-  def test_operations( self ):
+  def test04Operations( self ):
     """ test operations arithemtic and state machine """
     req = Request()
     self.assertEqual( len( req ), 0 )
@@ -204,15 +204,6 @@ class RequestTests( unittest.TestCase ):
 
     ftsFile.Status = "Scheduled"
     print ftsTransfer.Status
-
-
-
-
-
-
-
-
-
 
 
 # # test execution
