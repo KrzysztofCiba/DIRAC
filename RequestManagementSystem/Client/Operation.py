@@ -89,7 +89,7 @@ class Operation( Record ):
              { "OperationID" : "INTEGER NOT NULL AUTO_INCREMENT",
                "RequestID" : "INTEGER NOT NULL",
                "Type" : "VARCHAR(64) NOT NULL",
-               "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Cancelled') "\
+               "Status" : "ENUM('Waiting', 'Assigned', 'Queued', 'Done', 'Failed', 'Canceled', 'Scheduled') "\
                  "DEFAULT 'Queued'",
                "Arguments" : "BLOB",
                "Order" : "INTEGER NOT NULL",
