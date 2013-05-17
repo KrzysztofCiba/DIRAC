@@ -183,6 +183,34 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( getWaiting["OK"], True )
     self.assertEqual( getWaiting["Value"], transfer )
 
+  def test03FTS( self ):
+    """ FTS state machine """
+    req = Request()
+    req.RequestName = "FTSTest"
+
+    ftsTransfer = Operation()
+    ftsTransfer.Type = "ReplicateAndRegister"
+    ftsTransfer.TargetSE = "CERN-USER"
+
+    ftsFile = File()
+    ftsFile.LFN = "/a/b/c"
+    ftsFile.Checksum = "123456"
+    ftsFile.Checksumtype = "Adler32"
+
+    ftsTransfer.addFile( ftsFile )
+    req.addOperation( ftsTransfer )
+
+    self.assertEqual( req.Status, "Waiting" )
+
+    ftsFile.Status = "Scheduled"
+    print ftsTransfer.Status
+
+
+
+
+
+
+
 
 
 

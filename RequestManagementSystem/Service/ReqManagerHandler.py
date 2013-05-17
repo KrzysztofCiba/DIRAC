@@ -67,7 +67,6 @@ class ReqManagerHandler( RequestHandler ):
     :param cls: class ref
     :param str requestString: xml string
     """
-    gLogger.debug( "putRequest: Setting request %s" % requestString )
     requestName = "***UNKNOWN***"
     try:
       request = Request.fromXML( requestString )
@@ -91,7 +90,6 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_getDBSummary( cls ):
     """ Get the summary of requests in the Request DB """
-    gLogger.info( "getDBSummary: Attempting to obtain database summary." )
     try:
       return cls.__requestDB.getDBSummary()
     except Exception, error:
@@ -103,7 +101,6 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_getRequest( cls, requestName = "" ):
     """ Get a request of given type from the database """
-    gLogger.info( "getRequest: Attempting to get request" )
     try:
       getRequest = cls.__requestDB.getRequest( requestName )
       if not getRequest["OK"]:
@@ -123,7 +120,6 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_peekRequest( cls, requestName = "" ):
     """ peek request given its name """
-    gLogger.info( "peekRequest: Attempting to get request" )
     try:
       peekRequest = cls.__requestDB.peekRequest( requestName )
       if not peekRequest["OK"]:
@@ -149,7 +145,6 @@ class ReqManagerHandler( RequestHandler ):
     :param int startItem: start item
     :param int maxItems: max items
     """
-    gLogger.info( "getRequestSummeryWeb called" )
     try:
       return cls.__requestDB.getRequestSummaryWeb( selectDict, sortList, startItem, maxItems )
     except Exception, error:
@@ -161,7 +156,6 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_deleteRequest( cls, requestName ):
     """ Delete the request with the supplied name"""
-    gLogger.info( "deleteRequest: Deleting request '%s'..." % requestName )
     try:
       return cls.__requestDB.deleteRequest( requestName )
     except Exception, error:
@@ -188,7 +182,6 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_getRequestNamesForJobs( cls, jobIDs ):
     """ Select the request names for supplied jobIDs """
-    gLogger.info( "getRequestNamesForJobs: Attempting to get request names for %s jobs." % len( jobIDs ) )
     try:
       return cls.__requestDB.getRequestNamesForJobs( jobIDs )
     except Exception, error:
@@ -200,7 +193,6 @@ class ReqManagerHandler( RequestHandler ):
   @classmethod
   def export_readRequestsForJobs( cls, jobIDs ):
     """ read requests for jobs given list of jobIDs """
-    gLogger.verbose( "readRequestsForJobs: Attempting to read requests associated to the jobs." )
     try:
       res = cls.__requestDB.readRequestsForJobs( jobIDs )
       return res
@@ -217,7 +209,6 @@ class ReqManagerHandler( RequestHandler ):
     :param str requestName: request's name
     :return: S_OK( json_str )
     """
-    gLogger.verbose( "getDigest: Attempting to get digest for request '%s'" % requestName )
     try:
       return cls.__requestDB.getDigest( requestName )
     except Exception , error:
