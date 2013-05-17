@@ -49,7 +49,7 @@ class RequestTests( unittest.TestCase ):
     del self.fromDict
 
   def test01CtorSerilization( self ):
-    """ test c'tor and serialization """
+    """ c'tor and serialization """
     # # empty c'tor
     req = Request()
     self.assertEqual( isinstance( req, Request ), True )
@@ -88,7 +88,7 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( toSQL.startswith( "UPDATE" ), True )
 
   def test02Props( self ):
-    """ test props """
+    """ props """
     # # valid values
     req = Request()
 
@@ -119,7 +119,7 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( req.LastUpdate, datetime.datetime( 1970, 1, 1, 0, 0, 0 ) )
 
   def test04Operations( self ):
-    """ test operations arithemtic and state machine """
+    """ operations arithmetic and state machine """
     req = Request()
     self.assertEqual( len( req ), 0 )
 
