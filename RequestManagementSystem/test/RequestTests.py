@@ -227,7 +227,11 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong status for ftsStatus: %s" % ftsTransfer.Status )
     self.assertEqual( req.Status, "Scheduled", "wrong status for request: %s" % req.Status )
 
+    ftsFile.Status = "Done"
 
+    self.assertEqual( insertBefore.Status, "Done", "wrong status for insertBefore: %s" % insertBefore.Status )
+    self.assertEqual( ftsTransfer.Status, "Done", "wrong status for ftsStatus: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Done", "wrong status for request: %s" % req.Status )
 
 
 
