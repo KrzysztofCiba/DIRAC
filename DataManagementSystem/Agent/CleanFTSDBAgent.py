@@ -23,7 +23,7 @@ __RCSID__ = "$Id: $"
 # # imports
 import datetime
 # # from DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
@@ -46,8 +46,12 @@ class CleanFTSDBAgent( AgentModule ):
 
   # # DELETION GRACE PERIOD IN DAYS
   DEL_GRACE_DAYS = 14
+  # # DEL_LIMIT
+  DEL_LIMIT = 100
   # # KICK_ASSIGNED_PERIOD IN HOURS
   KICK_ASSIGNED_HOURS = 1
+  # # KICK LIMIT
+  KICK_LIMIT = 100
 
   def ftsClient( self ):
     """ FTSClient getter """
@@ -58,9 +62,20 @@ class CleanFTSDBAgent( AgentModule ):
   def initialize( self ):
     """ agent initialization  """
     self.DEL_GRACE_DAYS = self.am_getOption( "DeleteGraceDays", self.DEL_GRACE_DAYS )
-    self.log.info( "Grace period = %s days" % self.DEL_GRACE_DAYS )
+    self.log.info( "Delete grace period = %s days" % self.DEL_GRACE_DAYS )
+    self.DEL_LIMIT = self.am_getOption( "DeleteLimitPerCycle", self.DEL_LIMIT )
+    self.log.info( "Delete FTSJob limit = %s" % self.DEL_LIMIT )
     self.KICK_ASSIGNED_HOURS = self.am_getOption( "KickAssignedHours", self.KICK_ASSIGNED_HOURS )
     self.log.info( "Kick assigned period = %s hours" % self.KICK_ASSIGNED_HOURS )
+    self.KICK_LIMIT = self.am_getOption( "KickLimitPerCycle", self.KICK_LIMIT )
+    self.log.info( "Kick FTSJobs limit = %s" % self.KICK_LIMIT )
+
+    gMonitor.registerActivity( "KickedFTSJobs", "Assigned FTSJobs kicked",
+                              "CleanFTSDBAgent", "FTSJobs/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "DeletedFTSJobs", "Deleted FTSJobs",
+                              "CleanFTSDBAgent", "FTSJobs/min", gMonitor.OP_SUM )
+
+
     return S_OK()
 
   def execute( self ):
@@ -74,7 +89,7 @@ class CleanFTSDBAgent( AgentModule ):
     deleted = 0
 
     # # select Assigned FTSJobs
-    assignedFTSJobList = self.ftsClient().getFTSJobList( ["Assigned"], 100 )
+    assignedFTSJobList = self.ftsClient().getFTSJobList( ["Assigned"], self.KICK_LIMIT )
     if not assignedFTSJobList["OK"]:
       self.log.error( "execute: %s" % assignedFTSJobList["Message"] )
       return assignedFTSJobList
@@ -90,7 +105,7 @@ class CleanFTSDBAgent( AgentModule ):
         self.log.error( "execute: unable to put back FTSJob %s: %s" % ( ftsJob.FTSGUID, put["Message"] ) )
         return put
 
-    finishedFTSJobList = self.ftsClient().getFTSJobList( list( FTSJob.FINALSTATES ), 100 )
+    finishedFTSJobList = self.ftsClient().getFTSJobList( list( FTSJob.FINALSTATES ), self.DEL_LIMIT )
     if not finishedFTSJobList["OK"]:
       self.log.error( "execute: %s" % finishedFTSJobList["Message"] )
       return finishedFTSJobList
@@ -109,7 +124,8 @@ class CleanFTSDBAgent( AgentModule ):
           self.log.error( "execute: %s" % putJob["Message"] )
           return putJob
 
-    self.log.info( "%s FTSJobs have been kicked and %s have been deleted" % ( kicked, deleted ) )
-
+    self.log.info( "Assigned FTSJobs kicked %s Finished FTSJobs deleted %s" % ( kicked, deleted ) )
+    gMonitor.addMark( "KickedFTSJobs", kicked )
+    gMonitor.addMark( "DeletedFTSJobs", deleted )
     return S_OK()
 
