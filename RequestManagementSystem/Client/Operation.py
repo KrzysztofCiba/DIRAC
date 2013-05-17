@@ -277,7 +277,7 @@ class Operation( Record ):
   @Status.setter
   def Status( self, value ):
     """ Status setter """
-    if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done" ):
+    if value not in ( "Waiting", "Assigned", "Queued", "Failed", "Done", "Canceled", "Scheduled" ):
       raise ValueError( "unknown Status '%s'" % str( value ) )
     if value in ( "Failed", "Done" ) and self.__files__:
       fStatuses = self.fileStatusList()
