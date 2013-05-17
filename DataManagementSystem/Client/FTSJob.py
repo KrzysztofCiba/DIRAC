@@ -388,10 +388,8 @@ class FTSJob( Record ):
     """ create and return SURL pair file """
     surls = []
     for ftsFile in self:
-      checksum = "%s:%s" % ( ftsFile.ChecksumType, ftsFile.Checksum )
-      if len( checksum ) == 1:
-        checksum = ""
-      surls.append( "%s %s %s" % ( ftsFile.SourceURL, ftsFile.TargetURL, checksum ) )
+      checksum = "%s:%s" % ( ftsFile.ChecksumType, ftsFile.Checksum ) if ftsFile.ChecksumType and ftsFile.Checksum else ""
+      surls.append( "%s %s %s" % ( ftsFile.SourceSURL, ftsFile.TargetSURL, checksum ) )
     return "\n".join( surls )
 
   def submitFTS2( self ):
