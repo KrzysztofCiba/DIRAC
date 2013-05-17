@@ -25,6 +25,8 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import unittest
+# # SUT
+from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 
 ########################################################################
 class FTSSiteTests(unittest.TestCase):
@@ -39,6 +41,10 @@ class FTSSiteTests(unittest.TestCase):
     :param self: self reference
     """
     pass
+
+  def test01CtorSerilization( self ):
+    """ ctor and serialization """
+
 
 
 

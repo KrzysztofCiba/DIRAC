@@ -51,14 +51,14 @@ class FTSDBTests( unittest.TestCase ):
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/DBName', 'FTSDB' )
     gConfig.setOptionValue( '/Systems/DataManagement/Test/Databases/FTSDB/User', 'Dirac' )
 
-    self.ftsSites = [ FTSSite( { "ServerURI": "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "CERN.ch" } ),
-                      FTSSite( { "ServerURI": "https://fts.pic.es:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "PIC.es" } ),
-                      FTSSite( { "ServerURI": "https://lcgfts.gridpp.rl.ac.uk:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "RAL.uk" } ),
-                      FTSSite( { "ServerURI": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "SARA.nl" } ),
-                      FTSSite( { "ServerURI": "https://fts.cr.cnaf.infn.it:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "CNAF.it" } ),
-                      FTSSite( { "ServerURI": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "NIKHEF.nl" } ),
-                      FTSSite( { "ServerURI": "https://fts-fzk.gridka.de:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "GRIDKA.de" } ),
-                      FTSSite( { "ServerURI": "https://cclcgftsprod.in2p3.fr:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "IN2P3.fr" } ) ]
+    self.ftsSites = [ FTSSite( { "FTSServer": "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "CERN.ch" } ),
+                      FTSSite( { "FTSServer": "https://fts.pic.es:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "PIC.es" } ),
+                      FTSSite( { "FTSServer": "https://lcgfts.gridpp.rl.ac.uk:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "RAL.uk" } ),
+                      FTSSite( { "FTSServer": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "SARA.nl" } ),
+                      FTSSite( { "FTSServer": "https://fts.cr.cnaf.infn.it:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "CNAF.it" } ),
+                      FTSSite( { "FTSServer": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "NIKHEF.nl" } ),
+                      FTSSite( { "FTSServer": "https://fts-fzk.gridka.de:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "GRIDKA.de" } ),
+                      FTSSite( { "FTSServer": "https://cclcgftsprod.in2p3.fr:8443/glite-data-transfer-fts/services/FileTransfer", "Name": "IN2P3.fr" } ) ]
 
 
     self.ftsFiles = []
@@ -85,7 +85,7 @@ class FTSDBTests( unittest.TestCase ):
 
       ftsJob = FTSJob()
       ftsJob.FTSGUID = str( uuid.uuid4() )
-      ftsJob.FTSServer = self.ftsSites[0].ServerURI
+      ftsJob.FTSServer = self.ftsSites[0].FTSServer
       ftsJob.Status = statuses[ i % len( statuses ) ]
 
       if ftsJob.Status in FTSJob.FINALSTATES:

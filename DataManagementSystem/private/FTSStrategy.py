@@ -78,7 +78,7 @@ class FTSStrategy( object ):
     self.log = gLogger.getSubLogger( "FTSStrategy", child = True )
     self.log.setLevel( gConfig.getValue( self.csPath + "/LogLevel", "DEBUG" ) )
     for ftsSite in ftsSites:
-      self.log.info( "FTSSite: %-16s ServerURI=%s" % ( ftsSite.Name, ftsSite.ServerURI ) )
+      self.log.info( "FTSSite: %-16s FTSServer=%s" % ( ftsSite.Name, ftsSite.FTSServer ) )
 
     # # CS options
     self.log.info( "Supported strategies = %s" % ", ".join( self.supportedStrategies ) )

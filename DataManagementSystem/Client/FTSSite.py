@@ -42,6 +42,7 @@ class FTSSite( Record ):
 
   site with FTS infrastructure
   """
+  MAX_ACTIVE_JOBS = 50
 
   def __init__( self, fromDict = None ):
     """c'tor
@@ -50,7 +51,7 @@ class FTSSite( Record ):
     :param dict fromDict: data dict
     """
     Record.__init__( self )
-    self.__data__["MaxActiveJobs"] = 50
+    self.__data__["MaxActiveJobs"] = self.MAX_ACTIVE_JOBS
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
@@ -63,7 +64,7 @@ class FTSSite( Record ):
     return { "Fields" :
              { "FTSSiteID": "INTEGER NOT NULL AUTO_INCREMENT",
                "Name": "VARCHAR(255) NOT NULL",
-               "ServerURI":  "VARCHAR(255)",
+               "FTSServer":  "VARCHAR(255)",
                "MaxActiveJobs": "INTEGER NOT NULL DEFAULT 50" },
              "PrimaryKey": [ "FTSSiteID" ] }
 
@@ -88,14 +89,14 @@ class FTSSite( Record ):
     self.__data__["Name"] = value
 
   @property
-  def ServerURI( self ):
+  def FTSServer( self ):
     """ FTS server uri getter """
-    return self.__data__["ServerURI"]
+    return self.__data__["FTSServer"]
 
-  @ServerURI.setter
-  def ServerURI( self, value ):
+  @FTSServer.setter
+  def FTSServer( self, value ):
     """ server uri setter """
-    self.__data__["ServerURI"] = value
+    self.__data__["FTSServer"] = value
 
   @property
   def MaxActiveJobs( self ):
@@ -103,33 +104,9 @@ class FTSSite( Record ):
     return self.__data__["MaxActiveJobs"]
 
   @MaxActiveJobs.setter
-  def MaxActiveJobs(self, value):
+  def MaxActiveJobs( self, value ):
     """ max active jobs setter """
     self.__data__["MaxActiveJobs"] = int( value ) if value else 50
-
-  def toXML( self, dumpToStr = False ):
-    """ serialize FTS site to XML
-
-    :param bool dumpToStr: dump to str
-    """
-    dumpToStr = bool( dumpToStr )
-    attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
-    el = ElementTree.Element( "ftssite", attrs )
-    return S_OK( { False: el,
-                    True: ElementTree.tostring( el ) }[dumpToStr] )
-
-  @classmethod
-  def fromXML( cls, element ):
-    """ build FTSSite from xml fragment """
-    if type( element ) == str:
-      try:
-        element = ElementTree.fromstring( element )
-      except ExpatError, error:
-        return S_ERROR( "unable to de-serialize FTSSite from xml: %s" % str( error ) )
-    if element.tag != "ftssite":
-      return S_ERROR( "wrong tag, expected 'ftssite', got %s" % element.tag )
-    fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return S_OK( FTSSite( fromDict ) )
 
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """

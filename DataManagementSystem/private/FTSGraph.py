@@ -137,12 +137,12 @@ class FTSGraph( Graph ):
         rwSEsDict[se] = { "read": False, "write": False }
 
       rwAttrs = { "SEs": rwSEsDict }
-      roAttrs = { "ServerURI": ftsSite.ServerURI,
+      roAttrs = { "FTSServer": ftsSite.FTSServer,
                   "FTSSiteID": ftsSite.FTSSiteID,
                   "MaxActiveJobs": ftsSite.MaxActiveJobs }
       site = Site( ftsSite.Name, rwAttrs, roAttrs )
 
-      self.log.debug( "adding site %s using ServerURI %s" % ( ftsSite.Name, ftsSite.ServerURI ) )
+      self.log.debug( "adding site %s using FTSServer %s" % ( ftsSite.Name, ftsSite.FTSServer ) )
       self.addNode( site )
 
     for sourceSite in self.nodes():

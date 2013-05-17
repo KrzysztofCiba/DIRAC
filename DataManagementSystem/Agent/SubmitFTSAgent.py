@@ -132,7 +132,7 @@ class SubmitFTSAgent( AgentModule ):
 
     log.info( "FTSSites:" )
     for i, site in enumerate( self.__ftsGraph.nodes() ):
-      log.info( " [%02d] FTSSite: %-25s ServerURI: %s" % ( i, site.name, site.ServerURI ) )
+      log.info( " [%02d] FTSSite: %-25s FTSServer: %s" % ( i, site.name, site.FTSServer ) )
     log.info( "FTSRoutes:" )
     for i, route in enumerate( self.__ftsGraph.edges() ):
       log.info( " [%02d] FTSRoute: %-25s Active FTSJobs (Max) = %s (%s)" % ( i,
@@ -293,7 +293,7 @@ class SubmitFTSAgent( AgentModule ):
             sTJId = "submit-%s/%s/%s/%s" % ( enqueued, opID, sourceSE, targetSE )
             while True:
               queue = self.threadPool().generateJobAndQueueIt( self.submit,
-                                                               args = ( ftsFileListChunk, targetSite.ServerURI,
+                                                               args = ( ftsFileListChunk, targetSite.FTSServer,
                                                                         sourceSE, targetSE, route, sTJId ),
                                                                sTJId = sTJId )
               if queue["OK"]:
