@@ -200,12 +200,12 @@ class RequestTests( unittest.TestCase ):
     ftsTransfer.addFile( ftsFile )
     req.addOperation( ftsTransfer )
 
-    self.assertEqual( req.Status, "Waiting" )
+    self.assertEqual( req.Status, "Waiting", "1. wrong request status: %s" % req.Status )
 
     ftsFile.Status = "Scheduled"
 
-    self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong status for ftsTransfer: %s" % ftsTransfer.Status )
-    self.assertEqual( req.Status, "Scheduled", "wrong status for request: %s" % req.Status )
+    self.assertEqual( ftsTransfer.Status, "Scheduled", "2. wrong status for ftsTransfer: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Scheduled", "2. wrong status for request: %s" % req.Status )
 
     insertBefore = Operation()
     insertBefore.Type = "RegisterReplica"
@@ -217,21 +217,27 @@ class RequestTests( unittest.TestCase ):
 
     req.insertBefore( insertBefore, ftsTransfer )
 
-    self.assertEqual( insertBefore.Status, "Waiting", "wrong status for insertBefore: %s" % insertBefore.Status )
-    self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong status for ftsStatus: %s" % ftsTransfer.Status )
-    self.assertEqual( req.Status, "Waiting", "wrong status for request: %s" % req.Status )
+    self.assertEqual( insertBefore.Status, "Waiting", "3. wrong status for insertBefore: %s" % insertBefore.Status )
+    self.assertEqual( ftsTransfer.Status, "Scheduled", "3. wrong status for ftsStatus: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Waiting", "3. wrong status for request: %s" % req.Status )
 
     insertFile.Status = "Done"
 
-    self.assertEqual( insertBefore.Status, "Done", "wrong status for insertBefore: %s" % insertBefore.Status )
-    self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong status for ftsStatus: %s" % ftsTransfer.Status )
-    self.assertEqual( req.Status, "Scheduled", "wrong status for request: %s" % req.Status )
+    self.assertEqual( insertBefore.Status, "Done", "4. wrong status for insertBefore: %s" % insertBefore.Status )
+    self.assertEqual( ftsTransfer.Status, "Scheduled", "4. wrong status for ftsStatus: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Scheduled", "4. wrong status for request: %s" % req.Status )
+
+    ftsFile.Status = "Waiting"
+
+    self.assertEqual( insertBefore.Status, "Done", "5. wrong status for insertBefore: %s" % insertBefore.Status )
+    self.assertEqual( ftsTransfer.Status, "Scheduled", "5. wrong status for ftsStatus: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Scheduled", "5. wrong status for request: %s" % req.Status )
 
     ftsFile.Status = "Done"
 
-    self.assertEqual( insertBefore.Status, "Done", "wrong status for insertBefore: %s" % insertBefore.Status )
-    self.assertEqual( ftsTransfer.Status, "Done", "wrong status for ftsStatus: %s" % ftsTransfer.Status )
-    self.assertEqual( req.Status, "Done", "wrong status for request: %s" % req.Status )
+    self.assertEqual( insertBefore.Status, "Done", "5. wrong status for insertBefore: %s" % insertBefore.Status )
+    self.assertEqual( ftsTransfer.Status, "Done", "5. wrong status for ftsStatus: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Done", "5. wrong status for request: %s" % req.Status )
 
 
 
