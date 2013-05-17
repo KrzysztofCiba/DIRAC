@@ -104,14 +104,16 @@ class Operation( Record ):
   # # protected methods for parent only
   def _notify( self ):
     """ notify self about file status change """
-    fStatus = self.fileStatusList()
+    fStatus = set( self.fileStatusList() )
     newStatus = self.Status
     print "1 _notify", fStatus, self.Status, newStatus
     if "Done" in fStatus:
       newStatus = "Done"
-    if "Failed" in fStatus:
+    elif "Failed" in fStatus:
       newStatus = "Failed"
-    if "Waiting" in fStatus or "Scheduled" in fStatus:
+    elif "Waiting" in fStatus:
+      newStatus = "Queued"
+    elif "Scheduled" in fStatus:
       newStatus = "Queued"
 
     print "2 _notify", fStatus, self.Status, newStatus
@@ -163,7 +165,7 @@ class Operation( Record ):
 
   def __setitem__( self, i, opFile ):
     """ overwrite file """
-    return self.__files__.__setitem__(i, opFile )
+    return self.__files__.__setitem__( i, opFile )
 
   def fileStatusList( self ):
     """ get list of files statuses """
