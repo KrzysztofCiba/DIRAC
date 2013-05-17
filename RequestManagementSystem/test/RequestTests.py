@@ -203,8 +203,9 @@ class RequestTests( unittest.TestCase ):
     self.assertEqual( req.Status, "Waiting" )
 
     ftsFile.Status = "Scheduled"
-    print ftsTransfer.Status
 
+    print ftsTransfer.Status
+    print req.Status
 
 # # test execution
 if __name__ == "__main__":
