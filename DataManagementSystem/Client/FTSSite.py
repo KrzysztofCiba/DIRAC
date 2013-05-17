@@ -26,11 +26,7 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSSite class.
 
 # # imports
-try:
-  import xml.etree.cElementTree as ElementTree
-except ImportError:
-  import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
+import urlparse
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.private.Record import Record
@@ -96,6 +92,11 @@ class FTSSite( Record ):
   @FTSServer.setter
   def FTSServer( self, value ):
     """ server uri setter """
+    if type( value ) != str:
+      raise TypeError( "FTSServer has to be a string!" )
+    if not urlparse.urlparse( value ).scheme:
+      raise ValueError( "Wrongly formatted URI!" )
+
     self.__data__["FTSServer"] = value
 
   @property

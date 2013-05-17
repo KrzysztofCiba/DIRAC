@@ -26,10 +26,8 @@ __RCSID__ = "$Id $"
 import os
 import re
 import datetime
-import xml.etree.ElementTree as ElementTree
-from xml.parsers.expat import ExpatError
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.private.Record import Record
 
 ########################################################################
@@ -301,32 +299,6 @@ class FTSFile( Record ):
 
     return S_OK( dict( zip( self.__data__.keys(),
                       [ val if val != None else "" for val in self.__data__.values() ] ) ) )
-
-  def toXML( self, dumpToStr = False ):
-    """ serialize file to XML
-
-    :param bool dumpToStr: dump to str
-    """
-    dumpToStr = bool( dumpToStr )
-    attrs = dict( [ ( k, str( getattr( self, k ) ) if getattr( self, k ) else "" ) for k in self.__data__ ] )
-    attrs["CreationTime"] = self.CreationTime.isoformat( " " ).split( "." )[0] if self.CreationTime else ""
-    attrs["LastUpdate"] = self.LastUpdate.isoformat( " " ).split( "." )[0] if self.LastUpdate else ""
-    el = ElementTree.Element( "ftsfile", attrs )
-    return S_OK( { False: el, True: ElementTree.tostring( el ) }[dumpToStr] )
-
-  @classmethod
-  def fromXML( cls, element ):
-    """ build FTSFile form ElementTree.Element :element: """
-    if type( element ) == str:
-      try:
-        element = ElementTree.fromstring( element )
-      except ExpatError, error:
-        return S_ERROR( str( error ) )
-    if element.tag != "ftsfile":
-      return S_ERROR( "wrong tag, expected 'ftsfile', got %s" % element.tag )
-    fromDict = dict( [ ( key, value ) for key, value in element.attrib.items() if value ] )
-    return S_OK( FTSFile( fromDict ) )
-
   def toSQL( self ):
     """ prepare SQL INSERT or UPDATE statement """
     colVals = [ ( "`%s`" % column, "'%s'" % value if type( value ) in ( str, datetime.datetime ) else str( value ) )

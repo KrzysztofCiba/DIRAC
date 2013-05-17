@@ -25,6 +25,8 @@ __RCSID__ = "$Id $"
 # @brief Definition of FTSHistoryView class.
 
 # # imports
+import urlparse
+# # from DIRAC
 from DIRAC import S_OK
 
 ########################################################################
@@ -119,6 +121,10 @@ class FTSHistoryView( object ):
   @FTSServer.setter
   def FTSServer( self, ftsServer ):
     """ FTS server setter """
+    if type( ftsServer ) != str:
+      raise TypeError( "FTSServer has to be a string!" )
+    if not urlparse.urlparse( ftsServer ).scheme:
+      raise ValueError( "Wrongly formatted URI!" )
     self.__data__["FTSServer"] = ftsServer
 
   @property

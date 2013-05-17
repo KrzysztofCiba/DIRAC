@@ -61,11 +61,6 @@ class FTSFileTests( unittest.TestCase ):
     for k, v in self.fromDict.items():
       self.assertEqual( getattr( ftsFileJSON, k ), v )
 
-    XML = ftsFile.toXML()
-    ftsFileXML = FTSFile.fromXML( XML["Value"] )
-    self.assertEqual( isinstance( ftsFileXML["Value"], FTSFile ), True )
-    for k, v in self.fromDict.items():
-      self.assertEqual( getattr( ftsFileXML["Value"], k ), v )
 
 
 # # test execution
