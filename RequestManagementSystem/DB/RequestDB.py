@@ -28,6 +28,7 @@ from MySQLdb import Error as MySQLdbError
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities.List import stringListToString
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -250,6 +251,20 @@ class RequestDB( DB ):
     :param str requestName: Request.RequestName
     """
     return self.getRequest( requestName, False )
+
+  def getRequestNamesList( self, statusList = None, limit = None ):
+    """ select requests with status in :statusList: """
+    statusList = statusList if statusList else list( Request.FINAL_STATES )
+    limit = limit if limit else 100
+    query = "SELECT `RequestName`, `Status`, `LastUpdate` FROM `Request` WHERE "\
+      " `Status` IN (%s) ORDER BY `LastUpdate` DESC LIMIT %s;" % ( stringListToString( statusList ), limit )
+    reqNamesList = self._query( query )
+    if not reqNamesList["OK"]:
+      self.log.error( "getRequestNamesList: %s" % reqNamesList["Message"] )
+      return reqNamesList
+    reqNamesList = reqNamesList["Value"]
+    self.log.always( reqNamesList )
+    return S_OK()
 
   def deleteRequest( self, requestName ):
     """ delete request given its name
