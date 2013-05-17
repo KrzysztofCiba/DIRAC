@@ -70,7 +70,6 @@ class FTSJobTests( unittest.TestCase ):
     self.assertEqual( XML["OK"], True, "XML serialization error" )
     self.assertEqual( XML["Value"].tag, "ftsjob", "XML serialization error - wrong tag" )
 
-
     ftsJobXML = FTSJob.fromXML( XML["Value"] )
     self.assertEqual( ftsJobXML["OK"], True, "XML de-serialization error" )
     self.assertEqual( isinstance( ftsJobXML["Value"], FTSJob ), True, "XML de-serilization error - wrong type" )
@@ -86,11 +85,11 @@ class FTSJobTests( unittest.TestCase ):
 
     json = ftsJob.toJSON()
     ftsJobJSON = FTSJob( json["Value"] )
-    self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True )
+    self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True, "JSON de-serilization error" )
 
     XML = ftsJob.toXML()
     ftsJobXML = FTSJob.fromXML( XML["Value"] )
-    self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True )
+    self.assertEqual( isinstance( ftsJobJSON, FTSJob ), True, "XML de-serialization error" )
 
     SQL = ftsJob.toSQL()
     self.assertEqual( SQL["OK"], True, "SQL serialization error" )
@@ -101,23 +100,25 @@ class FTSJobTests( unittest.TestCase ):
     self.assertEqual( SQL["OK"], True, "SQL serialization error" )
     self.assertEqual( SQL["Value"].startswith( "UPDATE" ), True, "SQL serialization UPDATE error" )
 
-    print SQL["Value"]
 
   def test02Files( self ):
     """ FTSFiles arithmetic """
     ftsJob = FTSJob()
     ftsJob.FTSGUID = str( uuid.uuid4() )
 
-    self.assertEqual( len( ftsJob ), 0 )
-    self.assertEqual( ftsJob.Files, 0 )
-    self.assertEqual( ftsJob.Size, 0 )
+    self.assertEqual( len( ftsJob ), 0, "1. len(ftsJob) error" )
+    self.assertEqual( ftsJob.Files, 0 , "1. Files prop error" )
+    self.assertEqual( ftsJob.Size, 0, "1. Size prop error" )
 
     ftsJob.addFile( self.fileA )
     ftsJob.addFile( self.fileB )
 
-    self.assertEqual( len( ftsJob ), 2 )
-    self.assertEqual( ftsJob.Files, 2 )
-    self.assertEqual( ftsJob.Size, 20 )
+    self.assertEqual( self.fileA.FTSGUID, ftsJob.FTSGUID, "FTSGUID mismatch for fileA" )
+    self.assertEqual( self.fileB.FTSGUID, ftsJob.FTSGUID, "FTSGUID mismatch for fileB" )
+
+    self.assertEqual( len( ftsJob ), 2, "2. len(ftsJob) error" )
+    self.assertEqual( ftsJob.Files, 2, "2. Files prop error" )
+    self.assertEqual( ftsJob.Size, 20, "2. Size prop error" )
 
   def test03Submit( self ):
     """ submit """
