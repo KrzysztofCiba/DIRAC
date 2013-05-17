@@ -185,6 +185,7 @@ class RequestTests( unittest.TestCase ):
 
   def test05FTS( self ):
     """ FTS state machine """
+
     req = Request()
     req.RequestName = "FTSTest"
 
@@ -201,12 +202,15 @@ class RequestTests( unittest.TestCase ):
     req.addOperation( ftsTransfer )
 
     self.assertEqual( req.Status, "Waiting", "1. wrong request status: %s" % req.Status )
+    self.assertEqual( ftsTransfer.Status, "Waiting", "1. wrong ftsStatus status: %s" % ftsTransfer.Status )
 
+    # # scheduled
     ftsFile.Status = "Scheduled"
 
     self.assertEqual( ftsTransfer.Status, "Scheduled", "2. wrong status for ftsTransfer: %s" % ftsTransfer.Status )
     self.assertEqual( req.Status, "Scheduled", "2. wrong status for request: %s" % req.Status )
 
+    # # add new operation before FTS
     insertBefore = Operation()
     insertBefore.Type = "RegisterReplica"
     insertBefore.TargetSE = "CERN-USER"
@@ -214,32 +218,32 @@ class RequestTests( unittest.TestCase ):
     insertFile.LFN = "/a/b/c"
     insertFile.PFN = "http://foo/bar"
     insertBefore.addFile( insertFile )
-
     req.insertBefore( insertBefore, ftsTransfer )
 
     self.assertEqual( insertBefore.Status, "Waiting", "3. wrong status for insertBefore: %s" % insertBefore.Status )
     self.assertEqual( ftsTransfer.Status, "Scheduled", "3. wrong status for ftsStatus: %s" % ftsTransfer.Status )
     self.assertEqual( req.Status, "Waiting", "3. wrong status for request: %s" % req.Status )
 
+    # # prev done
     insertFile.Status = "Done"
 
     self.assertEqual( insertBefore.Status, "Done", "4. wrong status for insertBefore: %s" % insertBefore.Status )
     self.assertEqual( ftsTransfer.Status, "Scheduled", "4. wrong status for ftsStatus: %s" % ftsTransfer.Status )
     self.assertEqual( req.Status, "Scheduled", "4. wrong status for request: %s" % req.Status )
 
+    # # reschedule
     ftsFile.Status = "Waiting"
 
     self.assertEqual( insertBefore.Status, "Done", "5. wrong status for insertBefore: %s" % insertBefore.Status )
     self.assertEqual( ftsTransfer.Status, "Waiting", "5. wrong status for ftsStatus: %s" % ftsTransfer.Status )
     self.assertEqual( req.Status, "Waiting", "5. wrong status for request: %s" % req.Status )
 
+    # # fts done
     ftsFile.Status = "Done"
 
     self.assertEqual( insertBefore.Status, "Done", "5. wrong status for insertBefore: %s" % insertBefore.Status )
     self.assertEqual( ftsTransfer.Status, "Done", "5. wrong status for ftsStatus: %s" % ftsTransfer.Status )
     self.assertEqual( req.Status, "Done", "5. wrong status for request: %s" % req.Status )
-
-
 
 # # test execution
 if __name__ == "__main__":
