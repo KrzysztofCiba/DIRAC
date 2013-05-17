@@ -195,7 +195,7 @@ class RequestTests( unittest.TestCase ):
     ftsFile = File()
     ftsFile.LFN = "/a/b/c"
     ftsFile.Checksum = "123456"
-    ftsFile.Checksumtype = "Adler32"
+    ftsFile.ChecksumType = "Adler32"
 
     ftsTransfer.addFile( ftsFile )
     req.addOperation( ftsTransfer )
