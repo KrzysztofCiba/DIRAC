@@ -89,5 +89,6 @@ class CleanReqDBAgent( AgentModule ):
 
     gMonitor.addMark( "KickedRequests", kicked )
     gMonitor.addMark( "DeletedRequests", deleted )
-
+    self.log.info( "execute: kicked assigned requests = %s" % kicked )
+    self.log.info( "execute: deleted finished requests = %s" % deleted )
     return S_OK()
