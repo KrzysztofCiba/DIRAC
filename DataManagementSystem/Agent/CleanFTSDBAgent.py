@@ -28,6 +28,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
 from DIRAC.DataManagementSystem.Client.FTSJob import FTSJob
 
+# # agent's name
 AGENT_NAME = 'DataManagement/MonitorFTSAgent'
 
 ########################################################################
@@ -35,6 +36,10 @@ class CleanFTSDBAgent( AgentModule ):
   """
   .. class:: CleanFTSDBAgent
 
+  This agent is performing two actions:
+
+  * deletion of obsoleted and finished FTSJobs (DEL_GRACE_DAYS)
+  * kicking FTSJobs assigned for too long (KICK_ASSIGNED_HOURS)
   """
   # # FTSClient
   __ftsClient = None
@@ -104,7 +109,7 @@ class CleanFTSDBAgent( AgentModule ):
           self.log.error( "execute: %s" % putJob["Message"] )
           return putJob
 
-    self.log.info( "%s FTSJobs has been kicked and %s has been deleted" % ( kicked, deleted ) )
+    self.log.info( "%s FTSJobs have been kicked and %s have been deleted" % ( kicked, deleted ) )
 
     return S_OK()
 
