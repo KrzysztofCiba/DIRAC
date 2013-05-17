@@ -204,8 +204,8 @@ class RequestTests( unittest.TestCase ):
 
     ftsFile.Status = "Scheduled"
 
-    self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong operation status" )
-    self.assertEqual( req.Status, "Scheduled", "wrong request status" )
+    self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong status for ftsTransfer: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Scheduled", "wrong status for request: %s" % req.Status )
 
     insertBefore = Operation()
     insertBefore.Type = "RegisterReplica"
@@ -217,7 +217,16 @@ class RequestTests( unittest.TestCase ):
 
     req.insertBefore( insertBefore, ftsTransfer )
 
-    print insertBefore.Status, ftsTransfer.Status, req.Status
+    self.assertEqual( insertBefore.Status, "Waiting", "wrong status for insertBefore: %s" % insertBefore.Status )
+    self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong status for ftsStatus: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Waiting", "wrong status for request: %s" % req.Status )
+
+    insertFile.Status = "Done"
+
+    self.assertEqual( insertBefore.Status, "Done", "wrong status for insertBefore: %s" % insertBefore.Status )
+    self.assertEqual( ftsTransfer.Status, "Scheduled", "wrong status for ftsStatus: %s" % ftsTransfer.Status )
+    self.assertEqual( req.Status, "Scheduled", "wrong status for request: %s" % req.Status )
+
 
 
 
