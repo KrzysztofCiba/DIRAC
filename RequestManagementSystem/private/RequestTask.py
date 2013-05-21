@@ -187,9 +187,6 @@ class RequestTask( object ):
 
     :param Operation operation: Operation instance
     """
-    gLogger.always( "getHandler: %s" % self.handlersDict )
-    gLogger.always( "getHandler: %s" % self.handlers )
-
     if operation.Type not in self.handlersDict:
       return S_ERROR( "handler for operation '%s' not set" % operation.Type )
     handler = self.handlers.get( operation.Type, None )
