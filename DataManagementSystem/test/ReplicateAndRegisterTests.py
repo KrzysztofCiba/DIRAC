@@ -85,6 +85,8 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.req = Request()
     self.req.RequestName = self.reqName
+    self.req.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
+    self.req.OwnerGroup = "diracAdmin"
     self.req.addOperation( self.putAndRegister )
     self.req.addOperation( self.replicateAndRegister )
     self.req.addOperation( self.removeFile )
