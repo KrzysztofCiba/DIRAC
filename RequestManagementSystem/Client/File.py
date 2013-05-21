@@ -161,8 +161,10 @@ class File( Record ):
     """ PFN setter """
     if type( value ) != str:
       raise TypeError( "PFN has to be a string!" )
-    if not urlparse.urlparse( value ).scheme or not os.path.isabs( value ):
-      raise ValueError( "Wrongly formatted URI!" )
+    isURL = urlparse.urlparse( value ).scheme
+    isABS = os.path.isabs( value )
+    if not isURL and not isABS:
+      raise ValueError( "Wrongly formatted PFN!" )
     self.__data__["PFN"] = value
 
   @property
