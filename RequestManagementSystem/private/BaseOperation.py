@@ -140,8 +140,8 @@ class BaseOperation( object ):
   def rssClient( cls ):
     """ ResourceStatusClient getter """
     if not cls.__rssClient:
-      from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-      cls.__rssClient = ResourceStatusClient()
+      from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+      cls.__rssClient = ResourceStatus()
     return cls.__rssClient
 
   def getProxyForLFN( self, lfn ):
