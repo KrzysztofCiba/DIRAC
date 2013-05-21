@@ -109,7 +109,7 @@ class ReqClient( Client ):
         errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
     # # if we're here neither requestManager nor requestProxy were successful
     self.log.error( "putRequest: unable to set request '%s'" % request.RequestName )
-    errorsDict["Message"] = "ReqClient.putRequest: unable to set request '%s'"
+    errorsDict["Message"] = "ReqClient.putRequest: unable to set request '%s'" % request.RequestName
     return errorsDict
 
   def getRequest( self, requestName = "" ):
