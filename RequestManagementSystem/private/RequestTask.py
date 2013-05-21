@@ -283,7 +283,7 @@ class RequestTask( object ):
 
     # # request done?
     if self.request.Status == "Done":
-      self.log.info( "request is done" )
+      self.log.info( "request %s is done" % self.request.RequestName )
       gMonitor.addMark( "RequestOK", 1 )
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
@@ -293,7 +293,7 @@ class RequestTask( object ):
                                                                   finalizeRequest["Message"] ) )
           return finalizeRequest
         else:
-          self.log.info( "request is finalized" )
+          self.log.info( "request %s is finalized" % self.request.RequestName )
 
     # # update request to the RequestDB
     update = self.updateRequest()
