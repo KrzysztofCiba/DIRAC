@@ -100,8 +100,6 @@ class ReplicateAndRegister( BaseOperation ):
       self.log.error( replicas["Message"] )
       return replicas
 
-    self.log.always( "AAAAAAAAAAAAAAAAAA %s" % replicas )
-
     reMissing = re.compile( "no such file or directory" )
     for failedLFN, errStr in replicas["Value"]["Failed"].items():
       waitingFiles[failedLFN].Error = errStr
@@ -110,7 +108,7 @@ class ReplicateAndRegister( BaseOperation ):
         gMonitor.addMark( "ReplicateFail", len( targetSESet ) )
         waitingFiles[failedLFN].Status = "Failed"
 
-    for successfulLFN, reps in replicas["Value"]["Successful"]:
+    for successfulLFN, reps in replicas["Value"]["Successful"].items():
       if targetSESet.issubset( set( reps ) ):
         self.log.info( "file %s has been replicated to all targets" % successfulLFN )
         waitingFiles[successfulLFN].Status = "Done"
@@ -134,6 +132,8 @@ class ReplicateAndRegister( BaseOperation ):
       return S_ERROR( failed )
 
     replicas = replicas["Successful"]
+
+    self.log.always( "AAAAAAAAAAAAAAAAAa %s" % replicas )
 
     for repSEName in replicas:
 
