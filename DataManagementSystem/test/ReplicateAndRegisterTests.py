@@ -56,7 +56,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.checksum = fileAdler( self.fname )
 
     self.putFile = File()
-    self.putFile.PFN = "file://" + self.fname
+    self.putFile.PFN = self.fname
     self.putFile.LFN = "/lhcb/user/c/cibak" + self.fname
     self.putFile.Checksum = self.checksum
     self.putFile.ChecksumType = "adler32"
