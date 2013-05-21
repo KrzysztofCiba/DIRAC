@@ -39,28 +39,36 @@ class FTSGraphTests( unittest.TestCase ):
   def setUp( self ):
     """ test set up """
     self.ftsSites = [ FTSSite( { "FTSServer": "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer",
-                                "Name": "CERN.ch" } ),
+                                "Name": "CERN.ch",
+                                "FTSSiteID": 1 } ),
                       FTSSite( { "FTSServer": "https://fts.pic.es:8443/glite-data-transfer-fts/services/FileTransfer",
-                                "Name": "PIC.es" } ),
+                                "Name": "PIC.es",
+                                "FTSSiteID": 2 } ),
                       FTSSite( { "FTSServer": "https://lcgfts.gridpp.rl.ac.uk:8443/glite-data-transfer-fts/services/FileTransfer",
-                                "Name": "RAL.uk" } ),
+                                "Name": "RAL.uk",
+                                "FTSSiteID": 3 } ),
                       FTSSite( { "FTSServer": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer",
-                                "Name": "SARA.nl" } ),
+                                "Name": "SARA.nl",
+                                "FTSSiteID": 4 } ),
                       FTSSite( { "FTSServer": "https://fts.cr.cnaf.infn.it:8443/glite-data-transfer-fts/services/FileTransfer",
-                                "Name": "CNAF.it" } ),
+                                "Name": "CNAF.it",
+                                "FTSSiteID": 5 } ),
                       FTSSite( { "FTSServer": "https://fts.grid.sara.nl:8443/glite-data-transfer-fts/services/FileTransfer",
-                                "Name": "NIKHEF.nl" } ),
+                                "Name": "NIKHEF.nl",
+                                "FTSSiteID": 6 } ),
                       FTSSite( { "FTSServer": "https://fts-fzk.gridka.de:8443/glite-data-transfer-fts/services/FileTransfer",
-                                "Name": "GRIDKA.de" } ),
+                                "Name": "GRIDKA.de",
+                                "FTSSiteID": 7 } ),
                       FTSSite( { "FTSServer": "https://cclcgftsprod.in2p3.fr:8443/glite-data-transfer-fts/services/FileTransfer",
-                                "Name": "IN2P3.fr" } ) ]
-    self.ftsHistoryViews = [ FTSHistoryView( {"TargetSE": "RAL-USER",
-                                              "SourceSE": "CERN-USER",
-                                              "FTSJobs": 10,
-                                              "FTSServer": "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer",
-                                              "Status": "Active",
-                                              "Files" : 1000,
-                                              "Size": 10000000 } ) ]
+                                "Name": "IN2P3.fr",
+                                "FTSSiteID": 8 } ) ]
+    self.ftsHistoryViews = [ FTSHistoryView( { "TargetSE": "RAL-USER",
+                                               "SourceSE": "CERN-USER",
+                                               "FTSJobs": 10,
+                                               "FTSServer": "https://fts22-t0-export.cern.ch:8443/glite-data-transfer-fts/services/FileTransfer",
+                                               "Status": "Active",
+                                               "Files" : 1000,
+                                               "Size": 10000000 } ) ]
 
   def tearDown( self ):
     """ test case tear down """
