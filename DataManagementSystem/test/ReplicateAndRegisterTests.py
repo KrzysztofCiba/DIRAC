@@ -72,9 +72,14 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.replicateAndRegister.TargetSE = "RAL-USER,PIC-USER"
     self.replicateAndRegister.addFile( self.repFile )
 
+    self.removeFile = Operation()
+    self.removeFile.Type = "RemoveFile"
+    self.removeFile.addFile( File( { "LFN": self.putFile.LFN } ) )
+
     self.req = Request()
     self.req.addOperation( self.putAndRegister )
     self.req.addOperation( self.replicateAndRegister )
+    self.req.addOperation( self.removeFile )
 
   def tearDown( self ):
     """ tear down """
@@ -82,6 +87,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     del self.req
     del self.putAndRegister
     del self.replicateAndRegister
+    del self.removeFile
     del self.putFile
     del self.repFile
 
