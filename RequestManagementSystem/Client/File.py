@@ -78,6 +78,7 @@ class File( Record ):
                "Checksum" : "VARCHAR(255)",
                "GUID" : "VARCHAR(26)",
                "Size" : "INTEGER",
+               "Attempt": "INTEGER",
                "Error" : "VARCHAR(255)" },
              "PrimaryKey" : "FileID",
              "Indexes" : { "LFN" : [ "LFN" ] } }
