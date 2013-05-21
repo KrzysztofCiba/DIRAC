@@ -64,11 +64,11 @@ class RequestTask( object ):
     self.__setupManagerProxies()
     # # own gMonitor activities
     gMonitor.registerActivity( "RequestAtt", "Requests processed",
-                               "RequestTask", "Requests/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RequestFail", "Requests failed",
-                               "RequestTask", "Requests/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
     gMonitor.registerActivity( "RequestOK", "Requests done",
-                               "RequestTask", "Requests/min", gMonitor.OP_SUM )
+                               "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM )
 
 
   def __setupManagerProxies( self ):
@@ -179,6 +179,7 @@ class RequestTask( object ):
       gLogger.always( "registering %s%s" % ( pluginName, key ) )
       gMonitor.registerActivity( "%s%s" % ( pluginName, key ), "%s operations %s" % ( pluginName, status ),
                                  "RequestExecutingAgent", "Operations/min", gMonitor.OP_SUM )
+      gLogger.always( str( gMonitor.sourceDict ) )
     # # return an instance
     return pluginClassObj
 
