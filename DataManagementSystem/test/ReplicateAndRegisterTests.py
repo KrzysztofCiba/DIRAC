@@ -39,14 +39,24 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
   """
   def setUp( self ):
     """ test setup """
-    self.fname = "/tmp/testFile"
+    self.fname = "/tmp/testPutAndRegister"
     self.file = open( self.fname, "w+" )
     for i in range( 100 ):
       self.file.write( str( random.randint( 0, i ) ) )
     self.file.close()
 
+    self.size = os.stat( self.fname ).st_size 
     self.checksum = fileAdler( self.fname )
-    print self.checksum
+
+    print self.size
+
+    self.putFile = File()
+    self.putFile.PFN = "file://" + self.fname
+    self.putFile.LFN = "/lhcb/user/c/cibak" + self.fname
+    self.putFile.Checksum = self.checksum
+    self.putFile.ChecksumType = "adler32"
+    self.putFile.Size = self.size
+
 
     putAndRegister = Operation()
     putAndRegister.Type = "PutAndRegister"
