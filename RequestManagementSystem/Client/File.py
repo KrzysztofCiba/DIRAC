@@ -39,7 +39,7 @@ class File( Record ):
   """
   .. class:: File
 
-  A bag object holding sub-request file attributes.
+   A bag object holding Operation file attributes.
 
   :param Operation _parent: reference to parent Operation
   :param dict __data__: attrs dict
@@ -161,7 +161,7 @@ class File( Record ):
     """ PFN setter """
     if type( value ) != str:
       raise TypeError( "PFN has to be a string!" )
-    if not urlparse.urlparse( value ).scheme:
+    if not urlparse.urlparse( value ).scheme or not os.path.isabs( value ):
       raise ValueError( "Wrongly formatted URI!" )
     self.__data__["PFN"] = value
 

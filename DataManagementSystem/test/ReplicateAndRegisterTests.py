@@ -104,7 +104,6 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     del self.putFile
     del self.repFile
 
-
   def test( self ):
     """ test case """
     self.reqClient.deleteRequest( self.reqName )
