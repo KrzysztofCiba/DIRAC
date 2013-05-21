@@ -228,23 +228,28 @@ class ReplicateAndRegister( BaseOperation ):
   def rmTransfer( self ):
     """ replicate and register using ReplicaManager  """
     # # source SE
-    sourceSE = self.operation.SourceSE
-    # # check source se for read
-    sourceRead = self.rssSEStatus( sourceSE, "Read" )
-    if not sourceRead["OK"]:
-      self.log.error( sourceRead["Message"] )
-      for opFile in self.operation:
-        opFile.Error = sourceRead["Message"]
-        opFile.Status = "Failed"
-      self.operation.Error = sourceRead["Message"]
-      gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
-      gMonitor.addMark( "ReplicateFail", len( self.operation ) )
-      return sourceRead
 
-    if not sourceRead["Value"]:
-      self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
-      self.log.error( self.operation.Error )
-      return S_ERROR( self.operation.Error )
+
+    sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
+    if sourceSE:
+      # # check source se for read
+      sourceRead = self.rssSEStatus( sourceSE, "Read" )
+      if not sourceRead["OK"]:
+        self.log.error( sourceRead["Message"] )
+        for opFile in self.operation:
+          opFile.Error = sourceRead["Message"]
+          opFile.Status = "Failed"
+        self.operation.Error = sourceRead["Message"]
+        gMonitor.addMark( "ReplicateAndRegisterAtt", len( self.operation ) )
+        gMonitor.addMark( "ReplicateFail", len( self.operation ) )
+        return sourceRead
+
+      if not sourceRead["Value"]:
+        self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
+        self.log.error( self.operation.Error )
+        return S_ERROR( self.operation.Error )
+
+
 
     # # list of targetSEs
     targetSEs = self.operation.targetSEList
@@ -294,6 +299,19 @@ class ReplicateAndRegister( BaseOperation ):
 
         gMonitor.addMark( "ReplicateAndRegisterAtt", 1 )
         lfn = opFile.LFN
+
+        if not sourceSE:
+          replicas = self._filterReplicas( opFile )
+          if not replicas["OK"]:
+            self.log.error( replicas["Message"] )
+            continue
+          replicas = replicas["Value"]
+          if not replicas["Valid"]:
+            self.log.warn( "unable to find valid replicas for %s" % lfn )
+            continue
+          # # get the first one in the list
+          sourceSE = replicas["Valid"][0]
+
 
         # # call ReplicaManager
         res = self.replicaManager().replicateAndRegister( lfn, targetSE, sourceSE = sourceSE )
