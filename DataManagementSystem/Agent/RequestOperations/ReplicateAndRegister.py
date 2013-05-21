@@ -100,6 +100,8 @@ class ReplicateAndRegister( BaseOperation ):
       self.log.error( replicas["Message"] )
       return replicas
 
+    self.log.always( "AAAAAAAAAAAAAAAAAA %s" % replicas )
+
     reMissing = re.compile( "no such file or directory" )
     for failedLFN, errStr in replicas["Value"]["Failed"]:
       waitingFiles[failedLFN].Error = errStr
