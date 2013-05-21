@@ -69,7 +69,7 @@ class FTSGraphTests( unittest.TestCase ):
 
   def test( self ):
     """ test case """
-    graph = FTSGraph( self.ftsSites, self.ftsHistoryViews )
+    graph = FTSGraph( "ftsGraph", self.ftsSites, self.ftsHistoryViews )
 
     self.assertEqual( type( graph ), FTSGraph, "c'tor failed" )
 
