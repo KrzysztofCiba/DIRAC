@@ -5,9 +5,9 @@
 # Date: 2013/04/16 08:52:36
 ########################################################################
 
-""" :mod: FTSSiteTests 
+""" :mod: FTSSiteTests
     ==================
- 
+
     .. module: FTSSiteTests
     :synopsis: unittest for FTSSite class
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -17,36 +17,59 @@
 
 __RCSID__ = "$Id $"
 
-##
+# #
 # @file FTSSiteTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/04/16 08:52:44
 # @brief Definition of FTSSiteTests class.
 
-## imports 
+# # imports
 import unittest
 # # SUT
 from DIRAC.DataManagementSystem.Client.FTSSite import FTSSite
 
 ########################################################################
-class FTSSiteTests(unittest.TestCase):
+class FTSSiteTests( unittest.TestCase ):
   """
   .. class:: FTSSiteTests
-  
+
   """
 
   def setUp( self ):
-    """c'tor
+    """ test set up """
+    self.fromDict = { "FTSServer": "https://something.somewhere.org/FTSService",
+                      "Name": "something.somewhere.org",
+                      "MaxActiveJobs" : 100 }
 
-    :param self: self reference
-    """
-    pass
+  def tearDown( self ):
+    """ test tear down """
+    del self.fromDict
 
-  def test01CtorSerilization( self ):
-    """ ctor and serialization """
+  def test( self ):
+    """ test case """
+    ftsSite = FTSSite( self.fromDict )
+
+    self.assertEqual( type( ftsSite ), FTSSite, "wrong type" )
+    for k, v in self.fromDict.items():
+      self.assertEqual( hasattr( ftsSite, k ), True, "%s attr is missing" % k )
+      self.assertEqual( getattr( ftsSite, k ), v, "wrong value for attr %s" % k )
+
+    # # serilization
+    toJSON = ftsSite.toJSON()
+    self.assertEqual( toJSON["OK"], True, "toJSON failed" )
+    toJSON = toJSON["Value"]
+
+    toSQL = ftsSite.toSQL()
+    self.assertEqual( toSQL["OK"], True, "toSQL failed" )
+    self.assertEqual( toSQL["Value"].startswith( "INSERT" ), True, "toSQL should start with INSERT" )
 
 
+    ftsSite.FTSSiteID = 10
+    self.assertEqual( ftsSite.FTSSiteID, 10, "wrong value for FTSSite" )
 
+    toSQL = ftsSite.toSQL()
+    self.assertEqual( toSQL["OK"], True, "toSQL failed" )
+    self.assertEqual( toSQL["Value"].startswith( "UPDATE" ), True, "toSQL should start with UPDATE" )
 
 # # test execution
 if __name__ == "__main__":
