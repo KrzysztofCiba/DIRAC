@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 from DIRAC import gLogger, S_OK, S_ERROR, gMonitor
-from DIRAC.RequestManagementSystem.Client.RequestClient import RequestClient
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.BaseOperation import BaseOperation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -212,7 +212,7 @@ class RequestTask( object ):
   def requestClient( cls ):
     """ on demand request client """
     if not cls.__requestClient:
-      cls.__requestClient = RequestClient()
+      cls.__requestClient = ReqClient()
     return cls.__requestClient
 
   def updateRequest( self ):
