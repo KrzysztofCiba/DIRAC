@@ -203,6 +203,7 @@ class BaseOperation( object ):
     :param str status: RSS status
     """
     rssStatus = self.rssClient().getStorageElementStatus( se, status )
+    gLogger.always( rssStatus )
     if not rssStatus["OK"]:
       return S_ERROR( "unknown SE: %s" % se )
     if rssStatus["Value"][se][status] == "Banned":
