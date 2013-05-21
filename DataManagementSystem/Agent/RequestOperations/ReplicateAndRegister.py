@@ -103,7 +103,7 @@ class ReplicateAndRegister( BaseOperation ):
     self.log.always( "AAAAAAAAAAAAAAAAAA %s" % replicas )
 
     reMissing = re.compile( "no such file or directory" )
-    for failedLFN, errStr in replicas["Value"]["Failed"]:
+    for failedLFN, errStr in replicas["Value"]["Failed"].items():
       waitingFiles[failedLFN].Error = errStr
       if reMissing.search( errStr.lower() ):
         self.log.error( "file %s does not exists" % failedLFN )
