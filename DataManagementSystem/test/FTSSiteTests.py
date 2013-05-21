@@ -54,19 +54,23 @@ class FTSSiteTests( unittest.TestCase ):
       self.assertEqual( hasattr( ftsSite, k ), True, "%s attr is missing" % k )
       self.assertEqual( getattr( ftsSite, k ), v, "wrong value for attr %s" % k )
 
-    # # serilization
+    # # serialization
+
+    # # to JSON
     toJSON = ftsSite.toJSON()
     self.assertEqual( toJSON["OK"], True, "toJSON failed" )
     toJSON = toJSON["Value"]
 
+    # # to SQL
     toSQL = ftsSite.toSQL()
     self.assertEqual( toSQL["OK"], True, "toSQL failed" )
     self.assertEqual( toSQL["Value"].startswith( "INSERT" ), True, "toSQL should start with INSERT" )
 
-
+    # # FTSSiteID set
     ftsSite.FTSSiteID = 10
     self.assertEqual( ftsSite.FTSSiteID, 10, "wrong value for FTSSite" )
 
+    # # to SQL again
     toSQL = ftsSite.toSQL()
     self.assertEqual( toSQL["OK"], True, "toSQL failed" )
     self.assertEqual( toSQL["Value"].startswith( "UPDATE" ), True, "toSQL should start with UPDATE" )

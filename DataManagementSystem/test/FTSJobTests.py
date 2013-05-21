@@ -117,8 +117,6 @@ class FTSJobTests( unittest.TestCase ):
     print submit
 
 
-
-
 # # test execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
