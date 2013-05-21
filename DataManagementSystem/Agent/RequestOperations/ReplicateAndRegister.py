@@ -256,7 +256,7 @@ class ReplicateAndRegister( BaseOperation ):
     # # check targetSEs for removal
     bannedTargets = []
     for targetSE in targetSEs:
-      writeStatus = self.rssSEStatus( targetSE, "Write" )
+      writeStatus = self.rssSEStatus( targetSE, "WriteAccess" )
       if not writeStatus["OK"]:
         self.log.error( writeStatus["Message"] )
         for opFile in self.operation:
@@ -277,7 +277,7 @@ class ReplicateAndRegister( BaseOperation ):
     for targetSE in targetSEs:
 
       # # check target SE
-      targetWrite = self.rssSEStatus( targetSE, "Write" )
+      targetWrite = self.rssSEStatus( targetSE, "WriteAccess" )
       if not targetWrite["OK"]:
         self.log.error( targetWrite["Message"] )
         for opFile in self.operation:
