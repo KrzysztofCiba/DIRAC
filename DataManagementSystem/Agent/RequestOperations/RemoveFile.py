@@ -68,7 +68,7 @@ class RemoveFile( BaseOperation ):
     if not bulkRemoval["OK"]:
       self.log.error( "bulk removal failed: %s" % bulkRemoval["Message"] )
     else:
-      gMonitor.addMark( "RemovalFileOK", len( toRemoveDict ) - len( bulkRemoval["Value"] ) )
+      gMonitor.addMark( "RemoveFileOK", len( toRemoveDict ) - len( bulkRemoval["Value"] ) )
       toRemoveDict = bulkRemoval["Value"]
 
     # # 2nd step - single file removal
