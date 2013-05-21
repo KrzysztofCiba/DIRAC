@@ -101,6 +101,7 @@ class Operation( Record ):
                "SourceSE" : "VARCHAR(255)",
                "TargetSE" : "VARCHAR(255)",
                "Catalog" : "VARCHAR(255)",
+               "Error": "VARCHAR(255)",
                "CreationTime" : "DATETIME",
                "SubmitTime" : "DATETIME",
                "LastUpdate" : "DATETIME" },
