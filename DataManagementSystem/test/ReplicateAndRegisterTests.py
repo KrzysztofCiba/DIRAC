@@ -24,6 +24,9 @@ __RCSID__ = "$Id: $"
 import unittest
 import random
 import os
+# # from DIRAC
+from DIRAC.Core.Base.Scrip import parseCommandLine
+parseCommandLine()
 # # from Core
 from DIRAC.Core.Utilities.Adler import fileAdler
 # # from RMS and DMS
@@ -108,6 +111,8 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
 # # test execution
 if __name__ == "__main__":
+
+
   testLoader = unittest.TestLoader()
   suite = testLoader.loadTestsFromTestCase( ReplicateAndRegisterTests )
   suite = unittest.TestSuite( [ suite ] )
