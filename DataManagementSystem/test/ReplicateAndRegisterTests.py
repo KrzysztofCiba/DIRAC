@@ -96,7 +96,6 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
   def tearDown( self ):
     """ tear down """
-    os.unlink( self.fname )
     del self.req
     del self.putAndRegister
     del self.replicateAndRegister
