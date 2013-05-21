@@ -64,7 +64,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
     self.putAndRegister = Operation()
     self.putAndRegister.Type = "PutAndRegister"
-    self.putAndRegister.TargetSE = "CERN-USER"
+    self.putAndRegister.TargetSE = "RAL-USER"
 
     self.putAndRegister.addFile( self.putFile )
 
