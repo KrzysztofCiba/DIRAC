@@ -83,9 +83,9 @@ The callbacks could be attached in a two places:
 
 - directly in ProcessTask, in that case those have to be shelvable/picklable, so they should be defined as
   global functions with the signature :callback( task, taskResult ): where :task: is a :ProcessTask:
-  reference and :taskResult: is whatever task callable it returning for restuls callback and
+  reference and :taskResult: is whatever task callable it returning for results callback and
   :exceptionCallback( task, exc_info): where exc_info is a
-  :S_ERROR{ "Exception": { "Value" : exceptionName, "Exc_info" : exceptionInfo }:
+  :S_ERROR( "Exception": { "Value" : exceptionName, "Exc_info" : exceptionInfo ):
 
 - in ProcessPool, in that case there is no limitation on the function type, except the signature, which
   should follow :callback( task ): or :exceptionCallback( task ):, as those callbacks definitions

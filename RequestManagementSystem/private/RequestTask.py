@@ -176,6 +176,7 @@ class RequestTask( object ):
     if not issubclass( pluginClassObj, BaseOperation ):
       raise TypeError( "operation handler '%s' isn't inherited from BaseOperation class" % pluginName )
     for key, status in ( ( "Att", "Attempted" ), ( "OK", "Successful" ) , ( "Fail", "Failed" ) ):
+      gLogger.always( "registering %s%s" % ( pluginName, key ) )
       gMonitor.registerActivity( "%s%s" % ( pluginName, key ), "%s operations %s" % ( pluginName, status ),
                                  "RequestExecutingAgent", "Operations/min", gMonitor.OP_SUM )
     # # return an instance
