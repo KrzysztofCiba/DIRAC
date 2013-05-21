@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: StrategyHandlerTests 
-    =======================
+    ==========================
  
     .. module: StrategyHandlerTests
     :synopsis: unittest for StrategyHandler

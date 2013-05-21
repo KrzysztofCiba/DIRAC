@@ -27,7 +27,7 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import mock
-import unitest
+import unittest
 ## from DIRAC
 from DIRAC.DataManagementSystem.Agent.FTSCleaningAgent import FTSCleaningAgent
 
