@@ -45,10 +45,8 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
       self.file.write( str( random.randint( 0, i ) ) )
     self.file.close()
 
-    self.size = os.stat( self.fname ).st_size 
+    self.size = os.stat( self.fname ).st_size
     self.checksum = fileAdler( self.fname )
-
-    print self.size
 
     self.putFile = File()
     self.putFile.PFN = "file://" + self.fname
@@ -57,14 +55,35 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.putFile.ChecksumType = "adler32"
     self.putFile.Size = self.size
 
+    self.putAndRegister = Operation()
+    self.putAndRegister.Type = "PutAndRegister"
+    self.putAndRegister.TargetSE = "CERN-USER"
 
-    putAndRegister = Operation()
-    putAndRegister.Type = "PutAndRegister"
+    self.putAndRegister.addFile( self.putFile )
 
+    self.repFile = File()
+    self.repFile.LFN = self.putFile.LFN
+    self.repFile.Size = self.size
+    self.repFile.Checksum = self.checksum
+    self.repFile.ChecksumType = "adler32"
+
+    self.replicateAndRegister = Operation()
+    self.replicateAndRegister.Type = "ReplicateAndRegister"
+    self.replicateAndRegister.TargetSE = "RAL-USER,PIC-USER"
+    self.replicateAndRegister.addFile( self.repFile )
+
+    self.req = Request()
+    self.req.addOperation( self.putAndRegister )
+    self.req.addOperation( self.replicateAndRegister )
 
   def tearDown( self ):
     """ tear down """
     os.unlink( self.fname )
+    del self.req
+    del self.putAndRegister
+    del self.replicateAndRegister
+    del self.putFile
+    del self.repFile
 
 
   def test( self ):
