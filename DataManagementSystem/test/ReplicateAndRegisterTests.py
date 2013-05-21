@@ -88,7 +88,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
   def test( self ):
     """ test case """
-    pass
+    print self.req
 
 # # test execution
 if __name__ == "__main__":
