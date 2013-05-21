@@ -25,7 +25,7 @@ import unittest
 import random
 import os
 # # from DIRAC
-from DIRAC.Core.Base.Scrip import parseCommandLine
+from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 # # from Core
 from DIRAC.Core.Utilities.Adler import fileAdler
