@@ -93,7 +93,7 @@ class PutAndRegister( BaseOperation ):
       self.operation.Error = "TargetSE %s is banned for writing"
       return S_ERROR( self.operation.Error )
 
-    catalog = self.operation.Catalogue
+    catalog = self.operation.Catalog
 
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
