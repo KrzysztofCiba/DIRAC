@@ -78,7 +78,7 @@ class PutAndRegister( BaseOperation ):
       return S_ERROR( "TargetSE should contain only one target, got %s" % targetSEs )
 
     targetSE = targetSEs[0]
-    targetWrite = self.rssSEStatus( targetSE, "Write" )
+    targetWrite = self.rssSEStatus( targetSE, "WriteAccess" )
     if not targetWrite["OK"]:
       self.log.error( targetWrite["Message"] )
       for opFile in self.operation:
