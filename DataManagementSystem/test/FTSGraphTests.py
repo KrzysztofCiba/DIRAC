@@ -73,6 +73,12 @@ class FTSGraphTests( unittest.TestCase ):
 
     self.assertEqual( type( graph ), FTSGraph, "c'tor failed" )
 
+    for node in graph.nodes():
+      print node
+
+    for route in graph.edges():
+      print route
+
     site = graph.findSiteForSE( "CERN-FOO" )
     self.assertEqual( site["OK"], False, "findSiteForSE call failed for unknown SE" )
 
