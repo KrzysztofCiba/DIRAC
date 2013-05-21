@@ -30,6 +30,7 @@ from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 ########################################################################
 class ReplicateAndRegisterTests( unittest.TestCase ):
@@ -39,6 +40,9 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
   """
   def setUp( self ):
     """ test setup """
+
+    self.reqName = "fullChain"
+
     self.fname = "/tmp/testPutAndRegister"
     self.file = open( self.fname, "w+" )
     for i in range( 100 ):
@@ -77,9 +81,13 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.removeFile.addFile( File( { "LFN": self.putFile.LFN } ) )
 
     self.req = Request()
+    self.req.RequestName = self.reqName
     self.req.addOperation( self.putAndRegister )
     self.req.addOperation( self.replicateAndRegister )
     self.req.addOperation( self.removeFile )
+
+    self.reqClient = ReqClient()
+
 
   def tearDown( self ):
     """ tear down """
@@ -94,7 +102,9 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
 
   def test( self ):
     """ test case """
-    print self.req
+    self.reqClient.deleteRequest( self.reqName )
+    self.reqClient.putRequest( self.reqName )
+
 
 # # test execution
 if __name__ == "__main__":
