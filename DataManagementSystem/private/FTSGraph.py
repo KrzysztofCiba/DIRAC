@@ -107,7 +107,7 @@ class FTSGraph( Graph ):
     :param int accFailedFiles: acceptable failed files
     :param str schedulingType: scheduling type
     """
-    Graph.__init__( self, "FTSGraph" )
+    Graph.__init__( self, name )
     self.log = gLogger.getSubLogger( name, True )
     self.accFailureRate = accFailureRate
     self.accFailedFiles = accFailedFiles
@@ -142,7 +142,7 @@ class FTSGraph( Graph ):
                   "MaxActiveJobs": ftsSite.MaxActiveJobs }
       site = Site( ftsSite.Name, rwAttrs, roAttrs )
 
-      self.log.debug( "adding site %s using FTSServer %s" % ( ftsSite.Name, ftsSite.FTSServer ) )
+      self.log.always( "adding site %s using FTSServer %s" % ( ftsSite.Name, ftsSite.FTSServer ) )
       self.addNode( site )
 
     for sourceSite in self.nodes():
@@ -160,7 +160,7 @@ class FTSGraph( Graph ):
                     "SchedulingType": self.schedulingType }
 
         route = Route( sourceSite, destSite, rwAttrs, roAttrs )
-        self.log.debug( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
+        self.log.always( "adding route between %s and %s" % ( route.fromNode.name, route.toNode.name ) )
         self.addEdge( route )
 
     for ftsHistory in ftsHistoryViews:

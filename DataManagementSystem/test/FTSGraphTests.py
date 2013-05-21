@@ -79,7 +79,7 @@ class FTSGraphTests( unittest.TestCase ):
     sourceSite = graph.findSiteForSE( "CERN-USER" )
     self.assertEqual( site["OK"], True, "findSiteForSE call failed for target SE" )
 
-    sourceSite = graph.findSiteForSE( "RAL-USER" )
+    targetSite = graph.findSiteForSE( "RAL-USER" )
     self.assertEqual( site["OK"], True, "findSiteForSE call failed for source SE" )
 
     route = graph.findRoute( "RAL-USER", "CERN-USER" )
