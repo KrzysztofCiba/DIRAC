@@ -246,7 +246,7 @@ class RequestTask( object ):
         return operation
       operation = operation["Value"]
       self.log.debug( "about to execute operation %s" % operation.Type )
-      gMonitor.addMark( "%s%s" % ( operation.Type, "Att" ), 1 )
+      # gMonitor.addMark( "%s%s" % ( operation.Type, "Att" ), 1 )
 
       # # and handler for it
       handler = self.getHandler( operation )
@@ -260,6 +260,7 @@ class RequestTask( object ):
       handler.shifter = shifter
       # # and execute
       try:
+        gMonitor.addMark( "%s%s" % ( operation.Type, "Att" ), 1 )
         exe = handler()
         if not exe["OK"]:
           self.log.error( "unable to process operation %s: %s" % ( operation.Type, exe["Message"] ) )
