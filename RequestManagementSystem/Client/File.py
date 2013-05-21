@@ -53,12 +53,12 @@ class File( Record ):
     """
     Record.__init__( self )
     self._parent = None
-    # self.__data__ = dict.fromkeys( self.tableDesc()["Fields"].keys(), None )
     self.__data__["Status"] = "Waiting"
     self.__data__["OperationID"] = 0
     self.__data__["FileID"] = 0
     self.__data__["Checksum"] = ""
     self.__data__["ChecksumType"] = ""
+    self.__data__["Attempt"] = 0
     fromDict = fromDict if fromDict else {}
     for attrName, attrValue in fromDict.items():
       if attrName not in self.__data__:
