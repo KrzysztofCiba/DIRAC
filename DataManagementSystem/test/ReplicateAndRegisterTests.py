@@ -108,8 +108,8 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
   def test( self ):
     """ test case """
     self.reqClient.deleteRequest( self.reqName )
-    self.reqClient.putRequest( self.req )
-
+    put = self.reqClient.putRequest( self.req )
+    self.assertEqual( put["OK"], True, "putRequest failed" )
 
 # # test execution
 if __name__ == "__main__":
