@@ -4,14 +4,14 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/19 13:55:14
 ########################################################################
-""" :mod: RegisterOperation
-    =======================
+""" :mod: RegisterFile
+    ==================
 
-    .. module: RegisterOperation
+    .. module: RegisterFile
     :synopsis: register operation handler
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    register operation handler
+    RegisterFile operation handler
 """
 
 __RCSID__ = "$Id $"

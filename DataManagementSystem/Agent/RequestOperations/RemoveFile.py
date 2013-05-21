@@ -6,7 +6,7 @@
 ########################################################################
 
 """ :mod: RemoveFile
-    =======================
+    ================
 
     .. module: RemoveFile
     :synopsis: removeFile operation handler
