@@ -77,10 +77,10 @@ class FTSGraphTests( unittest.TestCase ):
     self.assertEqual( site["OK"], False, "findSiteForSE call failed for unknown SE" )
 
     sourceSite = graph.findSiteForSE( "CERN-USER" )
-    self.assertEqual( site["OK"], True, "findSiteForSE call failed for target SE" )
+    self.assertEqual( sourceSite["OK"], True, "findSiteForSE call failed for target SE" )
 
     targetSite = graph.findSiteForSE( "RAL-USER" )
-    self.assertEqual( site["OK"], True, "findSiteForSE call failed for source SE" )
+    self.assertEqual( targetSite["OK"], True, "findSiteForSE call failed for source SE" )
 
     route = graph.findRoute( "RAL-USER", "CERN-USER" )
     self.assertEqual( route["OK"], True, "findRoute failed for known source and target SEs" )
