@@ -106,7 +106,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
   def test( self ):
     """ test case """
     self.reqClient.deleteRequest( self.reqName )
-    self.reqClient.putRequest( self.reqName )
+    self.reqClient.putRequest( self.req )
 
 
 # # test execution
