@@ -87,7 +87,7 @@ class PutAndRegister( BaseOperation ):
         gMonitor.addMark( "PutAtt", 1 )
         gMonitor.addMark( "PutFail", 1 )
       self.operation.Error = targetWrite["Message"]
-      return S_ERROR( "Target SE %s is banned for writing right now" % targetSE )
+      return S_OK()
 
     if not targetWrite["Value"]:
       self.operation.Error = "TargetSE %s is banned for writing"
