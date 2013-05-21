@@ -46,6 +46,7 @@ class ReplicateAndRegisterTests( unittest.TestCase ):
     self.file.close()
 
     self.checksum = fileAdler( self.fname )
+    print self.checksum
 
     putAndRegister = Operation()
     putAndRegister.Type = "PutAndRegister"
